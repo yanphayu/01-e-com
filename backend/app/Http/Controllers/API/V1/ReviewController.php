@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\CreateReviewRequest;
+use App\Http\Requests\Buyer\CreateReviewRequest;
 use App\Services\ReviewService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,17 +17,23 @@ class ReviewController extends Controller
     public function store(CreateReviewRequest $request): JsonResponse
     {
         try {
-            $review = $this->reviewService->create($request->user()->id, $request->validated());
-            return response()->json($review, 201);
+            $data = $request->validated();
+            $data['user_id'] = $request->user()->id;
+            $review = $this->reviewService->create($data);
+            return response()->json([
+                'message' => 'Review created successfully.',
+                'review' => $review,
+            ], 201);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
     public function byProduct(string $productId, Request $request): JsonResponse
     {
         try {
-            $reviews = $this->reviewService->getByProduct($productId, $request->query());
+            $perPage = (int) $request->query('per_page', 15);
+            $reviews = $this->reviewService->getByProduct($productId, $perPage);
             return response()->json($reviews);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 404);
@@ -37,7 +43,8 @@ class ReviewController extends Controller
     public function bySeller(string $sellerId, Request $request): JsonResponse
     {
         try {
-            $reviews = $this->reviewService->getBySeller($sellerId, $request->query());
+            $perPage = (int) $request->query('per_page', 15);
+            $reviews = $this->reviewService->getBySeller($sellerId, $perPage);
             return response()->json($reviews);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 404);
@@ -48,9 +55,12 @@ class ReviewController extends Controller
     {
         try {
             $review = $this->reviewService->approve($id);
-            return response()->json($review);
+            return response()->json([
+                'message' => 'Review approved successfully.',
+                'review' => $review,
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
@@ -58,9 +68,12 @@ class ReviewController extends Controller
     {
         try {
             $review = $this->reviewService->disapprove($id);
-            return response()->json($review);
+            return response()->json([
+                'message' => 'Review disapproved successfully.',
+                'review' => $review,
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 

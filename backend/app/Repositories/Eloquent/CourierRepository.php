@@ -39,16 +39,19 @@ class CourierRepository extends BaseRepository implements CourierRepositoryInter
         return $this->model
             ->where('is_online', true)
             ->where('is_available', true)
-            ->where('status', 'active')
+            ->where('is_suspended', false)
             ->get();
     }
 
     public function getDeliveries(string $courierId, ?string $status = null, int $perPage = 15)
     {
-        $query = $this->model
-            ->find($courierId)
-            ->deliveries()
-            ->with('order');
+        $courier = $this->model->find($courierId);
+
+        if (!$courier) {
+            return collect();
+        }
+
+        $query = $courier->deliveries()->with('order');
 
         if ($status) {
             $query->where('status', $status);
@@ -59,8 +62,13 @@ class CourierRepository extends BaseRepository implements CourierRepositoryInter
 
     public function getEarnings(string $courierId, string $startDate, string $endDate)
     {
-        return $this->model->find($courierId)
-            ->deliveries()
+        $courier = $this->model->find($courierId);
+
+        if (!$courier) {
+            return 0;
+        }
+
+        return $courier->deliveries()
             ->where('status', 'delivered')
             ->whereBetween('delivered_at', [$startDate, $endDate])
             ->sum('fee');

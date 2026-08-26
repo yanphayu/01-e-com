@@ -26,7 +26,7 @@ class CartService
     {
         $product = $this->productRepository->find($productId);
 
-        if ($product->status !== 'active') {
+        if (!$product || !$product->is_active || $product->is_suspended) {
             throw new InvalidArgumentException('Product is not available.');
         }
 

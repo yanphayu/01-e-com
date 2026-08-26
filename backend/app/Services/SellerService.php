@@ -7,6 +7,7 @@ use App\Repositories\Interfaces\NotificationRepositoryInterface;
 use App\Repositories\Interfaces\SellerRepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class SellerService
 {
@@ -19,12 +20,19 @@ class SellerService
     public function createProfile(\App\Models\User $user, array $data): SellerProfile
     {
         return DB::transaction(function () use ($user, $data) {
+            $storeSlug = Str::slug($data['store_name']);
+
             $profile = $this->sellerRepository->create([
                 'user_id' => $user->id,
-                'shop_name' => $data['shop_name'],
+                'store_name' => $data['store_name'],
+                'store_slug' => $storeSlug,
                 'description' => $data['description'] ?? null,
+                'phone' => $data['phone'] ?? null,
+                'address' => $data['address'] ?? null,
+                'city' => $data['city'] ?? null,
                 'logo' => $data['logo'] ?? null,
-                'status' => 'active',
+                'banner' => $data['banner'] ?? null,
+                'is_suspended' => false,
             ]);
 
             $sellerRole = \App\Models\Role::where('slug', 'seller')->first();
@@ -39,7 +47,7 @@ class SellerService
                 'seller_profile',
             );
 
-            return $profile;
+            return $profile->load('user');
         });
     }
 
@@ -54,6 +62,17 @@ class SellerService
         return $profile->load('user');
     }
 
+    public function getProfileById(string $id): SellerProfile
+    {
+        $profile = $this->sellerRepository->find($id);
+
+        if (!$profile) {
+            throw new \Exception('Seller profile not found.');
+        }
+
+        return $profile->load('user', 'products');
+    }
+
     public function getProfileBySlug(string $slug): SellerProfile
     {
         $profile = $this->sellerRepository->findBySlug($slug);
@@ -62,14 +81,18 @@ class SellerService
             throw new \Exception('Seller profile not found.');
         }
 
-        return $profile->load('user');
+        return $profile->load('user', 'products');
     }
 
     public function updateProfile(string $sellerId, array $data): SellerProfile
     {
+        if (isset($data['store_name']) && !isset($data['store_slug'])) {
+            $data['store_slug'] = Str::slug($data['store_name']);
+        }
+
         $this->sellerRepository->update($sellerId, $data);
 
-        return $this->sellerRepository->findOrFail($sellerId);
+        return $this->sellerRepository->findOrFail($sellerId)->load('user');
     }
 
     public function suspend(string $sellerId, ?string $reason = null): SellerProfile
@@ -82,9 +105,9 @@ class SellerService
         return $this->sellerRepository->unsuspend($sellerId);
     }
 
-    public function getRevenue(string $sellerId, string $startDate, string $endDate): array
+    public function getRevenue(string $sellerId, string $startDate, string $endDate): float
     {
-        return $this->sellerRepository->getRevenue($sellerId, $startDate, $endDate);
+        return (float) $this->sellerRepository->getRevenue($sellerId, $startDate, $endDate);
     }
 
     public function getAll(int $perPage = 15)

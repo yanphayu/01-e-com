@@ -14,7 +14,7 @@ class WishlistController extends Controller
     {
         try {
             $wishlists = Wishlist::where('user_id', $request->user()->id)
-                ->with('products')
+                ->with('product.images', 'product.seller')
                 ->paginate($request->query('per_page', 15));
             return response()->json(WishlistResource::collection($wishlists));
         } catch (\Exception $e) {
@@ -28,13 +28,26 @@ class WishlistController extends Controller
             $request->validate([
                 'product_id' => 'required|exists:products,id',
             ]);
-            $wishlist = Wishlist::firstOrCreate([
+
+            $existing = Wishlist::where('user_id', $request->user()->id)
+                ->where('product_id', $request->input('product_id'))
+                ->first();
+
+            if ($existing) {
+                return response()->json(['message' => 'Product already in wishlist.'], 409);
+            }
+
+            $wishlist = Wishlist::create([
                 'user_id' => $request->user()->id,
                 'product_id' => $request->input('product_id'),
             ]);
-            return response()->json(new WishlistResource($wishlist->load('products')), 201);
+
+            return response()->json(
+                new WishlistResource($wishlist->load('product.images', 'product.seller')),
+                201
+            );
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 

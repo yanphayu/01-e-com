@@ -39,6 +39,12 @@ class OrderService
             foreach ($cartWithItems->items as $item) {
                 $product = $this->productRepository->find($item->product_id);
 
+                if (!$product || !$product->is_active) {
+                    throw new InvalidArgumentException(
+                        "Product is no longer available."
+                    );
+                }
+
                 if ($product->stock < $item->quantity) {
                     throw new InvalidArgumentException(
                         "Insufficient stock for product: {$product->name}. Available: {$product->stock}"

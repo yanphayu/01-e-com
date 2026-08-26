@@ -21,32 +21,49 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     {
         $query = $this->model->with(['category', 'seller']);
 
-        if (! empty($filters['keyword'])) {
+        if (!empty($filters['keyword'])) {
             $keyword = $filters['keyword'];
             $query->where(function ($q) use ($keyword) {
-                $q->where('name', 'LIKE', "%{$keyword}%")
-                    ->orWhere('description', 'LIKE', "%{$keyword}%");
+                $q->where('name', 'ILIKE', "%{$keyword}%")
+                    ->orWhere('description', 'ILIKE', "%{$keyword}%");
             });
         }
 
-        if (! empty($filters['category_id'])) {
+        if (!empty($filters['category_id'])) {
             $query->where('category_id', $filters['category_id']);
         }
 
-        if (! empty($filters['min_price'])) {
+        if (!empty($filters['min_price'])) {
             $query->where('price', '>=', $filters['min_price']);
         }
 
-        if (! empty($filters['max_price'])) {
+        if (!empty($filters['max_price'])) {
             $query->where('price', '<=', $filters['max_price']);
         }
 
-        if (! empty($filters['condition'])) {
+        if (!empty($filters['condition'])) {
             $query->where('condition', $filters['condition']);
         }
 
-        if (! empty($filters['seller_id'])) {
+        if (!empty($filters['seller_id'])) {
             $query->where('seller_id', $filters['seller_id']);
+        }
+
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'ILIKE', "%{$search}%")
+                    ->orWhere('description', 'ILIKE', "%{$search}%");
+            });
+        }
+
+        $query->where('is_active', true)->where('is_suspended', false);
+
+        if (!empty($filters['sort_by'])) {
+            $sortOrder = $filters['sort_order'] ?? 'desc';
+            $query->orderBy($filters['sort_by'], $sortOrder);
+        } else {
+            $query->latest();
         }
 
         return $query->paginate($perPage);
@@ -55,7 +72,8 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     public function getFeaturedProducts(int $limit = 10)
     {
         return $this->model
-            ->where('status', 'active')
+            ->where('is_active', true)
+            ->where('is_suspended', false)
             ->where('is_featured', true)
             ->with(['category', 'seller', 'images'])
             ->take($limit)
@@ -69,7 +87,9 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
         return $this->model
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $productId)
-            ->where('status', 'active')
+            ->where('is_active', true)
+            ->where('is_suspended', false)
+            ->with(['images', 'seller'])
             ->take($limit)
             ->get();
     }
@@ -79,6 +99,7 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
         return $this->model
             ->where('seller_id', $sellerId)
             ->with(['category', 'images'])
+            ->latest()
             ->paginate($perPage);
     }
 
@@ -86,7 +107,8 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     {
         return $this->model
             ->where('category_id', $categoryId)
-            ->where('status', 'active')
+            ->where('is_active', true)
+            ->where('is_suspended', false)
             ->with(['seller', 'images'])
             ->paginate($perPage);
     }
@@ -110,7 +132,10 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     public function suspend(string $productId)
     {
         $product = $this->findOrFail($productId);
-        $product->update(['status' => 'suspended']);
+        $product->update([
+            'is_suspended' => true,
+            'is_active' => false,
+        ]);
 
         return $product->fresh();
     }
@@ -118,7 +143,10 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     public function activate(string $productId)
     {
         $product = $this->findOrFail($productId);
-        $product->update(['status' => 'active']);
+        $product->update([
+            'is_suspended' => false,
+            'is_active' => true,
+        ]);
 
         return $product->fresh();
     }

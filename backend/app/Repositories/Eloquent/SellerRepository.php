@@ -20,14 +20,14 @@ class SellerRepository extends BaseRepository implements SellerRepositoryInterfa
 
     public function findBySlug(string $slug)
     {
-        return $this->model->where('slug', $slug)->first();
+        return $this->model->where('store_slug', $slug)->first();
     }
 
     public function suspend(string $sellerId, ?string $reason = null)
     {
         $seller = $this->findOrFail($sellerId);
         $seller->update([
-            'status' => 'suspended',
+            'is_suspended' => true,
             'suspension_reason' => $reason,
             'suspended_at' => now(),
         ]);
@@ -39,7 +39,7 @@ class SellerRepository extends BaseRepository implements SellerRepositoryInterfa
     {
         $seller = $this->findOrFail($sellerId);
         $seller->update([
-            'status' => 'active',
+            'is_suspended' => false,
             'suspension_reason' => null,
             'suspended_at' => null,
         ]);
@@ -51,7 +51,7 @@ class SellerRepository extends BaseRepository implements SellerRepositoryInterfa
     {
         return $this->model->find($sellerId)
             ->orders()
-            ->where('status', 'completed')
+            ->where('status', 'delivered')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->sum('total');
     }
@@ -59,12 +59,12 @@ class SellerRepository extends BaseRepository implements SellerRepositoryInterfa
     public function getTopSellers(int $limit = 10)
     {
         return $this->model
-            ->where('status', 'active')
+            ->where('is_suspended', false)
             ->withCount(['orders as total_orders' => function ($query) {
-                $query->where('status', 'completed');
+                $query->where('status', 'delivered');
             }])
             ->withSum(['orders as total_revenue' => function ($query) {
-                $query->where('status', 'completed');
+                $query->where('status', 'delivered');
             }])
             ->orderByDesc('total_revenue')
             ->take($limit)

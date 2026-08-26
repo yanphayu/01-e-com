@@ -17,7 +17,6 @@ use App\Http\Controllers\API\V1\WishlistController;
 use App\Http\Controllers\API\V1\Admin\DashboardController;
 use Illuminate\Support\Facades\Route;
 
-// Health check
 Route::get('/', function () {
     return response()->json([
         'message' => 'E-Commerce Marketplace API',
@@ -26,9 +25,9 @@ Route::get('/', function () {
     ]);
 });
 
-// Public routes
 Route::prefix('v1')->group(function () {
-    // Auth
+
+    // ─── PUBLIC AUTH ROUTES ──────────────────────────────────
     Route::post('/auth/register', [AuthController::class, 'register']);
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::post('/auth/verify-email', [AuthController::class, 'verifyEmail']);
@@ -36,29 +35,30 @@ Route::prefix('v1')->group(function () {
     Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
-    // Products (public)
+    // ─── PUBLIC PRODUCT ROUTES ──────────────────────────────
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/featured', [ProductController::class, 'featured']);
     Route::get('/products/{slug}', [ProductController::class, 'showBySlug']);
     Route::get('/products/{id}/related', [ProductController::class, 'related']);
 
-    // Categories (public)
+    // ─── PUBLIC CATEGORY ROUTES ─────────────────────────────
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
-    // Reviews (public)
+    // ─── PUBLIC REVIEW ROUTES ───────────────────────────────
     Route::get('/products/{productId}/reviews', [ReviewController::class, 'byProduct']);
 
-    // Seller profiles (public)
+    // ─── PUBLIC SELLER ROUTES ──────────────────────────────
     Route::get('/sellers', [SellerController::class, 'index']);
     Route::get('/sellers/{slug}', [SellerController::class, 'showBySlug']);
     Route::get('/sellers/{id}/products', [ProductController::class, 'bySeller']);
 
-    // Coupon validation
+    // ─── PUBLIC COUPON VALIDATION ──────────────────────────
     Route::post('/coupons/validate', [CouponController::class, 'validate']);
 
-    // Authenticated routes
-    Route::middleware('auth:sanctum')->group(function () {
+    // ─── AUTHENTICATED ROUTES (ALL ROLES) ─────────────────
+    Route::middleware(['auth:sanctum', 'App\Middlewares\EnsureUserNotSuspended'])->group(function () {
+
         // Auth
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
@@ -81,7 +81,7 @@ Route::prefix('v1')->group(function () {
         Route::delete('/cart/{cartItemId}', [CartController::class, 'removeItem']);
         Route::delete('/cart', [CartController::class, 'clear']);
 
-        // Orders (buyer)
+        // Orders (buyer/seller)
         Route::get('/orders', [OrderController::class, 'index']);
         Route::post('/orders', [OrderController::class, 'store']);
         Route::get('/orders/{id}', [OrderController::class, 'show']);
@@ -97,85 +97,101 @@ Route::prefix('v1')->group(function () {
 
         // Notifications
         Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/{id}', [NotificationController::class, 'show']);
         Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
         Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 
         // Reports
         Route::post('/reports', [ReportController::class, 'store']);
-
-        // Seller routes
-        Route::post('/seller/profile', [SellerController::class, 'store']);
-        Route::put('/seller/profile/{id}', [SellerController::class, 'update']);
-        Route::get('/seller/dashboard', [OrderController::class, 'dashboard']);
-        Route::get('/seller/revenue', [OrderController::class, 'revenueReport']);
-
-        // Seller product management
-        Route::post('/seller/products', [ProductController::class, 'store']);
-        Route::put('/seller/products/{id}', [ProductController::class, 'update']);
-        Route::delete('/seller/products/{id}', [ProductController::class, 'destroy']);
-
-        // Seller order management
-        Route::post('/seller/orders/{id}/accept', [OrderController::class, 'accept']);
-        Route::post('/seller/orders/{id}/reject', [OrderController::class, 'reject']);
-        Route::post('/seller/orders/{id}/pack', [OrderController::class, 'pack']);
-        Route::post('/seller/orders/{id}/ship', [OrderController::class, 'ship']);
-
-        // Seller coupons
-        Route::get('/seller/coupons', [CouponController::class, 'index']);
-        Route::post('/seller/coupons', [CouponController::class, 'store']);
-        Route::put('/seller/coupons/{id}', [CouponController::class, 'update']);
-        Route::delete('/seller/coupons/{id}', [CouponController::class, 'destroy']);
-
-        // Courier routes
-        Route::post('/courier/profile', [\App\Http\Controllers\API\V1\DeliveryController::class, 'store']);
-        Route::get('/courier/deliveries', [DeliveryController::class, 'index']);
-        Route::post('/courier/deliveries/{id}/accept', [DeliveryController::class, 'accept']);
-        Route::post('/courier/deliveries/{id}/pickup', [DeliveryController::class, 'pickup']);
-        Route::post('/courier/deliveries/{id}/transit', [DeliveryController::class, 'inTransit']);
-        Route::post('/courier/deliveries/{id}/complete', [DeliveryController::class, 'complete']);
-        Route::post('/courier/deliveries/{id}/fail', [DeliveryController::class, 'fail']);
-        Route::get('/courier/earnings', [DeliveryController::class, 'earnings']);
     });
 
-    // Admin routes
-    Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
+    // ─── SELLER ROUTES ─────────────────────────────────────
+    Route::middleware(['auth:sanctum', 'App\Middlewares\EnsureUserNotSuspended', 'App\Middlewares\EnsureUserHasRole:seller'])->prefix('seller')->group(function () {
+
+        // Profile
+        Route::post('/profile', [SellerController::class, 'store']);
+        Route::put('/profile/{id}', [SellerController::class, 'update']);
+
+        // Dashboard & Revenue
+        Route::get('/dashboard', [OrderController::class, 'dashboard']);
+        Route::get('/revenue', [OrderController::class, 'revenueReport']);
+
+        // Product Management
+        Route::post('/products', [ProductController::class, 'store']);
+        Route::put('/products/{id}', [ProductController::class, 'update']);
+        Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+
+        // Order Management
+        Route::post('/orders/{id}/accept', [OrderController::class, 'accept']);
+        Route::post('/orders/{id}/reject', [OrderController::class, 'reject']);
+        Route::post('/orders/{id}/pack', [OrderController::class, 'pack']);
+        Route::post('/orders/{id}/ship', [OrderController::class, 'ship']);
+
+        // Coupon Management
+        Route::get('/coupons', [CouponController::class, 'index']);
+        Route::post('/coupons', [CouponController::class, 'store']);
+        Route::put('/coupons/{id}', [CouponController::class, 'update']);
+        Route::delete('/coupons/{id}', [CouponController::class, 'destroy']);
+    });
+
+    // ─── COURIER ROUTES ────────────────────────────────────
+    Route::middleware(['auth:sanctum', 'App\Middlewares\EnsureUserNotSuspended', 'App\Middlewares\EnsureUserHasRole:courier'])->prefix('courier')->group(function () {
+
+        // Profile
+        Route::post('/profile', [DeliveryController::class, 'store']);
+
+        // Delivery Management
+        Route::get('/deliveries', [DeliveryController::class, 'index']);
+        Route::post('/deliveries/{id}/accept', [DeliveryController::class, 'accept']);
+        Route::post('/deliveries/{id}/pickup', [DeliveryController::class, 'pickup']);
+        Route::post('/deliveries/{id}/transit', [DeliveryController::class, 'inTransit']);
+        Route::post('/deliveries/{id}/complete', [DeliveryController::class, 'complete']);
+        Route::post('/deliveries/{id}/fail', [DeliveryController::class, 'fail']);
+
+        // Earnings
+        Route::get('/earnings', [DeliveryController::class, 'earnings']);
+    });
+
+    // ─── ADMIN ROUTES ──────────────────────────────────────
+    Route::middleware(['auth:sanctum', 'App\Middlewares\EnsureUserNotSuspended', 'App\Middlewares\EnsureUserHasRole:admin'])->prefix('admin')->group(function () {
+
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'stats']);
         Route::get('/dashboard/recent-orders', [DashboardController::class, 'recentOrders']);
         Route::get('/dashboard/top-sellers', [DashboardController::class, 'topSellers']);
         Route::get('/dashboard/top-products', [DashboardController::class, 'topProducts']);
 
-        // User management
+        // User Management
         Route::get('/users', [UserController::class, 'index']);
         Route::get('/users/{id}', [UserController::class, 'show']);
         Route::post('/users/{id}/suspend', [UserController::class, 'suspend']);
         Route::post('/users/{id}/unsuspend', [UserController::class, 'unsuspend']);
 
-        // Seller management
+        // Seller Management
         Route::get('/sellers', [SellerController::class, 'index']);
         Route::get('/sellers/{id}', [SellerController::class, 'show']);
         Route::post('/sellers/{id}/suspend', [SellerController::class, 'suspend']);
         Route::post('/sellers/{id}/unsuspend', [SellerController::class, 'unsuspend']);
 
-        // Category management
+        // Category Management
         Route::post('/categories', [CategoryController::class, 'store']);
         Route::put('/categories/{id}', [CategoryController::class, 'update']);
         Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
-        // Product management
+        // Product Management
         Route::post('/products/{id}/suspend', [ProductController::class, 'suspend']);
         Route::post('/products/{id}/activate', [ProductController::class, 'activate']);
 
-        // Review management
+        // Review Management
         Route::put('/reviews/{id}/approve', [ReviewController::class, 'approve']);
         Route::put('/reviews/{id}/disapprove', [ReviewController::class, 'disapprove']);
         Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);
 
-        // Payment management
+        // Payment Management
         Route::post('/payments/{paymentId}/refund', [PaymentController::class, 'refund']);
 
-        // Report management
+        // Report Management
         Route::get('/reports', [ReportController::class, 'index']);
         Route::put('/reports/{id}', [ReportController::class, 'update']);
         Route::delete('/reports/{id}', [ReportController::class, 'destroy']);

@@ -16,7 +16,13 @@ class NotificationController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $notifications = $this->notificationService->getAll($request->user()->id, $request->query());
+            $perPage = (int) $request->query('per_page', 20);
+            $type = $request->query('type');
+            $notifications = $this->notificationService->getUserNotifications(
+                $request->user()->id,
+                $perPage,
+                $type
+            );
             return response()->json($notifications);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
@@ -26,7 +32,7 @@ class NotificationController extends Controller
     public function show(string $id): JsonResponse
     {
         try {
-            $notification = $this->notificationService->findById($id);
+            $notification = \App\Models\Notification::findOrFail($id);
             return response()->json($notification);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 404);
@@ -37,9 +43,12 @@ class NotificationController extends Controller
     {
         try {
             $notification = $this->notificationService->markAsRead($id);
-            return response()->json($notification);
+            return response()->json([
+                'message' => 'Notification marked as read.',
+                'notification' => $notification,
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 404);
         }
     }
 
@@ -47,7 +56,7 @@ class NotificationController extends Controller
     {
         try {
             $this->notificationService->markAllAsRead($request->user()->id);
-            return response()->json(['message' => 'All notifications marked as read']);
+            return response()->json(['message' => 'All notifications marked as read.']);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
@@ -56,7 +65,7 @@ class NotificationController extends Controller
     public function unreadCount(Request $request): JsonResponse
     {
         try {
-            $count = $this->notificationService->unreadCount($request->user()->id);
+            $count = $this->notificationService->getUnreadCount($request->user()->id);
             return response()->json(['unread_count' => $count]);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);

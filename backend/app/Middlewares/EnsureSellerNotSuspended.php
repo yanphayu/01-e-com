@@ -21,7 +21,7 @@ class EnsureSellerNotSuspended
             return response()->json(['message' => 'Seller profile not found.'], 404);
         }
 
-        if ($sellerProfile->status === 'suspended') {
+        if ($sellerProfile->is_suspended) {
             return response()->json(['message' => 'Your seller account has been suspended.'], 403);
         }
 

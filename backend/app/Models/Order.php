@@ -39,20 +39,17 @@ class Order extends Model
         'cancel_reason',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'subtotal' => 'decimal:2',
-            'shipping_fee' => 'decimal:2',
-            'tax' => 'decimal:2',
-            'discount' => 'decimal:2',
-            'total' => 'decimal:2',
-            'paid_at' => 'datetime',
-            'shipped_at' => 'datetime',
-            'delivered_at' => 'datetime',
-            'cancelled_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'subtotal' => 'decimal:2',
+        'shipping_fee' => 'decimal:2',
+        'tax' => 'decimal:2',
+        'discount' => 'decimal:2',
+        'total' => 'decimal:2',
+        'paid_at' => 'datetime',
+        'shipped_at' => 'datetime',
+        'delivered_at' => 'datetime',
+        'cancelled_at' => 'datetime',
+    ];
 
     public function buyer(): BelongsTo
     {

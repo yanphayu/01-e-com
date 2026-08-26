@@ -29,6 +29,17 @@ class CouponRepository extends BaseRepository implements CouponRepositoryInterfa
             ->paginate(15);
     }
 
+    public function getBySeller(string $sellerId, array $filters = [], int $perPage = 15)
+    {
+        $query = $this->model->where('seller_id', $sellerId);
+
+        if (!empty($filters['is_active'])) {
+            $query->where('is_active', $filters['is_active']);
+        }
+
+        return $query->latest()->paginate($perPage);
+    }
+
     public function validateCoupon(string $code, string $sellerId, float $orderAmount)
     {
         $coupon = $this->model

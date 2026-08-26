@@ -27,6 +27,12 @@ class User extends Authenticatable
         'password',
         'phone',
         'avatar',
+        'is_active',
+        'is_suspended',
+        'suspended_at',
+        'suspension_reason',
+        'email_verification_code',
+        'email_verification_expires_at',
     ];
 
     protected $hidden = [

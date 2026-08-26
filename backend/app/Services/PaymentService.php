@@ -31,13 +31,13 @@ class PaymentService
             'payment_method' => $data['payment_method'],
             'transaction_id' => 'TXN-' . Str::upper(Str::random(20)),
             'amount' => $order->total,
-            'currency' => $data['currency'] ?? 'IDR',
+            'currency' => $data['currency'] ?? 'USD',
             'status' => 'pending',
         ]);
 
         $payment = $this->simulatePaymentProcessing($payment, $data['payment_method']);
 
-        if ($payment->status === 'completed') {
+        if ($payment->status === 'paid') {
             $this->orderRepository->update($order->id, [
                 'payment_status' => 'paid',
                 'paid_at' => now(),
@@ -47,6 +47,14 @@ class PaymentService
                 $order->buyer_id,
                 'Payment Successful',
                 "Payment for order #{$order->order_number} has been processed.",
+                'payment',
+                ['order_id' => $order->id, 'payment_id' => $payment->id]
+            );
+
+            $this->notificationRepository->createNotification(
+                $order->seller_id,
+                'Payment Received',
+                "Payment for order #{$order->order_number} has been received.",
                 'payment',
                 ['order_id' => $order->id, 'payment_id' => $payment->id]
             );
@@ -72,7 +80,7 @@ class PaymentService
     {
         $payment = $this->paymentRepository->findOrFail($paymentId);
 
-        if ($payment->status !== 'completed') {
+        if ($payment->status !== 'paid') {
             throw new InvalidArgumentException('Only completed payments can be refunded.');
         }
 
@@ -114,7 +122,7 @@ class PaymentService
 
     protected function simulatePaymentProcessing(Payment $payment, string $method): Payment
     {
-        $success = in_array($method, ['bank_transfer', 'e_wallet', 'credit_card'])
+        $success = in_array($method, ['aba_payway', 'acleda', 'wing', 'bank_transfer', 'e_wallet', 'credit_card'])
             ? true
             : (rand(1, 10) > 2);
 

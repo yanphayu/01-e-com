@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\CreateOrderRequest;
+use App\Http\Requests\Buyer\CreateOrderRequest;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,10 +17,15 @@ class OrderController extends Controller
     public function store(CreateOrderRequest $request): JsonResponse
     {
         try {
-            $order = $this->orderService->create($request->validated());
-            return response()->json($order, 201);
+            $data = $request->validated();
+            $data['buyer_id'] = $request->user()->id;
+            $order = $this->orderService->create($data);
+            return response()->json([
+                'message' => 'Order created successfully.',
+                'order' => $order,
+            ], 201);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
@@ -28,9 +33,25 @@ class OrderController extends Controller
     {
         try {
             $user = $request->user();
-            $orders = $user->role === 'seller'
-                ? $this->orderService->getSellerOrders($user->id, $request->query())
-                : $this->orderService->getBuyerOrders($user->id, $request->query());
+            $status = $request->query('status');
+            $perPage = (int) $request->query('per_page', 15);
+
+            if ($user->isSeller()) {
+                $sellerProfile = $user->sellerProfile;
+                if (!$sellerProfile) {
+                    return response()->json(['message' => 'Seller profile not found.'], 404);
+                }
+                $orders = $this->orderService->getBySeller($sellerProfile->id, $status, $perPage);
+            } elseif ($user->isCourier()) {
+                $courier = $user->courier;
+                if (!$courier) {
+                    return response()->json(['message' => 'Courier profile not found.'], 404);
+                }
+                $orders = $this->orderService->getByBuyer($user->id, $status, $perPage);
+            } else {
+                $orders = $this->orderService->getByBuyer($user->id, $status, $perPage);
+            }
+
             return response()->json($orders);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
@@ -40,8 +61,8 @@ class OrderController extends Controller
     public function show(string $id): JsonResponse
     {
         try {
-            $order = $this->orderService->findById($id);
-            return response()->json($order);
+            $order = $this->orderService->getById($id);
+            return response()->json($order->load(['items', 'payment', 'delivery', 'buyer', 'seller', 'seller.user']));
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 404);
         }
@@ -50,67 +71,92 @@ class OrderController extends Controller
     public function accept(string $id): JsonResponse
     {
         try {
-            $order = $this->orderService->accept($id);
-            return response()->json($order);
+            $order = $this->orderService->acceptOrder($id);
+            return response()->json([
+                'message' => 'Order accepted successfully.',
+                'order' => $order,
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
     public function reject(string $id): JsonResponse
     {
         try {
-            $order = $this->orderService->reject($id);
-            return response()->json($order);
+            $order = $this->orderService->rejectOrder($id);
+            return response()->json([
+                'message' => 'Order rejected successfully.',
+                'order' => $order,
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
     public function pack(string $id): JsonResponse
     {
         try {
-            $order = $this->orderService->pack($id);
-            return response()->json($order);
+            $order = $this->orderService->packOrder($id);
+            return response()->json([
+                'message' => 'Order packed successfully.',
+                'order' => $order,
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
     public function ship(string $id): JsonResponse
     {
         try {
-            $order = $this->orderService->ship($id);
-            return response()->json($order);
+            $order = $this->orderService->shipOrder($id);
+            return response()->json([
+                'message' => 'Order shipped successfully.',
+                'order' => $order,
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
     public function deliver(string $id): JsonResponse
     {
         try {
-            $order = $this->orderService->deliver($id);
-            return response()->json($order);
+            $order = $this->orderService->deliverOrder($id);
+            return response()->json([
+                'message' => 'Order marked as delivered.',
+                'order' => $order,
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
     public function cancel(Request $request, string $id): JsonResponse
     {
         try {
-            $order = $this->orderService->cancel($id, $request->user()->id, $request->input('reason'));
-            return response()->json($order);
+            $order = $this->orderService->cancelOrder($id, $request->input('reason'));
+            return response()->json([
+                'message' => 'Order cancelled successfully.',
+                'order' => $order,
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
     public function dashboard(Request $request): JsonResponse
     {
         try {
-            $stats = $this->orderService->sellerDashboard($request->user()->id, $request->query());
+            $user = $request->user();
+            $sellerProfile = $user->sellerProfile;
+
+            if (!$sellerProfile) {
+                return response()->json(['message' => 'Seller profile not found.'], 404);
+            }
+
+            $stats = $this->orderService->getDashboardStats($sellerProfile->id);
             return response()->json($stats);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
@@ -120,7 +166,17 @@ class OrderController extends Controller
     public function revenueReport(Request $request): JsonResponse
     {
         try {
-            $report = $this->orderService->revenueReport($request->user()->id, $request->query());
+            $user = $request->user();
+            $sellerProfile = $user->sellerProfile;
+
+            if (!$sellerProfile) {
+                return response()->json(['message' => 'Seller profile not found.'], 404);
+            }
+
+            $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
+            $endDate = $request->query('end_date', now()->toDateString());
+
+            $report = $this->orderService->getRevenueReport($startDate, $endDate, $sellerProfile->id);
             return response()->json($report);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);

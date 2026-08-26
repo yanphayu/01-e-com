@@ -31,19 +31,26 @@ class DeliveryService
             throw new InvalidArgumentException('Delivery already assigned for this order.');
         }
 
+        $courier = \App\Models\Courier::find($courierId);
+        if (!$courier) {
+            throw new InvalidArgumentException('Courier not found.');
+        }
+
+        $sellerProfile = \App\Models\SellerProfile::find($order->seller_id);
+
         $delivery = Delivery::create([
             'order_id' => $orderId,
             'courier_id' => $courierId,
             'status' => 'assigned',
             'fee' => $order->shipping_fee,
-            'pickup_address' => $order->seller->address ?? null,
+            'pickup_address' => $sellerProfile?->address ?? null,
             'delivery_address' => $order->shipping_address,
         ]);
 
         $this->orderRepository->update($orderId, ['courier_id' => $courierId]);
 
         $this->notificationRepository->createNotification(
-            $courierId,
+            $courier->user_id,
             'Delivery Assigned',
             "You have a new delivery assignment for order #{$order->order_number}.",
             'delivery',
@@ -58,7 +65,7 @@ class DeliveryService
             ['delivery_id' => $delivery->id, 'order_id' => $orderId]
         );
 
-        return $delivery;
+        return $delivery->load('order', 'courier');
     }
 
     public function acceptDelivery(string $deliveryId): Delivery
@@ -79,7 +86,7 @@ class DeliveryService
             ['delivery_id' => $delivery->id]
         );
 
-        return $delivery->fresh();
+        return $delivery->fresh()->load('order', 'courier');
     }
 
     public function pickupOrder(string $deliveryId): Delivery
@@ -105,7 +112,7 @@ class DeliveryService
             ['delivery_id' => $delivery->id]
         );
 
-        return $delivery->fresh();
+        return $delivery->fresh()->load('order', 'courier');
     }
 
     public function inTransit(string $deliveryId): Delivery
@@ -126,7 +133,7 @@ class DeliveryService
             ['delivery_id' => $delivery->id]
         );
 
-        return $delivery->fresh();
+        return $delivery->fresh()->load('order', 'courier');
     }
 
     public function completeDelivery(string $deliveryId, ?string $proofImage = null): Delivery
@@ -145,6 +152,12 @@ class DeliveryService
 
         $this->orderRepository->updateStatus($delivery->order_id, 'delivered');
 
+        $courier = $delivery->courier;
+        if ($courier) {
+            $courier->increment('total_deliveries');
+            $courier->increment('total_earnings', $delivery->fee);
+        }
+
         $this->notificationRepository->createNotification(
             $delivery->order->buyer_id,
             'Delivery Completed',
@@ -153,7 +166,7 @@ class DeliveryService
             ['delivery_id' => $delivery->id]
         );
 
-        return $delivery->fresh();
+        return $delivery->fresh()->load('order', 'courier');
     }
 
     public function failDelivery(string $deliveryId, ?string $reason = null): Delivery
@@ -185,7 +198,7 @@ class DeliveryService
             ['delivery_id' => $delivery->id, 'reason' => $reason]
         );
 
-        return $delivery->fresh();
+        return $delivery->fresh()->load('order', 'courier');
     }
 
     public function getDeliveries(string $courierId, ?string $status = null, int $perPage = 15)
@@ -193,8 +206,8 @@ class DeliveryService
         return $this->courierRepository->getDeliveries($courierId, $status, $perPage);
     }
 
-    public function getEarnings(string $courierId, string $startDate, string $endDate)
+    public function getEarnings(string $courierId, string $startDate, string $endDate): float
     {
-        return $this->courierRepository->getEarnings($courierId, $startDate, $endDate);
+        return (float) $this->courierRepository->getEarnings($courierId, $startDate, $endDate);
     }
 }

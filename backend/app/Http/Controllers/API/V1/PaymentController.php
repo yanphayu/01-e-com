@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\ProcessPaymentRequest;
+use App\Http\Requests\Buyer\ProcessPaymentRequest;
 use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,17 +17,24 @@ class PaymentController extends Controller
     public function store(ProcessPaymentRequest $request): JsonResponse
     {
         try {
-            $payment = $this->paymentService->process($request->validated());
-            return response()->json($payment, 201);
+            $data = $request->validated();
+            $payment = $this->paymentService->processPayment($data);
+            return response()->json([
+                'message' => 'Payment processed successfully.',
+                'payment' => $payment,
+            ], 201);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
     public function show(string $orderId): JsonResponse
     {
         try {
-            $payment = $this->paymentService->getByOrderId($orderId);
+            $payment = $this->paymentService->getPaymentByOrder($orderId);
+            if (!$payment) {
+                return response()->json(['message' => 'Payment not found.'], 404);
+            }
             return response()->json($payment);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 404);
@@ -38,26 +45,30 @@ class PaymentController extends Controller
     {
         try {
             $payment = $this->paymentService->refund($paymentId, $request->input('reason'));
-            return response()->json($payment);
+            return response()->json([
+                'message' => 'Payment refunded successfully.',
+                'payment' => $payment,
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
     public function verify(Request $request, string $transactionId): JsonResponse
     {
         try {
-            $payment = $this->paymentService->verify($transactionId, $request->input('gateway_response'));
+            $payment = $this->paymentService->verifyPayment($transactionId);
             return response()->json($payment);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 404);
         }
     }
 
     public function history(Request $request): JsonResponse
     {
         try {
-            $history = $this->paymentService->history($request->user()->id, $request->query());
+            $perPage = (int) $request->query('per_page', 15);
+            $history = $this->paymentService->getPaymentHistory($request->user()->id, $perPage);
             return response()->json($history);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);

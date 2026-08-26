@@ -22,6 +22,7 @@ class Payment extends Model
         'paid_at',
         'refunded_at',
         'refund_reason',
+        'failure_reason',
     ];
 
     protected function casts(): array
