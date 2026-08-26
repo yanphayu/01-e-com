@@ -1,5 +1,5 @@
 <template>
-  <main>
+  <main class="auth-page">
     <VerifyEmailForm />
   </main>
 </template>

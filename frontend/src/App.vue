@@ -1,17 +1,23 @@
 <template>
   <div class="app">
-    <Navbar />
+    <Navbar v-if="!isAuthPage" />
     <main class="app-main">
       <RouterView />
     </main>
-    <Footer />
+    <Footer v-if="!isAuthPage" />
   </div>
 </template>
 
 <script setup>
-import { RouterView } from 'vue-router'
+import { computed } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
 import Navbar from './components/Navbar.vue'
 import Footer from './components/Footer.vue'
+
+const route = useRoute()
+const isAuthPage = computed(() =>
+  ['login', 'register', 'verify-email'].includes(route.name)
+)
 </script>
 
 <style scoped>

@@ -1,24 +1,30 @@
 <template>
-  <form class="auth-form" @submit.prevent="handleSubmit">
-    <h2>Login</h2>
-
-    <p v-if="error" class="error">{{ error }}</p>
-
-    <div class="field">
-      <label for="email">Email</label>
-      <input id="email" v-model="email" type="email" required autocomplete="email" />
+  <form class="auth-card stack" autocomplete="off" @submit.prevent="handleSubmit">
+    <div class="auth-head">
+      <h1>{{ t('auth.welcome') }}</h1>
+      <p>{{ t('auth.welcomeSub') }}</p>
     </div>
 
-    <div class="field">
-      <label for="password">Password</label>
-      <div class="input-wrap">
-        <input
-          id="password"
-          v-model="password"
-          :type="showPassword ? 'text' : 'password'"
-          required
-          autocomplete="current-password"
-        />
+    <p v-if="error" class="alert alert-error">{{ error }}</p>
+
+    <BaseInput
+      v-model="email"
+      :label="t('auth.email')"
+      type="email"
+      :placeholder="t('auth.emailPlaceholder')"
+      autocomplete="off"
+      readonly
+    />
+
+    <BaseInput
+      v-model="password"
+      :label="t('auth.password')"
+      :type="showPassword ? 'text' : 'password'"
+      :placeholder="t('auth.passwordPlaceholder')"
+      autocomplete="new-password"
+      readonly
+    >
+      <template #suffix>
         <button
           type="button"
           class="toggle"
@@ -36,16 +42,16 @@
             <line x1="2" x2="22" y1="2" y2="22" />
           </svg>
         </button>
-      </div>
-    </div>
+      </template>
+    </BaseInput>
 
-    <button type="submit" class="submit" :disabled="loading">
-      {{ loading ? 'Logging in...' : 'Login' }}
-    </button>
+    <BaseButton type="submit" variant="primary" block :loading="loading">
+      {{ loading ? t('auth.loggingIn') : t('auth.login') }}
+    </BaseButton>
 
-    <p class="switch">
-      No account?
-      <RouterLink to="/register">Register</RouterLink>
+    <p class="auth-foot">
+      {{ t('auth.noAccount') }}
+      <RouterLink to="/register">{{ t('auth.createOne') }}</RouterLink>
     </p>
   </form>
 </template>
@@ -54,6 +60,9 @@
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { loginUser } from '../../services/auth'
+import { t } from '../../i18n'
+import BaseInput from '../../design-system/BaseInput.vue'
+import BaseButton from '../../design-system/BaseButton.vue'
 
 const router = useRouter()
 

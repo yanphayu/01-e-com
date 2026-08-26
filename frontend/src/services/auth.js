@@ -1,7 +1,12 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
+import { getLocale } from '../i18n'
+
 async function request(endpoint, options = {}) {
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const sep = endpoint.includes('?') ? '&' : '?'
+  const url = `${API_URL}${endpoint}${sep}lang=${getLocale()}`
+
+  const response = await fetch(url, {
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -34,6 +39,13 @@ export function loginUser(payload) {
 
 export function verifyEmail(payload) {
   return request('/verify-email', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function resendVerification(payload) {
+  return request('/resend-verification', {
     method: 'POST',
     body: JSON.stringify(payload),
   })

@@ -1,30 +1,29 @@
 <template>
-  <form class="auth-form" @submit.prevent="handleSubmit">
-    <h2>Register</h2>
-
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-if="success" class="success">{{ success }}</p>
-
-    <div class="field">
-      <label for="name">Name</label>
-      <input id="name" v-model="name" type="text" required autocomplete="name" />
+  <form class="auth-card stack" @submit.prevent="handleSubmit">
+    <div class="auth-head">
+      <h1>{{ t('auth.createAccount') }}</h1>
+      <p>{{ t('auth.joinSub') }}</p>
     </div>
 
-    <div class="field">
-      <label for="email">Email</label>
-      <input id="email" v-model="email" type="email" required autocomplete="email" />
-    </div>
+    <p v-if="error" class="alert alert-error">{{ error }}</p>
+    <p v-if="success" class="alert alert-success">{{ success }}</p>
 
-    <div class="field">
-      <label for="password">Password</label>
-      <div class="input-wrap">
-        <input
-          id="password"
-          v-model="password"
-          :type="showPassword ? 'text' : 'password'"
-          required
-          autocomplete="new-password"
-        />
+    <BaseInput
+      v-model="email"
+      :label="t('auth.email')"
+      type="email"
+      :placeholder="t('auth.emailPlaceholder')"
+      autocomplete="email"
+    />
+
+    <BaseInput
+      v-model="password"
+      :label="t('auth.password')"
+      :type="showPassword ? 'text' : 'password'"
+      :placeholder="t('auth.passwordPlaceholder')"
+      autocomplete="new-password"
+    >
+      <template #suffix>
         <button
           type="button"
           class="toggle"
@@ -42,19 +41,17 @@
             <line x1="2" x2="22" y1="2" y2="22" />
           </svg>
         </button>
-      </div>
-    </div>
+      </template>
+    </BaseInput>
 
-    <div class="field">
-      <label for="passwordConfirmation">Confirm password</label>
-      <div class="input-wrap">
-        <input
-          id="passwordConfirmation"
-          v-model="passwordConfirmation"
-          :type="showConfirmPassword ? 'text' : 'password'"
-          required
-          autocomplete="new-password"
-        />
+    <BaseInput
+      v-model="passwordConfirmation"
+      :label="t('auth.confirmPassword')"
+      :type="showConfirmPassword ? 'text' : 'password'"
+      :placeholder="t('auth.confirmPlaceholder')"
+      autocomplete="new-password"
+    >
+      <template #suffix>
         <button
           type="button"
           class="toggle"
@@ -72,16 +69,16 @@
             <line x1="2" x2="22" y1="2" y2="22" />
           </svg>
         </button>
-      </div>
-    </div>
+      </template>
+    </BaseInput>
 
-    <button type="submit" class="submit" :disabled="loading">
-      {{ loading ? 'Registering...' : 'Register' }}
-    </button>
+    <BaseButton type="submit" variant="primary" block :loading="loading">
+      {{ loading ? t('auth.creatingAccount') : t('auth.createAccount') }}
+    </BaseButton>
 
-    <p class="switch">
-      Already have an account?
-      <RouterLink to="/login">Login</RouterLink>
+    <p class="auth-foot">
+      {{ t('auth.alreadyAccount') }}
+      <RouterLink to="/login">{{ t('auth.signInLink') }}</RouterLink>
     </p>
   </form>
 </template>
@@ -90,10 +87,12 @@
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { registerUser } from '../../services/auth'
+import { t } from '../../i18n'
+import BaseInput from '../../design-system/BaseInput.vue'
+import BaseButton from '../../design-system/BaseButton.vue'
 
 const router = useRouter()
 
-const name = ref('')
 const email = ref('')
 const password = ref('')
 const passwordConfirmation = ref('')
@@ -105,7 +104,7 @@ const success = ref(null)
 
 async function handleSubmit() {
   if (password.value !== passwordConfirmation.value) {
-    error.value = 'Passwords do not match'
+    error.value = t('auth.passwordsMismatch')
     return
   }
 
@@ -114,13 +113,13 @@ async function handleSubmit() {
 
   try {
     await registerUser({
-      name: name.value,
       email: email.value,
       password: password.value,
       password_confirmation: passwordConfirmation.value,
     })
 
-    success.value = 'Account created! Please verify your email.'
+    sessionStorage.setItem('verifyEmail', email.value)
+    success.value = t('auth.accountCreated')
     router.push('/verify-email')
   } catch (err) {
     error.value = err.message

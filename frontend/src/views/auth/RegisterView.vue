@@ -1,9 +1,10 @@
 <template>
-  <main>
+  <AuthLayout>
     <RegisterForm />
-  </main>
+  </AuthLayout>
 </template>
 
 <script setup>
+import AuthLayout from '../../components/AuthLayout.vue'
 import RegisterForm from '../../components/auth/RegisterForm.vue'
 </script>
