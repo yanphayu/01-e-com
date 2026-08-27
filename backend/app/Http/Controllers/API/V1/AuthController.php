@@ -73,13 +73,15 @@ class AuthController extends Controller
     public function verifyEmail(VerifyEmailRequest $request): JsonResponse
     {
         try {
-            $this->authService->verifyEmail(
+            $result = $this->authService->verifyEmail(
                 $request->input('email'),
                 $request->input('code'),
             );
 
             return response()->json([
                 'message' => 'Email verified successfully.',
+                'token' => $result['token'],
+                'user' => $result['user'],
             ], 200, [], JSON_UNESCAPED_UNICODE);
         } catch (\Exception $e) {
             return response()->json([

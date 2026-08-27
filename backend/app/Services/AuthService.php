@@ -22,14 +22,16 @@ class AuthService
     public function register(array $data): array
     {
         $user = $this->userRepository->create([
-            'name' => $data['name'],
+            'name' => $data['name'] ?? null,
+            'first_name' => $data['first_name'] ?? null,
+            'last_name' => $data['last_name'] ?? null,
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'email_verification_code' => Str::random(6),
+            'email_verification_code' => (string) random_int(100000, 999999),
             'email_verification_expires_at' => now()->addMinutes(30),
         ]);
 
-        $buyerRole = \App\Models\Role::where('slug', 'buyer')->first();
+        $buyerRole = \App\Models\Role::where('name', 'buyer')->first();
         if ($buyerRole) {
             $this->userRepository->attachRole($user->id, $buyerRole->id);
         }
@@ -61,7 +63,7 @@ class AuthService
         $user->currentAccessToken()->delete();
     }
 
-    public function verifyEmail(string $email, string $code): User
+    public function verifyEmail(string $email, string $code): array
     {
         $user = $this->userRepository->findByEmail($email);
 
@@ -81,13 +83,17 @@ class AuthService
             throw new \Exception('Verification code has expired.');
         }
 
-        $user->update([
+        $user->forceFill([
             'email_verified_at' => now(),
             'email_verification_code' => null,
             'email_verification_expires_at' => null,
-        ]);
+        ])->save();
 
-        return $user;
+        $token = $user->createToken('auth-token')->plainTextToken;
+
+        $user->load('roles');
+
+        return ['user' => $user, 'token' => $token];
     }
 
     public function resendVerification(string $email): void
@@ -102,7 +108,7 @@ class AuthService
             throw new \Exception('Email already verified.');
         }
 
-        $code = Str::random(6);
+        $code = (string) random_int(100000, 999999);
 
         $user->update([
             'email_verification_code' => $code,

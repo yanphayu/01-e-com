@@ -68,6 +68,7 @@ Route::prefix('v1')->group(function () {
 
         // User Profile
         Route::put('/profile', [UserController::class, 'update']);
+        Route::put('/auth/profile', [UserController::class, 'update']);
 
         // Wishlist
         Route::get('/wishlist', [WishlistController::class, 'index']);

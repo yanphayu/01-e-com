@@ -21,6 +21,11 @@ const routes = [
     name: 'verify-email',
     component: () => import('../views/auth/VerifyEmailView.vue'),
   },
+  {
+    path: '/profile-setup',
+    name: 'profile-setup',
+    component: () => import('../views/auth/ProfileSetupView.vue'),
+  },
 ]
 
 const router = createRouter({

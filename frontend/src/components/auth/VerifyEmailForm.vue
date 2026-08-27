@@ -122,11 +122,14 @@ async function handleSubmit() {
   success.value = false
 
   try {
-    await verifyEmail({ email: email.value, code: code.value })
+    const data = await verifyEmail({ email: email.value, code: code.value })
     success.value = true
     stopExpiry()
     sessionStorage.removeItem('verifyEmail')
-    redirectTimer = setTimeout(() => router.push('/login'), 1500)
+    if (data.token) {
+      localStorage.setItem('token', data.token)
+    }
+    redirectTimer = setTimeout(() => router.push('/profile-setup'), 1500)
   } catch (err) {
     if (/expired/i.test(err.message)) {
       expired.value = true
