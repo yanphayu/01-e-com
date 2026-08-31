@@ -54,9 +54,6 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
-    // Base URL of the frontend app, used to build password reset links.
-    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
-
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
