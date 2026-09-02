@@ -7,8 +7,9 @@ async function request(endpoint, options = {}) {
   const url = `${API_URL}${endpoint}${sep}lang=${getLocale()}`
 
   const token = localStorage.getItem('token')
+  const isForm = options.body instanceof FormData
   const headers = {
-    'Content-Type': 'application/json',
+    ...(!isForm ? { 'Content-Type': 'application/json' } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   }
@@ -59,5 +60,14 @@ export function updateProfile(payload) {
   return request('/profile', {
     method: 'PUT',
     body: JSON.stringify(payload),
+  })
+}
+
+export function uploadAvatar(file) {
+  const form = new FormData()
+  form.append('avatar', file)
+  return request('/avatar', {
+    method: 'POST',
+    body: form,
   })
 }

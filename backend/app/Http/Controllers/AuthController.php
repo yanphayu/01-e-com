@@ -169,4 +169,69 @@ class AuthController extends Controller
             'message' => 'Logout successfully.'
         ]);
     }
+
+    // update profile
+    public function updateProfile(Request $request)
+    {
+        $validate = $request->validate([
+            'first_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'birth_date' => 'nullable|date',
+            'address' => 'nullable|string|max:255',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'avatar' => 'nullable|url',
+            'facebook' => 'nullable|url',
+            'instagram' => 'nullable|url',
+            'twitter' => 'nullable|url'
+        ]);
+
+        $user = $request->user();
+
+        $name = $user->name;
+        if (isset($validate['first_name']) && isset($validate['last_name'])) {
+            $name = trim($validate['first_name'] . ' ' . $validate['last_name']);
+        } elseif (isset($validate['first_name'])) {
+            $name = trim($validate['first_name'] . ' ' . explode(' ', $user->name)[1] ?? $user->name);
+        } elseif (isset($validate['last_name'])) {
+            $name = trim((explode(' ', $user->name)[0] ?? '') . ' ' . $validate['last_name']);
+        }
+
+        $user->name = $name;
+
+        foreach (['phone', 'birth_date', 'address', 'latitude', 'longitude', 'avatar', 'facebook', 'instagram', 'twitter'] as $field) {
+            if (array_key_exists($field, $validate)) {
+                $user->{$field} = $validate[$field];
+            }
+        }
+
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile updated successfully.',
+            'data' => $user
+        ]);
+    }
+
+    // upload avatar
+    public function uploadAvatar(Request $request)
+    {
+        $validate = $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+        ]);
+
+        $path = $request->file('avatar')->store('avatars', 'public');
+
+        $user = $request->user();
+        $user->avatar = asset('storage/' . $path);
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Avatar uploaded successfully.',
+            'data' => $user
+        ]);
+    }
 }
