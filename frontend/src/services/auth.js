@@ -63,6 +63,10 @@ export function updateProfile(payload) {
   })
 }
 
+export function getUser() {
+  return request('/me')
+}
+
 export function uploadAvatar(file) {
   const form = new FormData()
   form.append('avatar', file)

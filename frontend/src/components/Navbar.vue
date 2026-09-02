@@ -15,6 +15,11 @@
       <div class="links">
         <LocaleSwitcher />
         <template v-if="isAuthenticated">
+          <RouterLink to="/profile" class="user-chip" :title="userName">
+            <span class="user-name">{{ userName }}</span>
+            <img v-if="userAvatar" :src="userAvatar" class="user-avatar" alt="" />
+            <span v-else class="user-avatar user-avatar-fallback">{{ userInitial }}</span>
+          </RouterLink>
           <button class="btn btn-ghost" @click="logout">{{ t('nav.logout') }}</button>
         </template>
         <template v-else>
@@ -27,17 +32,44 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { t } from '../i18n'
+import { getUser } from '../services/auth'
 import LocaleSwitcher from './LocaleSwitcher.vue'
 
 const router = useRouter()
 const isAuthenticated = ref(!!localStorage.getItem('token'))
 
+const user = ref(readStoredUser())
+const userName = computed(() => user.value.name || '')
+const userAvatar = computed(() => user.value.avatar || '')
+const userInitial = computed(() => (userName.value || '?').trim().charAt(0).toUpperCase())
+
+function readStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem('user') || '{}')
+  } catch {
+    return {}
+  }
+}
+
+onMounted(async () => {
+  if (!isAuthenticated.value) return
+  try {
+    const data = await getUser()
+    user.value = data.data || {}
+    localStorage.setItem('user', JSON.stringify(user.value))
+  } catch {
+    logout()
+  }
+})
+
 function logout() {
   localStorage.removeItem('token')
+  localStorage.removeItem('user')
   isAuthenticated.value = false
+  user.value = {}
   router.push('/login')
 }
 </script>
@@ -107,6 +139,55 @@ function logout() {
 .link.router-link-active {
   color: var(--accent);
   background: var(--accent-soft);
+}
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  text-decoration: none;
+  color: var(--text);
+  padding: 0.2rem 0.2rem 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--navbar-bg);
+  transition: border-color 0.15s;
+}
+
+.user-chip:hover {
+  border-color: var(--accent);
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.user-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .user-name {
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {

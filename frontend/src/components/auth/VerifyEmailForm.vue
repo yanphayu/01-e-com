@@ -129,6 +129,7 @@ async function handleSubmit() {
     sessionStorage.removeItem('verifyEmail')
     if (data.token) {
       localStorage.setItem('token', data.token)
+      localStorage.setItem('user', JSON.stringify(data.data))
     }
     redirectTimer = setTimeout(() => router.push('/profile-setup'), 1500)
   } catch (err) {

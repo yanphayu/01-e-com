@@ -83,6 +83,7 @@ async function handleSubmit() {
     })
 
     localStorage.setItem('token', data.token)
+    localStorage.setItem('user', JSON.stringify(data.data))
     router.push('/')
   } catch (err) {
     error.value = err.message

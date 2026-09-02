@@ -103,11 +103,11 @@
     />
 
     <BaseButton type="submit" variant="primary" block :loading="loading">
-      {{ loading ? t('auth.savingProfile') : t('auth.completeProfile') }}
+      {{ loading ? t('auth.savingProfile') : t('auth.saveProfile') }}
     </BaseButton>
 
-    <button type="button" class="skip" :disabled="loading" @click="skip">
-      {{ t('auth.skipForNow') }}
+    <button v-if="!redirectOnSave" type="button" class="skip" :disabled="loading" @click="emit('cancel')">
+      {{ t('auth.cancelEdit') }}
     </button>
   </form>
 </template>
@@ -120,25 +120,39 @@ import { t, getLocale } from '../../i18n'
 import BaseInput from '../../design-system/BaseInput.vue'
 import BaseButton from '../../design-system/BaseButton.vue'
 
+const props = defineProps({ redirectOnSave: { type: Boolean, default: true } })
+const emit = defineEmits(['saved', 'cancel'])
+
 const router = useRouter()
 
-const firstName = ref('')
-const lastName = ref('')
-const phone = ref('')
-const birthDate = ref('')
-const address = ref('')
-const latitude = ref(null)
-const longitude = ref(null)
+function readStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem('user') || '{}')
+  } catch {
+    return {}
+  }
+}
+
+const stored = readStoredUser()
+const storedNameParts = (stored.name || '').trim().split(/\s+/).filter(Boolean)
+
+const firstName = ref(stored.first_name || storedNameParts[0] || '')
+const lastName = ref(stored.last_name || storedNameParts.slice(1).join(' ') || '')
+const phone = ref(stored.phone || '')
+const birthDate = ref(stored.birth_date || '')
+const address = ref(stored.address || '')
+const latitude = ref(stored.latitude ?? null)
+const longitude = ref(stored.longitude ?? null)
 const locError = ref(null)
 const locating = ref(false)
-const avatar = ref('')
+const avatar = ref(stored.avatar || '')
 const avatarName = ref('')
-const avatarPreview = ref(null)
+const avatarPreview = ref(stored.avatar || null)
 const avatarUploading = ref(false)
 const avatarError = ref(null)
-const facebook = ref('')
-const instagram = ref('')
-const twitter = ref('')
+const facebook = ref(stored.facebook || '')
+const instagram = ref(stored.instagram || '')
+const twitter = ref(stored.twitter || '')
 const loading = ref(false)
 const error = ref(null)
 const success = ref(null)
@@ -164,7 +178,10 @@ async function submit(payload) {
 
   try {
     await updateProfile(payload)
-    router.push('/')
+    const data = JSON.parse(localStorage.getItem('user') || '{}')
+    localStorage.setItem('user', JSON.stringify({ ...data, ...payload }))
+    emit('saved')
+    if (redirectOnSave) router.push('/')
   } catch (err) {
     error.value = err.message
   } finally {
@@ -193,6 +210,8 @@ async function onAvatarChange(e) {
   try {
     const data = await uploadAvatar(file)
     avatar.value = data.data.avatar
+    const stored = JSON.parse(localStorage.getItem('user') || '{}')
+    localStorage.setItem('user', JSON.stringify({ ...stored, avatar: data.data.avatar }))
   } catch (err) {
     avatarError.value = err.message
     avatarPreview.value = null
@@ -252,10 +271,6 @@ async function handleSubmit() {
     twitter: twitter.value.trim(),
   })
 }
-
-async function skip() {
-  await submit({ first_name: firstName.value.trim(), last_name: lastName.value.trim() })
-}
 </script>
 
 <style scoped>
@@ -278,18 +293,21 @@ async function skip() {
 }
 
 .skip {
-  background: none;
-  border: none;
+  background: transparent;
+  border: 1px solid var(--border);
   color: var(--text-muted);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
+  font-weight: 600;
   cursor: pointer;
-  padding: 0;
-  margin-top: 0.25rem;
+  padding: 0.62rem 1rem;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, border-color 0.15s;
 }
 
-.skip:hover {
+.skip:hover:not(:disabled) {
   color: var(--text);
+  border-color: var(--border-strong);
 }
 
 .skip:disabled {

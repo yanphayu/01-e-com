@@ -22,6 +22,11 @@ const routes = [
     component: () => import('../views/auth/VerifyEmailView.vue'),
   },
   {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('../views/ProfileView.vue'),
+  },
+  {
     path: '/profile-setup',
     name: 'profile-setup',
     component: () => import('../views/auth/ProfileSetupView.vue'),
