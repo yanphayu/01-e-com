@@ -75,3 +75,9 @@ export function uploadAvatar(file) {
     body: form,
   })
 }
+
+export function deleteAccount() {
+  return request('/profile', {
+    method: 'DELETE',
+  })
+}

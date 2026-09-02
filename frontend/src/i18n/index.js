@@ -97,6 +97,11 @@ const messages = {
     'auth.editProfile': 'Edit profile',
     'auth.cancelEdit': 'Cancel',
     'auth.addNewAccount': 'Add new account',
+    'auth.deleteProfile': 'Delete profile',
+    'auth.deleteConfirmTitle': 'Delete your profile?',
+    'auth.deleteConfirmBody': 'This will permanently delete your account and all your data. This action cannot be undone.',
+    'auth.deleteAccount': 'Delete',
+    'auth.deletingAccount': 'Deleting…',
 
     'footer.home': 'Home',
     'footer.getStarted': 'Get started',
@@ -207,6 +212,11 @@ const messages = {
     'auth.editProfile': 'កែប្រវត្តិ',
     'auth.cancelEdit': 'បោះបង់',
     'auth.addNewAccount': 'បន្ថែមគណនីថ្មី',
+    'auth.deleteProfile': 'លុបប្រវត្តិ',
+    'auth.deleteConfirmTitle': 'លុបប្រវត្តិរបស់អ្នក?',
+    'auth.deleteConfirmBody': 'វានឹងលុបគណនី និងទិន្នន័យទាំងអស់របស់អ្នកជាអចិន្ត្រៃយ៍។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។',
+    'auth.deleteAccount': 'លុប',
+    'auth.deletingAccount': 'កំពុងលុប…',
 
     'footer.home': 'ទំព័រដើម',
     'footer.getStarted': 'ចាប់ផ្តើម',

@@ -109,16 +109,43 @@
     <button v-if="!redirectOnSave" type="button" class="skip" :disabled="loading" @click="emit('cancel')">
       {{ t('auth.cancelEdit') }}
     </button>
+
+    <button
+      v-if="!redirectOnSave"
+      type="button"
+      class="danger-btn"
+      :disabled="loading || deleting"
+      @click="confirmingDelete = true"
+    >
+      {{ t('auth.deleteProfile') }}
+    </button>
+
+    <BaseModal
+      v-model="confirmingDelete"
+      :title="t('auth.deleteConfirmTitle')"
+      size="sm"
+    >
+      <p class="modal-text">{{ t('auth.deleteConfirmBody') }}</p>
+      <template #footer>
+        <BaseButton variant="ghost" :disabled="deleting" @click="confirmingDelete = false">
+          {{ t('auth.cancelEdit') }}
+        </BaseButton>
+        <BaseButton variant="primary" class="btn-danger-solid" :loading="deleting" @click="handleDelete">
+          {{ deleting ? t('auth.deletingAccount') : t('auth.deleteAccount') }}
+        </BaseButton>
+      </template>
+    </BaseModal>
   </form>
 </template>
 
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { updateProfile, uploadAvatar } from '../../services/auth'
+import { updateProfile, uploadAvatar, deleteAccount } from '../../services/auth'
 import { t, getLocale } from '../../i18n'
 import BaseInput from '../../design-system/BaseInput.vue'
 import BaseButton from '../../design-system/BaseButton.vue'
+import BaseModal from '../../design-system/BaseModal.vue'
 
 const props = defineProps({ redirectOnSave: { type: Boolean, default: true } })
 const emit = defineEmits(['saved', 'cancel'])
@@ -156,6 +183,8 @@ const twitter = ref(stored.twitter || '')
 const loading = ref(false)
 const error = ref(null)
 const success = ref(null)
+const confirmingDelete = ref(false)
+const deleting = ref(false)
 const errors = reactive({ firstName: null, lastName: null, phone: null })
 
 function validate() {
@@ -271,6 +300,23 @@ async function handleSubmit() {
     twitter: twitter.value.trim(),
   })
 }
+
+async function handleDelete() {
+  deleting.value = true
+  error.value = null
+
+  try {
+    await deleteAccount()
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    router.push('/register')
+  } catch (err) {
+    error.value = err.message
+    confirmingDelete.value = false
+  } finally {
+    deleting.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -313,6 +359,42 @@ async function handleSubmit() {
 .skip:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.danger-btn {
+  background: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.62rem 1rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s, color 0.15s;
+}
+
+.danger-btn:hover:not(:disabled) {
+  background: var(--danger-soft);
+}
+
+.danger-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-danger-solid {
+  background: var(--danger) !important;
+}
+
+.btn-danger-solid:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 88%, #000 12%) !important;
+}
+
+.modal-text {
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
 }
 
 .loc-btn {
