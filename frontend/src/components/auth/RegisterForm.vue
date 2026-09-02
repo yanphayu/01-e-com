@@ -112,13 +112,15 @@ async function handleSubmit() {
   error.value = null
 
   try {
-    await registerUser({
+    const data = await registerUser({
+      name: email.value.split('@')[0],
       email: email.value,
       password: password.value,
       password_confirmation: passwordConfirmation.value,
     })
 
     sessionStorage.setItem('verifyEmail', email.value)
+    sessionStorage.setItem('verifyUserId', data.data.id)
     success.value = t('auth.accountCreated')
     router.push('/verify-email')
   } catch (err) {

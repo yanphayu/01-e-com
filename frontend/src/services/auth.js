@@ -28,35 +28,35 @@ async function request(endpoint, options = {}) {
 }
 
 export function registerUser(payload) {
-  return request('/v1/auth/register', {
+  return request('/register', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
 }
 
 export function loginUser(payload) {
-  return request('/v1/auth/login', {
+  return request('/login', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
 }
 
 export function verifyEmail(payload) {
-  return request('/v1/auth/verify-email', {
+  return request('/verify', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
 }
 
 export function resendVerification(payload) {
-  return request('/v1/auth/resend-verification', {
+  return request('/resend', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
 }
 
 export function updateProfile(payload) {
-  return request('/v1/auth/profile', {
+  return request('/profile', {
     method: 'PUT',
     body: JSON.stringify(payload),
   })

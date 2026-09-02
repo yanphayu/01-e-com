@@ -67,6 +67,7 @@ const router = useRouter()
 const OTP_TTL = 60
 
 const email = ref(sessionStorage.getItem('verifyEmail') || '')
+const userId = sessionStorage.getItem('verifyUserId')
 const digits = reactive(['', '', '', '', '', ''])
 const inputs = ref([])
 
@@ -122,7 +123,7 @@ async function handleSubmit() {
   success.value = false
 
   try {
-    const data = await verifyEmail({ email: email.value, code: code.value })
+    const data = await verifyEmail({ user_id: userId, email: email.value, otp: code.value })
     success.value = true
     stopExpiry()
     sessionStorage.removeItem('verifyEmail')
@@ -151,7 +152,7 @@ async function resend() {
   }
   error.value = null
   try {
-    await resendVerification({ email: email.value })
+    await resendVerification({ user_id: userId, email: email.value })
     startCountdown(OTP_TTL)
     startExpiry()
   } catch (err) {
