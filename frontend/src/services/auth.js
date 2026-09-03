@@ -9,6 +9,7 @@ async function request(endpoint, options = {}) {
   const token = localStorage.getItem('token')
   const isForm = options.body instanceof FormData
   const headers = {
+    Accept: 'application/json',
     ...(!isForm ? { 'Content-Type': 'application/json' } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,

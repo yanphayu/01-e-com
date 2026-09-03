@@ -15,7 +15,7 @@
       <div class="links">
         <LocaleSwitcher />
         <template v-if="isAuthenticated">
-          <RouterLink to="/profile" class="user-chip" :title="userName">
+          <RouterLink to="/profile" class="btn btn-ghost" :title="userName">
             <span class="user-name">{{ userName }}</span>
             <img v-if="userAvatar" :src="userAvatar" class="user-avatar" alt="" />
             <span v-else class="user-avatar user-avatar-fallback">{{ userInitial }}</span>
@@ -159,8 +159,8 @@ function logout() {
 }
 
 .user-avatar {
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   object-fit: cover;
 }

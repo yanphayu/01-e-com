@@ -1,35 +1,29 @@
 <template>
   <main class="store-page" :class="{ editing }">
     <template v-if="!editing">
-      <div class="store-cover">
-        <img v-if="user.profile?.cover_image" :src="user.profile.cover_image" class="cover-img" alt="" />
-        <div class="cover-gradient"></div>
-        <label class="cover-upload" :class="{ 'is-uploading': coverUploading }">
-          <input type="file" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp" :disabled="coverUploading" @change="onCoverChange" />
-          <svg v-if="!coverUploading" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-            <circle cx="12" cy="13" r="4"/>
-          </svg>
-          <span v-if="coverUploading" class="cover-spinner"></span>
-          {{ coverUploading ? '' : t('profile.changeCover') }}
-        </label>
-        <p v-if="coverError" class="cover-error">{{ coverError }}</p>
-      </div>
+      <div class="fb-header container">
+        <div class="fb-cover">
+          <img v-if="user.profile?.cover_image" :src="user.profile.cover_image" class="cover-img" alt="" />
+          <div class="cover-gradient"></div>
+        </div>
 
-      <div class="store-body container">
-        <div class="store-header">
-          <div class="avatar-wrap">
-            <img v-if="user.profile?.avatar" :src="user.profile.avatar" class="store-avatar" alt="" />
-            <span v-else class="store-avatar store-avatar-fallback">{{ userInitial }}</span>
-            <span v-if="isVerified" class="verified-badge" title="Verified">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="var(--accent)">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-              </svg>
-            </span>
+        <div class="fb-header-inner">
+          <div class="fb-avatar-col">
+            <div class="avatar-wrap">
+              <img v-if="user.profile?.avatar" :src="user.profile.avatar" class="store-avatar" alt="" />
+              <span v-else class="store-avatar store-avatar-fallback">{{ userInitial }}</span>
+            </div>
           </div>
 
-          <div class="store-meta">
-            <h1 class="store-name">{{ user.name || t('auth.myProfile') }}</h1>
+          <div class="fb-meta">
+            <div class="fb-name-row">
+              <h1 class="store-name">{{ user.name || t('auth.myProfile') }}</h1>
+              <span v-if="isVerified" class="verified-badge" title="Verified">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="var(--accent)">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+              </span>
+            </div>
             <p class="store-email">{{ user.email }}</p>
             <div v-if="user.profile?.address?.address" class="store-location">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -40,7 +34,7 @@
             </div>
           </div>
 
-          <div class="store-actions">
+          <div class="fb-actions">
             <button class="btn btn-primary" @click="editing = true">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -51,6 +45,10 @@
           </div>
         </div>
 
+        <div class="fb-divider"></div>
+      </div>
+
+      <div class="store-body">
         <div class="store-stats">
           <div class="stat-item">
             <span class="stat-value">{{ orderCount }}</span>
@@ -165,7 +163,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { t } from '../i18n'
-import { getUser, uploadCoverImage } from '../services/auth'
+import { getUser } from '../services/auth'
 import ProfileSetupForm from '../components/auth/ProfileSetupForm.vue'
 
 const router = useRouter()
@@ -173,10 +171,6 @@ const editing = ref(false)
 const user = ref({})
 const orderCount = ref(0)
 const reviewCount = ref(0)
-const coverUploading = ref(false)
-const coverError = ref(null)
-
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp']
 
 const userInitial = computed(() => (user.value.name || '?').trim().charAt(0).toUpperCase())
 const isVerified = computed(() => !!user.value.email_verified_at)
@@ -192,32 +186,6 @@ async function loadUser() {
     localStorage.setItem('user', JSON.stringify(user.value))
   } catch {
     user.value = {}
-  }
-}
-
-async function onCoverChange(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
-
-  coverError.value = null
-
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    coverError.value = t('auth.avatarTypeInvalid')
-    e.target.value = ''
-    return
-  }
-
-  coverUploading.value = true
-
-  try {
-    const data = await uploadCoverImage(file)
-    user.value = data.data || {}
-    localStorage.setItem('user', JSON.stringify(user.value))
-  } catch (err) {
-    coverError.value = err.message
-  } finally {
-    coverUploading.value = false
-    e.target.value = ''
   }
 }
 
@@ -240,16 +208,21 @@ onMounted(loadUser)
   padding-bottom: 2rem;
 }
 
-.store-cover {
-  height: 200px;
-  background: var(--surface);
+.store-page .container {
+  max-width: 1400px;
+}
+
+.fb-header {
+  margin-top: 1rem;
+}
+
+.fb-cover {
+  height: 260px;
+  background: var(--surface-2);
   border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
-  margin: 0 auto;
-  max-width: var(--container);
-  border-radius: var(--radius-lg);
-  margin-top: 1rem;
+  border-radius: 4px 4px 0 0;
 }
 
 .cover-img {
@@ -263,88 +236,40 @@ onMounted(loadUser)
 .cover-gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.04) 100%);
+  background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.18) 100%);
 }
 
-.cover-upload {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.75rem;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-  color: #fff;
-  font-size: 0.78rem;
-  font-weight: 500;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.cover-upload:hover {
-  background: rgba(0, 0, 0, 0.7);
-}
-
-.cover-upload input {
-  display: none;
-}
-
-.cover-upload.is-uploading {
-  cursor: wait;
-  opacity: 0.7;
-}
-
-.cover-spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid #fff;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-
-.cover-error {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--danger);
-  color: #fff;
-  font-size: 0.75rem;
-  padding: 0.3rem 0.75rem;
-  border-radius: var(--radius-sm);
-  margin: 0;
-  white-space: nowrap;
-}
-
-.store-body {
-  position: relative;
-  margin-top: 0;
-}
-
-.store-header {
+.fb-header-inner {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 1.25rem;
-  flex-wrap: wrap;
-  margin-top: 1rem;
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  padding: 0 1.5rem 1.25rem;
+}
+
+.fb-avatar-col {
+  flex-shrink: 0;
+  margin-top: -52px;
 }
 
 .avatar-wrap {
   position: relative;
+  width: 168px;
+  height: 168px;
   flex-shrink: 0;
 }
 
 .store-avatar {
-  width: 96px;
-  height: 96px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   object-fit: cover;
   border: 4px solid var(--surface);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .store-avatar-fallback {
@@ -353,42 +278,42 @@ onMounted(loadUser)
   justify-content: center;
   background: var(--accent);
   color: #fff;
-  font-size: 2.2rem;
+  font-size: 4rem;
   font-weight: 700;
 }
 
-.verified-badge {
-  position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 26px;
-  height: 26px;
-  background: var(--surface);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-}
-
-.store-meta {
+.fb-meta {
   flex: 1;
   min-width: 0;
-  padding-bottom: 4px;
+  padding-top: 0.75rem;
+}
+
+.fb-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .store-name {
   font-family: var(--font-serif);
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 700;
   margin: 0;
   word-break: break-word;
+  color: #050505;
+}
+
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .store-email {
   color: var(--text-muted);
-  font-size: 0.88rem;
-  margin: 0.15rem 0 0;
+  font-size: 0.9rem;
+  margin: 0.2rem 0 0;
   word-break: break-word;
 }
 
@@ -397,18 +322,39 @@ onMounted(loadUser)
   align-items: center;
   gap: 0.3rem;
   color: var(--text-muted);
-  font-size: 0.82rem;
-  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  margin-top: 0.4rem;
 }
 
-.store-actions {
-  padding-bottom: 4px;
+.fb-actions {
+  flex-shrink: 0;
+  padding-top: 0.75rem;
 }
 
-.store-actions .btn {
+.fb-actions .btn {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  background: #e4e6eb;
+  color: #050505;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.fb-actions .btn:hover {
+  background: #d8dadf;
+}
+
+.fb-divider {
+  height: 1px;
+  background: var(--border);
+}
+
+.store-body {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 1400px;
+  padding: 0 1.5rem;
 }
 
 .store-stats {
@@ -570,46 +516,62 @@ onMounted(loadUser)
 }
 
 .store-edit {
-  max-width: 700px;
-  padding-top: 1.5rem;
-}
-
-.store-edit :deep(.auth-card) {
-  max-width: 100%;
+  max-width: var(--container);
+  padding: 1.5rem 1.5rem 0;
+  margin: 0 auto;
 }
 
 @media (max-width: 560px) {
-  .store-cover {
-    height: 140px;
-    margin-top: 0.5rem;
+  .fb-cover {
+    height: 150px;
+    margin-top: 0;
     border-radius: 0;
     border-left: none;
     border-right: none;
   }
 
-  .cover-upload span {
-    display: none;
+  .fb-header-inner {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0 1rem 1.25rem;
   }
 
-  .store-avatar {
-    width: 80px;
-    height: 80px;
+  .fb-avatar-col {
+    margin-top: -40px;
+  }
+
+  .avatar-wrap {
+    width: 120px;
+    height: 120px;
   }
 
   .store-avatar-fallback {
-    font-size: 1.8rem;
+    font-size: 2.8rem;
   }
 
-  .store-header {
-    flex-direction: column;
-    align-items: flex-start;
+  .fb-meta {
+    padding-top: 0;
   }
 
-  .store-actions {
+  .fb-name-row {
+    justify-content: center;
+  }
+
+  .store-name {
+    font-size: 1.4rem;
+  }
+
+  .store-location {
+    justify-content: center;
+  }
+
+  .fb-actions {
     width: 100%;
+    padding-top: 0.25rem;
   }
 
-  .store-actions .btn {
+  .fb-actions .btn {
     width: 100%;
     justify-content: center;
   }
