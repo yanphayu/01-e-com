@@ -22,7 +22,7 @@
   --shadow-lg: 0 40px 80px -40px rgba(28, 27, 25, 0.30);
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans Khmer", "Khmer OS", "Khmer OS System", "Leelawadee UI", sans-serif;
   --font-serif: var(--font-sans);
-  --container: 1120px;
+  --container: 1400px;
 }
 
 * {

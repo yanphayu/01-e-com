@@ -25,13 +25,6 @@
               </span>
             </div>
             <p class="store-email">{{ user.email }}</p>
-            <div v-if="user.profile?.address?.address" class="store-location">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
-              <span>{{ user.profile.address.address }}</span>
-            </div>
           </div>
 
           <div class="fb-actions">
@@ -126,16 +119,7 @@
               </svg>
               {{ t('profile.location') }}
             </h2>
-            <div class="location-coords">
-              <div class="coord-item">
-                <span class="coord-label">{{ t('auth.latitude') }}</span>
-                <span class="coord-value">{{ user.profile?.address?.latitude }}</span>
-              </div>
-              <div class="coord-item">
-                <span class="coord-label">{{ t('auth.longitude') }}</span>
-                <span class="coord-value">{{ user.profile?.address?.longitude }}</span>
-              </div>
-            </div>
+            <p class="location-address">ផ្លូវ ១៦០, សង្កាត់ទឹកល្អក់ទី ២, ខណ្ឌទួលគោក, រាជធានីភ្នំពេញ, 120405, ព្រះរាជាណាចក្រ​កម្ពុជា</p>
           </div>
         </div>
 
@@ -209,7 +193,7 @@ onMounted(loadUser)
 }
 
 .store-page .container {
-  max-width: 1400px;
+  max-width: var(--container)
 }
 
 .fb-header {
@@ -315,15 +299,6 @@ onMounted(loadUser)
   font-size: 0.9rem;
   margin: 0.2rem 0 0;
   word-break: break-word;
-}
-
-.store-location {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  margin-top: 0.4rem;
 }
 
 .fb-actions {
@@ -478,29 +453,10 @@ onMounted(loadUser)
 .social-instagram:hover { color: #e4405f; border-color: #e4405f; }
 .social-twitter:hover { color: #000; border-color: #000; }
 
-.location-coords {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.coord-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.coord-label {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.coord-value {
+.location-address {
   font-size: 0.95rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+  line-height: 1.6;
+  color: var(--text);
 }
 
 .store-footer {
@@ -562,10 +518,6 @@ onMounted(loadUser)
     font-size: 1.4rem;
   }
 
-  .store-location {
-    justify-content: center;
-  }
-
   .fb-actions {
     width: 100%;
     padding-top: 0.25rem;
@@ -576,8 +528,7 @@ onMounted(loadUser)
     justify-content: center;
   }
 
-  .info-grid,
-  .location-coords {
+  .info-grid {
     grid-template-columns: 1fr;
   }
 
