@@ -119,7 +119,7 @@
               </svg>
               {{ t('profile.location') }}
             </h2>
-            <p class="location-address">ផ្លូវ ១៦០, សង្កាត់ទឹកល្អក់ទី ២, ខណ្ឌទួលគោក, រាជធានីភ្នំពេញ, 120405, ព្រះរាជាណាចក្រ​កម្ពុជា</p>
+            <p class="location-address">{{ translatedAddress || user.profile?.address?.address }}</p>
           </div>
         </div>
 
@@ -144,9 +144,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { t } from '../i18n'
+import { t, getLocale, localeRef } from '../i18n'
 import { getUser } from '../services/auth'
 import ProfileSetupForm from '../components/auth/ProfileSetupForm.vue'
 
@@ -155,6 +155,7 @@ const editing = ref(false)
 const user = ref({})
 const orderCount = ref(0)
 const reviewCount = ref(0)
+const translatedAddress = ref(null)
 
 const userInitial = computed(() => (user.value.name || '?').trim().charAt(0).toUpperCase())
 const isVerified = computed(() => !!user.value.email_verified_at)
@@ -168,8 +169,25 @@ async function loadUser() {
     const data = await getUser()
     user.value = data.data || {}
     localStorage.setItem('user', JSON.stringify(user.value))
+    translateAddress()
   } catch {
     user.value = {}
+  }
+}
+
+async function translateAddress() {
+  const addr = user.value.profile?.address
+  if (!addr?.latitude || !addr?.longitude) return
+  const lang = getLocale() === 'kh' ? 'km' : getLocale()
+  if (lang === 'en') { translatedAddress.value = null; return }
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${addr.latitude}&lon=${addr.longitude}&accept-language=${lang}`
+    )
+    const data = await res.json()
+    translatedAddress.value = data.display_name || null
+  } catch {
+    translatedAddress.value = null
   }
 }
 
@@ -185,6 +203,8 @@ function addNewAccount() {
 }
 
 onMounted(loadUser)
+
+watch(localeRef, () => translateAddress())
 </script>
 
 <style scoped>

@@ -375,8 +375,9 @@ async function getLocation() {
       latitude.value = lat
       longitude.value = lng
       try {
+        const lang = getLocale() === 'kh' ? 'km' : getLocale()
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=${getLocale()}`
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=${lang}`
         )
         const data = await res.json()
         address.value = data.display_name || `${lat}, ${lng}`
