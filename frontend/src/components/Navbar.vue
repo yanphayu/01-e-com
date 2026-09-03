@@ -43,7 +43,7 @@ const isAuthenticated = ref(!!localStorage.getItem('token'))
 
 const user = ref(readStoredUser())
 const userName = computed(() => user.value.name || '')
-const userAvatar = computed(() => user.value.avatar || '')
+const userAvatar = computed(() => user.value.profile?.avatar || '')
 const userInitial = computed(() => (userName.value || '?').trim().charAt(0).toUpperCase())
 
 function readStoredUser() {

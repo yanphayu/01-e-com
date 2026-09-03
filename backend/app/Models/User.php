@@ -2,19 +2,26 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'phone', 'birth_date', 'address', 'latitude', 'longitude', 'avatar', 'facebook', 'instagram', 'twitter'])]
-#[Hidden(['password'])]
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+    ];
+
+    protected $hidden = [
+        'password',
+    ];
 
     protected function casts(): array
     {
@@ -23,9 +30,14 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-    
-    public function otps()
+
+    public function otps(): HasMany
     {
         return $this->hasMany(Otp::class);
+    }
+
+    public function profile(): HasOne
+    {
+        return $this->hasOne(Profile::class);
     }
 }

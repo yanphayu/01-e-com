@@ -76,6 +76,15 @@ export function uploadAvatar(file) {
   })
 }
 
+export function uploadCoverImage(file) {
+  const form = new FormData()
+  form.append('cover_image', file)
+  return request('/cover-image', {
+    method: 'POST',
+    body: form,
+  })
+}
+
 export function deleteAccount() {
   return request('/profile', {
     method: 'DELETE',

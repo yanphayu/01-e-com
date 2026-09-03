@@ -162,24 +162,26 @@ function readStoredUser() {
 
 const stored = readStoredUser()
 const storedNameParts = (stored.name || '').trim().split(/\s+/).filter(Boolean)
+const profile = stored.profile || {}
+const addressData = profile.address || {}
 
 const firstName = ref(stored.first_name || storedNameParts[0] || '')
 const lastName = ref(stored.last_name || storedNameParts.slice(1).join(' ') || '')
-const phone = ref(stored.phone || '')
-const birthDate = ref(stored.birth_date || '')
-const address = ref(stored.address || '')
-const latitude = ref(stored.latitude ?? null)
-const longitude = ref(stored.longitude ?? null)
+const phone = ref(profile.phone || '')
+const birthDate = ref(profile.birth_date || '')
+const address = ref(addressData.address || '')
+const latitude = ref(addressData.latitude ?? null)
+const longitude = ref(addressData.longitude ?? null)
 const locError = ref(null)
 const locating = ref(false)
-const avatar = ref(stored.avatar || '')
+const avatar = ref(profile.avatar || '')
 const avatarName = ref('')
-const avatarPreview = ref(stored.avatar || null)
+const avatarPreview = ref(profile.avatar || null)
 const avatarUploading = ref(false)
 const avatarError = ref(null)
-const facebook = ref(stored.facebook || '')
-const instagram = ref(stored.instagram || '')
-const twitter = ref(stored.twitter || '')
+const facebook = ref(profile.facebook || '')
+const instagram = ref(profile.instagram || '')
+const twitter = ref(profile.twitter || '')
 const loading = ref(false)
 const error = ref(null)
 const success = ref(null)
@@ -208,9 +210,24 @@ async function submit(payload) {
   try {
     await updateProfile(payload)
     const data = JSON.parse(localStorage.getItem('user') || '{}')
-    localStorage.setItem('user', JSON.stringify({ ...data, ...payload }))
+    const profile = data.profile || {}
+    const addressData = profile.address || {}
+    localStorage.setItem('user', JSON.stringify({
+      ...data,
+      ...payload,
+      profile: {
+        ...profile,
+        ...payload,
+        address: {
+          ...addressData,
+          address: payload.address,
+          latitude: payload.latitude,
+          longitude: payload.longitude
+        }
+      }
+    }))
     emit('saved')
-    if (redirectOnSave) router.push('/')
+    if (props.redirectOnSave) router.push('/')
   } catch (err) {
     error.value = err.message
   } finally {
@@ -238,9 +255,10 @@ async function onAvatarChange(e) {
 
   try {
     const data = await uploadAvatar(file)
-    avatar.value = data.data.avatar
+    avatar.value = data.data.profile?.avatar
     const stored = JSON.parse(localStorage.getItem('user') || '{}')
-    localStorage.setItem('user', JSON.stringify({ ...stored, avatar: data.data.avatar }))
+    const profile = stored.profile || {}
+    localStorage.setItem('user', JSON.stringify({ ...stored, profile: { ...profile, avatar: data.data.profile?.avatar } }))
   } catch (err) {
     avatarError.value = err.message
     avatarPreview.value = null
