@@ -1,25 +1,18 @@
 <template>
   <form class="auth-card stack" autocomplete="off" @submit.prevent="handleSubmit">
     <div class="auth-head">
-      <h1>{{ t('auth.welcome') }}</h1>
-      <p>{{ t('auth.welcomeSub') }}</p>
+      <h1>{{ t('auth.setPasswordTitle') }}</h1>
+      <p>{{ t('auth.setPasswordSub') }}</p>
     </div>
 
     <p v-if="error" class="alert alert-error">{{ error }}</p>
-
-    <BaseInput
-      v-model="email"
-      :label="t('auth.email')"
-      type="email"
-      :placeholder="t('auth.emailPlaceholder')"
-      autocomplete="off"
-    />
+    <p v-if="success" class="alert alert-success">{{ t('auth.passwordReset') }}</p>
 
     <BaseInput
       v-model="password"
-      :label="t('auth.password')"
+      :label="t('auth.newPassword')"
       :type="showPassword ? 'text' : 'password'"
-      :placeholder="t('auth.passwordPlaceholder')"
+      :placeholder="t('auth.newPasswordPlaceholder')"
       autocomplete="new-password"
     >
       <template #suffix>
@@ -43,50 +36,69 @@
       </template>
     </BaseInput>
 
-    <p class="forgot-password">
-      <RouterLink to="/forgot-password">{{ t('auth.forgotPassword') }}</RouterLink>
-    </p>
+    <BaseInput
+      v-model="passwordConfirmation"
+      :label="t('auth.confirmNewPassword')"
+      :type="showPassword ? 'text' : 'password'"
+      :placeholder="t('auth.confirmNewPasswordPlaceholder')"
+      autocomplete="new-password"
+    />
 
     <BaseButton type="submit" variant="primary" block :loading="loading">
-      {{ loading ? t('auth.loggingIn') : t('auth.login') }}
+      {{ loading ? t('auth.resettingPassword') : success ? t('auth.passwordReset') : t('auth.resetPassword') }}
     </BaseButton>
 
     <p class="auth-foot">
-      {{ t('auth.noAccount') }}
-      <RouterLink to="/register">{{ t('auth.createOne') }}</RouterLink>
+      <RouterLink to="/login">{{ t('auth.backToLogin') }}</RouterLink>
     </p>
   </form>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
-import { loginUser } from '../../services/auth'
+import { useRouter } from 'vue-router'
+import { resetPassword } from '../../services/auth'
 import { t } from '../../i18n'
 import BaseInput from '../../design-system/BaseInput.vue'
 import BaseButton from '../../design-system/BaseButton.vue'
 
 const router = useRouter()
 
-const email = ref('')
+const email = ref(sessionStorage.getItem('resetEmail') || '')
+const otp = ref(sessionStorage.getItem('resetOtp') || '')
 const password = ref('')
+const passwordConfirmation = ref('')
 const showPassword = ref(false)
+
 const loading = ref(false)
 const error = ref(null)
+const success = ref(false)
+let redirectTimer = null
 
 async function handleSubmit() {
+  if (!otp.value) {
+    error.value = 'Missing verification code. Please start over.'
+    return
+  }
+  if (password.value !== passwordConfirmation.value) {
+    error.value = t('auth.passwordsMismatch')
+    return
+  }
   loading.value = true
   error.value = null
+  success.value = false
 
   try {
-    const data = await loginUser({
+    await resetPassword({
       email: email.value,
+      otp: otp.value,
       password: password.value,
+      password_confirmation: passwordConfirmation.value,
     })
-
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('user', JSON.stringify(data.data))
-    router.push('/')
+    success.value = true
+    sessionStorage.removeItem('resetEmail')
+    sessionStorage.removeItem('resetOtp')
+    redirectTimer = setTimeout(() => router.push('/login'), 2000)
   } catch (err) {
     error.value = err.message
   } finally {
@@ -94,5 +106,3 @@ async function handleSubmit() {
   }
 }
 </script>
-
-

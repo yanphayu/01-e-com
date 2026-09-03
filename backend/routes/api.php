@@ -7,6 +7,8 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/verify', [AuthController::class, 'verify']);
 Route::post('/resend', [AuthController::class, 'resend']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 Route::get('/me', [AuthController::class, 'me'])->middleware('auth:sanctum');
 Route::put('/profile', [AuthController::class, 'updateProfile'])->middleware('auth:sanctum');

@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Mail\SendEmailVerify;
+use App\Mail\SendPasswordReset;
 use App\Models\Address;
 use App\Models\Otp;
 use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 
 class AuthController extends Controller
@@ -26,13 +26,14 @@ class AuthController extends Controller
         $user = User::create([
             'name' => $validate['name'],
             'email' => $validate['email'],
-            'password' => Hash::make($validate['password']),
+            'password' => $validate['password'],
         ]);
 
         $otp = random_int(000000, 999999);
 
         Otp::create([
             'user_id' => $user['id'],
+            'type' => 'email_verify',
             'otp' => $otp,
             'expires_at' => now()->addMinute(1),
         ]);
@@ -117,6 +118,7 @@ class AuthController extends Controller
 
         Otp::create([
             'user_id' => $user['id'],
+            'type' => 'email_verify',
             'otp' => $otp,
             'expires_at' => now()->addMinute(1),
         ]);
@@ -318,6 +320,95 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Account deleted successfully.',
+        ]);
+    }
+
+    // forgot password
+    public function forgotPassword(Request $request)
+    {
+        $validate = $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $user = User::where('email', $validate['email'])->first();
+
+        if (! $user) {
+            return response()->json([
+                'success' => true,
+                'message' => 'If the email exists, a verification code has been sent.',
+            ]);
+        }
+
+        Otp::where('user_id', $user->id)
+            ->where('type', 'password_reset')
+            ->delete();
+
+        $otp = random_int(000000, 999999);
+
+        Otp::create([
+            'user_id' => $user->id,
+            'type' => 'password_reset',
+            'otp' => $otp,
+            'expires_at' => now()->addMinutes(15),
+        ]);
+
+        Mail::to($user->email)->send(new SendPasswordReset($otp));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'If the email exists, a verification code has been sent.',
+        ]);
+    }
+
+    // reset password
+    public function resetPassword(Request $request)
+    {
+        $validate = $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required|string|digits:6',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = User::where('email', $validate['email'])->first();
+
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid credentials.',
+            ]);
+        }
+
+        $otp = Otp::where('user_id', $user->id)
+            ->where('type', 'password_reset')
+            ->where('otp', $validate['otp'])
+            ->first();
+
+        if (! $otp) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid OTP.',
+            ]);
+        }
+
+        if (now()->greaterThan($otp->expires_at)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'OTP has expired.',
+            ]);
+        }
+
+        $user->password = $validate['password'];
+        $user->save();
+
+        Otp::where('user_id', $user->id)
+            ->where('type', 'password_reset')
+            ->delete();
+
+        $user->tokens()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password has been reset successfully.',
         ]);
     }
 }

@@ -24,6 +24,22 @@ const routes = [
     component: () => import('../views/auth/VerifyEmailView.vue'),
   },
   {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: () => import('../views/auth/ForgotPasswordView.vue'),
+    meta: { guest: true },
+  },
+  {
+    path: '/reset-password',
+    name: 'reset-password',
+    component: () => import('../views/auth/ResetPasswordView.vue'),
+  },
+  {
+    path: '/set-password',
+    name: 'set-password',
+    component: () => import('../views/auth/SetPasswordView.vue'),
+  },
+  {
     path: '/profile',
     name: 'profile',
     component: () => import('../views/ProfileView.vue'),
@@ -42,7 +58,7 @@ const router = createRouter({
   routes,
 })
 
-const PUBLIC_ROUTES = ['/login', '/register']
+const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/set-password']
 
 router.beforeEach((to) => {
   if (to.meta.guest) {

@@ -57,6 +57,20 @@ export function resendVerification(payload) {
   })
 }
 
+export function forgotPassword(payload) {
+  return request('/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function resetPassword(payload) {
+  return request('/reset-password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function updateProfile(payload) {
   return request('/profile', {
     method: 'PUT',
