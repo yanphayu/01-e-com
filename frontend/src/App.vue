@@ -4,7 +4,6 @@
     <main class="app-main">
       <RouterView />
     </main>
-    <Footer v-if="!isAuthPage" />
   </div>
 </template>
 
@@ -12,7 +11,6 @@
 import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import Navbar from './components/Navbar.vue'
-import Footer from './components/Footer.vue'
 
 const route = useRoute()
 const isAuthPage = computed(() =>

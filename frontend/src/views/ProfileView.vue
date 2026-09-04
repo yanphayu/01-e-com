@@ -123,6 +123,52 @@
           </div>
         </div>
 
+        <div class="section-card my-listings" v-if="products.length || loadingProducts">
+          <h2 class="section-title">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+              <path d="M16 7V5a4 4 0 0 0-8 0v2"/>
+            </svg>
+            {{ t('product.listings') }} ({{ products.length }})
+          </h2>
+          <div v-if="loadingProducts" class="loading">{{ t('product.loading') }}</div>
+          <div v-else-if="products.length === 0" class="empty-text">{{ t('product.noProducts') }}</div>
+          <div v-else class="my-products-grid">
+            <div v-for="p in products" :key="p.id" class="my-product-card">
+              <RouterLink :to="`/products/${p.id}`" class="my-product-thumb">
+                <img v-if="getPrimaryImage(p)" :src="getPrimaryImage(p)" :alt="p.name" />
+                <div v-else class="no-img-placeholder">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+              </RouterLink>
+              <div class="my-product-info">
+                <RouterLink :to="`/products/${p.id}`" class="my-product-name">{{ p.name }}</RouterLink>
+                <p class="my-product-price">${{ Number(p.price).toFixed(2) }}</p>
+                <div class="my-product-actions">
+                  <RouterLink :to="`/products/${p.id}/edit`" class="action-btn edit-btn">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    {{ t('auth.editProfile') }}
+                  </RouterLink>
+                  <button class="action-btn delete-btn" @click="confirmDelete(p)">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="store-footer">
           <button class="btn btn-ghost btn-block" @click="addNewAccount">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -140,14 +186,30 @@
     <div v-else class="store-edit container">
       <ProfileSetupForm :redirect-on-save="false" @saved="onSaved" @cancel="editing = false" />
     </div>
+
+    <!-- Delete Confirmation -->
+    <div v-if="deletingProduct" class="modal-overlay" @click.self="deletingProduct = null">
+      <div class="modal-box">
+        <h3>Delete Product</h3>
+        <p class="modal-desc">Are you sure you want to delete "{{ deletingProduct.name }}"? This action cannot be undone.</p>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" @click="deletingProduct = null">{{ t('auth.cancel') }}</button>
+          <button class="btn btn-danger" :disabled="deleting" @click="deleteProductConfirm">
+            <span v-if="deleting" class="spinner-sm"></span>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
   </main>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { t } from '../i18n'
 import { getUser } from '../services/auth'
+import { getProducts, deleteProduct as apiDeleteProduct } from '../services/products'
 import ProfileSetupForm from '../components/auth/ProfileSetupForm.vue'
 
 const router = useRouter()
@@ -155,6 +217,11 @@ const editing = ref(false)
 const user = ref({})
 const orderCount = ref(0)
 const reviewCount = ref(0)
+const products = ref([])
+const loadingProducts = ref(true)
+
+const deletingProduct = ref(null)
+const deleting = ref(false)
 
 const userInitial = computed(() => (user.value.name || '?').trim().charAt(0).toUpperCase())
 const isVerified = computed(() => !!user.value.email_verified_at)
@@ -163,6 +230,28 @@ const memberSince = computed(() => {
   return new Date(user.value.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short' })
 })
 
+function getPrimaryImage(product) {
+  const img = product.images?.find(i => i.is_primary) || product.images?.[0]
+  return img ? `/storage/${img.image}` : null
+}
+
+function confirmDelete(product) {
+  deletingProduct.value = product
+}
+
+async function deleteProductConfirm() {
+  deleting.value = true
+  try {
+    await apiDeleteProduct(deletingProduct.value.id)
+    products.value = products.value.filter(p => p.id !== deletingProduct.value.id)
+    deletingProduct.value = null
+  } catch {
+    // ignore
+  } finally {
+    deleting.value = false
+  }
+}
+
 async function loadUser() {
   try {
     const data = await getUser()
@@ -170,6 +259,19 @@ async function loadUser() {
     localStorage.setItem('user', JSON.stringify(user.value))
   } catch {
     user.value = {}
+  }
+}
+
+async function loadProducts() {
+  loadingProducts.value = true
+  try {
+    const data = await getProducts()
+    const all = data.data?.data || []
+    products.value = all.filter(p => p.user_id === user.value.id)
+  } catch {
+    products.value = []
+  } finally {
+    loadingProducts.value = false
   }
 }
 
@@ -184,7 +286,10 @@ function addNewAccount() {
   router.push('/register')
 }
 
-onMounted(loadUser)
+onMounted(async () => {
+  await loadUser()
+  await loadProducts()
+})
 </script>
 
 <style scoped>
@@ -201,7 +306,7 @@ onMounted(loadUser)
 }
 
 .fb-cover {
-  height: 260px;
+  height: 340px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   position: relative;
@@ -475,6 +580,194 @@ onMounted(loadUser)
   max-width: var(--container);
   padding: 1.5rem 1.5rem 0;
   margin: 0 auto;
+}
+
+.my-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.my-product-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.my-product-thumb {
+  display: block;
+  height: 140px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.my-product-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.no-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  opacity: 0.3;
+}
+
+.my-product-info {
+  padding: 0.75rem;
+}
+
+.my-product-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-product-name:hover {
+  color: var(--accent);
+}
+
+.my-product-price {
+  margin: 0.25rem 0 0;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.my-product-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.edit-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.delete-btn:hover {
+  border-color: #dc3545;
+  color: #dc3545;
+  background: #fff5f5;
+}
+
+.empty-text {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.my-listings {
+  margin-top: 1.5rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 440px;
+}
+
+.modal-box h3 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.modal-desc {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: #fff;
+  border: 1px solid #dc3545;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+  border-color: #c82333;
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner-sm {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 560px) {
+  .my-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 560px) {
