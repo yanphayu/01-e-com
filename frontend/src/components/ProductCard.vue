@@ -16,6 +16,7 @@
     <div class="product-card-body">
       <h3 class="product-card-name">{{ product.name }}</h3>
       <p v-if="product.detail?.province" class="product-card-location">{{ product.detail.province }}</p>
+      <p class="product-card-date">{{ formatDate(product.created_at) }}</p>
       <p class="product-card-price">${{ Number(product.price).toFixed(2) }}</p>
     </div>
   </RouterLink>
@@ -34,6 +35,22 @@ const primaryImage = computed(() => {
   const img = props.product.images?.find(i => i.is_primary) || props.product.images?.[0]
   return img ? `/storage/${img.image}` : null
 })
+
+function formatDate(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now - d
+  const diffMin = Math.floor(diffMs / 60000)
+  const diffHr = Math.floor(diffMs / 3600000)
+  const diffDay = Math.floor(diffMs / 86400000)
+
+  if (diffMin < 1) return 'Just now'
+  if (diffMin < 60) return `${diffMin}m ago`
+  if (diffHr < 24) return `${diffHr}h ago`
+  if (diffDay < 7) return `${diffDay}d ago`
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
 </script>
 
 <style scoped>
@@ -114,5 +131,11 @@ const primaryImage = computed(() => {
   color: var(--accent);
   font-weight: 700;
   font-size: 1.05rem;
+}
+
+.product-card-date {
+  margin: 0.3rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 </style>

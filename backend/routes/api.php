@@ -4,7 +4,9 @@ use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ModelController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductImageController;
 use App\Http\Controllers\SearchController;
@@ -55,6 +57,11 @@ Route::get('/users/{user}', [UserController::class, 'show']);
 Route::post('/products/{product}/images', [ProductImageController::class, 'store'])->middleware('auth:sanctum');
 Route::delete('/products/{product}/images/{image}', [ProductImageController::class, 'destroy'])->middleware('auth:sanctum');
 
+// Comments
+Route::get('/products/{product}/comments', [CommentController::class, 'index']);
+Route::post('/products/{product}/comments', [CommentController::class, 'store'])->middleware('auth:sanctum');
+Route::delete('/products/{product}/comments/{comment}', [CommentController::class, 'destroy'])->middleware('auth:sanctum');
+
 // Attributes
 Route::get('/attributes', [AttributeController::class, 'index']);
 Route::post('/attributes', [AttributeController::class, 'store'])->middleware('auth:sanctum');
@@ -62,3 +69,9 @@ Route::post('/attributes', [AttributeController::class, 'store'])->middleware('a
 // Brands & Models
 Route::get('/brands', [BrandController::class, 'index']);
 Route::get('/brands/{brand}/models', [ModelController::class, 'index']);
+
+// Notifications
+Route::get('/notifications', [NotificationController::class, 'index'])->middleware('auth:sanctum');
+Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->middleware('auth:sanctum');
+Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->middleware('auth:sanctum');
+Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->middleware('auth:sanctum');

@@ -60,6 +60,8 @@ class ProductController extends Controller
             'details.latitude' => 'nullable|numeric|between:-90,90',
             'details.longitude' => 'nullable|numeric|between:-180,180',
             'details.condition' => 'nullable|string|max:255',
+            'phones' => 'nullable|array',
+            'phones.*' => 'nullable|string|max:255',
             'attributes' => 'nullable|array',
             'attributes.*.attribute_id' => 'required_with:attributes|exists:attributes,id',
             'attributes.*.value' => 'required_with:attributes|string|max:255',
@@ -97,6 +99,17 @@ class ProductController extends Controller
             }
         }
 
+        if (isset($validated['phones'])) {
+            foreach ($validated['phones'] as $index => $phone) {
+                if ($phone) {
+                    $product->phones()->create([
+                        'phone' => $phone,
+                        'is_primary' => $index === 0,
+                    ]);
+                }
+            }
+        }
+
         if ($request->hasFile('images')) {
             $images = $request->file('images');
             foreach ($images as $index => $image) {
@@ -108,7 +121,7 @@ class ProductController extends Controller
             }
         }
 
-        $product->load(['detail', 'images', 'productAttributes.attribute', 'subcategory.category']);
+        $product->load(['detail', 'images', 'productAttributes.attribute', 'subcategory.category', 'phones']);
 
         return response()->json([
             'success' => true,
@@ -119,7 +132,7 @@ class ProductController extends Controller
 
     public function show(Product $product): JsonResponse
     {
-        $product->load(['user', 'subcategory.category', 'detail', 'images', 'productAttributes.attribute']);
+        $product->load(['user.profile', 'subcategory.category', 'detail', 'images', 'productAttributes.attribute', 'phones']);
 
         return response()->json([
             'success' => true,
@@ -153,6 +166,8 @@ class ProductController extends Controller
             'details.latitude' => 'nullable|numeric|between:-90,90',
             'details.longitude' => 'nullable|numeric|between:-180,180',
             'details.condition' => 'nullable|string|max:255',
+            'phones' => 'nullable|array',
+            'phones.*' => 'nullable|string|max:255',
         ]);
 
         $productFields = collect($validated)->only([
@@ -178,7 +193,19 @@ class ProductController extends Controller
             $product->detail()->updateOrCreate([], $validated['details']);
         }
 
-        $product->load(['detail', 'images', 'productAttributes.attribute', 'subcategory.category']);
+        if (isset($validated['phones'])) {
+            $product->phones()->delete();
+            foreach ($validated['phones'] as $index => $phone) {
+                if ($phone) {
+                    $product->phones()->create([
+                        'phone' => $phone,
+                        'is_primary' => $index === 0,
+                    ]);
+                }
+            }
+        }
+
+        $product->load(['detail', 'images', 'productAttributes.attribute', 'subcategory.category', 'phones']);
 
         return response()->json([
             'success' => true,

@@ -26,5 +26,9 @@ export async function request(endpoint, options = {}) {
     throw new Error(data.message || 'Something went wrong')
   }
 
+  if (data.success === false) {
+    throw new Error(data.message || 'Something went wrong')
+  }
+
   return data
 }

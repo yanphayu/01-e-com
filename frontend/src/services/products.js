@@ -78,3 +78,20 @@ export function getUser(userId) {
 export function globalSearch(q) {
   return request(`/search?q=${encodeURIComponent(q)}`)
 }
+
+export function getComments(productId) {
+  return request(`/products/${productId}/comments`)
+}
+
+export function addComment(productId, body, parentId = null) {
+  return request(`/products/${productId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ body, parent_id: parentId }),
+  })
+}
+
+export function deleteComment(productId, commentId) {
+  return request(`/products/${productId}/comments/${commentId}`, {
+    method: 'DELETE',
+  })
+}

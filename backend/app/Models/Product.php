@@ -54,4 +54,14 @@ class Product extends Model
     {
         return $this->hasMany(ProductAttribute::class);
     }
+
+    public function phones(): HasMany
+    {
+        return $this->hasMany(ProductPhone::class);
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
 }

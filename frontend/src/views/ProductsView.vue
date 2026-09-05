@@ -208,6 +208,7 @@ function goToPage(page) {
 .tab-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .tab-btn.active {
@@ -244,8 +245,9 @@ function goToPage(page) {
 }
 
 .sub-tab:hover {
-  border-color: var(--border-strong);
-  color: var(--text);
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .sub-tab.active {

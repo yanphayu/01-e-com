@@ -1,5 +1,12 @@
 <template>
   <div class="product-show container">
+    <button type="button" class="back-btn" @click="$router.back()">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5"/>
+        <polyline points="12 19 5 12 12 5"/>
+      </svg>
+      {{ t('product.back') }}
+    </button>
     <nav v-if="product" class="breadcrumb-nav">
       <RouterLink to="/">{{ t('nav.home') }}</RouterLink>
       <span class="sep">|</span>
@@ -41,6 +48,18 @@
 
       <!-- Info -->
       <div class="product-info">
+        <!-- Seller Mini Profile -->
+        <div class="seller-mini-profile" @click="goToProfile" role="link" tabindex="0">
+          <div class="seller-avatar">
+            <img v-if="product.user?.profile?.avatar" :src="product.user.profile.avatar" :alt="product.user?.name" />
+            <span v-else class="avatar-placeholder">{{ (product.user?.name || '?')[0] }}</span>
+          </div>
+          <div class="seller-details">
+            <span class="seller-name">{{ product.user?.name }}</span>
+            <span class="seller-label">{{ t('product.postedBy') }}</span>
+          </div>
+        </div>
+
         <div class="product-meta">
           <span v-if="product.detail?.condition" class="badge">
             {{ product.detail.condition === 'new' ? t('product.conditionNew') : t('product.conditionUsed') }}
@@ -85,12 +104,56 @@
           <p class="product-desc">{{ product.description }}</p>
         </div>
 
-        <div class="seller-info" @click="goToProfile" role="link" tabindex="0">
-          <span class="info-label">{{ t('product.postedBy') }}</span>
-          <span class="seller-name">{{ product.user?.name }}</span>
+        <div v-if="product.phones?.length" class="contact-section">
+          <h3>{{ t('product.contact') }}</h3>
+          <div v-for="phone in product.phones" :key="phone.id" class="contact-row">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+            </svg>
+            <a :href="`tel:${phone.phone}`" class="contact-phone">{{ phone.phone }}</a>
+          </div>
         </div>
       </div>
     </template>
+
+    <!-- Comments Section -->
+    <section class="comments-section">
+      <h2 class="related-title">{{ t('product.comments') }} ({{ comments.length }})</h2>
+
+      <div v-if="comments.length === 0" class="comment-empty">{{ t('product.noComments') }}</div>
+
+      <CommentNode
+        v-for="comment in comments"
+        :key="comment.id"
+        :comment="comment"
+        :depth="0"
+        :is-authenticated="isAuthenticated"
+        :current-user-id="currentUserId"
+        :is-owner="isOwner"
+        :reply-to="replyTo"
+        :reply-body="replyBody"
+        :posting-comment="postingComment"
+        @set-reply="(id) => replyTo = replyTo === id ? null : id"
+        @update-reply-body="(val) => replyBody = val"
+        @post-reply="(id) => postComment(id)"
+        @delete-comment="(id) => removeComment(id)"
+      />
+
+      <div v-if="isAuthenticated" class="comment-form">
+        <textarea
+          v-model="newComment"
+          class="comment-input"
+          :placeholder="t('product.writeComment')"
+          rows="3"
+        ></textarea>
+        <button
+          class="btn btn-primary btn-sm"
+          :disabled="!newComment.trim() || postingComment"
+          @click="postComment()"
+        >{{ postingComment ? t('product.posting') : t('product.postComment') }}</button>
+      </div>
+      <p v-else class="comment-login">{{ t('product.loginToComment') }}</p>
+    </section>
 
     <!-- Related Products -->
     <section v-if="relatedProducts.length" class="related-section">
@@ -106,8 +169,9 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { t } from '../i18n'
-import { getProduct, getProducts } from '../services/products'
+import { getProduct, getProducts, getComments, addComment, deleteComment } from '../services/products'
 import ProductCard from '../components/ProductCard.vue'
+import CommentNode from '../components/CommentNode.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -116,6 +180,16 @@ const product = ref(null)
 const loading = ref(true)
 const activeImageIndex = ref(0)
 const relatedProducts = ref([])
+const comments = ref([])
+const newComment = ref('')
+const replyTo = ref(null)
+const replyBody = ref('')
+const postingComment = ref(false)
+
+const isAuthenticated = computed(() => !!localStorage.getItem('token'))
+const currentUserId = computed(() => {
+  try { return JSON.parse(localStorage.getItem('user') || '{}').id } catch { return null }
+})
 
 const images = computed(() => product.value?.images || [])
 const mainImage = computed(() => {
@@ -161,11 +235,67 @@ async function loadProduct(id) {
     if (product.value?.subcategory_id) {
       fetchRelated(product.value.subcategory_id, product.value.id)
     }
+    loadComments(id)
   } catch {
     product.value = null
   } finally {
     loading.value = false
   }
+}
+
+async function loadComments(productId) {
+  try {
+    const data = await getComments(productId)
+    comments.value = data.data || []
+  } catch {
+    comments.value = []
+  }
+}
+
+async function postComment(parentId = null) {
+  const body = parentId ? replyBody.value : newComment.value
+  if (!body.trim()) return
+
+  postingComment.value = true
+  try {
+    await addComment(product.value.id, body.trim(), parentId)
+    if (parentId) {
+      replyBody.value = ''
+      replyTo.value = null
+    } else {
+      newComment.value = ''
+    }
+    await loadComments(product.value.id)
+  } catch (e) {
+    console.error('Failed to post comment:', e)
+  } finally {
+    postingComment.value = false
+  }
+}
+
+async function removeComment(commentId) {
+  try {
+    await deleteComment(product.value.id, commentId)
+    await loadComments(product.value.id)
+  } catch (e) {
+    console.error('Failed to delete comment:', e)
+  }
+}
+
+function formatTime(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now - d
+  const diffMin = Math.floor(diffMs / 60000)
+  const diffHr = Math.floor(diffMs / 3600000)
+  const diffDay = Math.floor(diffMs / 86400000)
+
+  if (diffMin < 1) return 'Just now'
+  if (diffMin < 60) return `${diffMin}m ago`
+  if (diffHr < 24) return `${diffHr}h ago`
+  if (diffDay < 7) return `${diffDay}d ago`
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 onMounted(() => {
@@ -184,6 +314,27 @@ watch(() => route.params.id, (newId) => {
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
   max-width: 1200px;
+}
+
+.back-btn {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.5rem;
+  transition: color 0.15s;
+}
+
+.back-btn:hover {
+  color: var(--accent);
 }
 
 .breadcrumb-nav {
@@ -354,26 +505,100 @@ watch(() => route.params.id, (newId) => {
   margin: 0;
 }
 
-.seller-info {
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
+.seller-mini-profile {
   display: flex;
-  justify-content: space-between;
-  font-size: 0.9rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 0.15s;
-  border-radius: var(--radius-sm);
-  padding: 1rem 0.5rem 0.5rem;
-  margin: 0 -0.5rem;
+  transition: background 0.15s, border-color 0.15s;
 }
 
-.seller-info:hover {
+.seller-mini-profile:hover {
   background: var(--surface-2);
+  border-color: var(--accent);
 }
 
-.seller-name {
-  color: var(--accent);
+.seller-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--surface-2);
+  flex-shrink: 0;
+}
+
+.seller-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 1.1rem;
   font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface-3, var(--surface-2));
+}
+
+.seller-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.seller-details .seller-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.seller-details .seller-phone {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.seller-details .seller-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.contact-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.contact-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.contact-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+}
+
+.contact-phone {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.contact-phone:hover {
+  text-decoration: underline;
 }
 
 .loading, .empty {
@@ -412,5 +637,181 @@ watch(() => route.params.id, (newId) => {
   .product-show {
     grid-template-columns: 1fr;
   }
+}
+
+/* Comments */
+.comments-section {
+  grid-column: 1 / -1;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+
+.comment-form {
+  margin-bottom: 1.5rem;
+}
+
+.comment-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--surface);
+  resize: vertical;
+  min-height: 60px;
+  margin-bottom: 0.5rem;
+  transition: border-color 0.15s;
+}
+
+.comment-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.comment-login {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin-bottom: 1rem;
+}
+
+.comment-empty {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  padding: 1rem 0;
+}
+
+.comment-item {
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.comment-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.comment-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.comment-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.comment-author {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.comment-time {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.comment-body {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0.3rem 0;
+  color: var(--text);
+}
+
+.comment-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.3rem;
+}
+
+.comment-reply-btn,
+.comment-delete-btn {
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.comment-reply-btn:hover {
+  color: var(--accent);
+}
+
+.comment-delete-btn:hover {
+  color: var(--danger);
+}
+
+.reply-form {
+  margin-top: 0.75rem;
+}
+
+.reply-input {
+  min-height: 48px;
+  font-size: 0.85rem;
+}
+
+.replies {
+  margin-top: 0.75rem;
+  padding-left: 1.5rem;
+  border-left: 2px solid var(--border);
+}
+
+.reply-item {
+  padding: 0.75rem 0;
+  border-top: none;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-sm {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.82rem;
 }
 </style>

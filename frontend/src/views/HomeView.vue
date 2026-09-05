@@ -27,6 +27,7 @@
           </div>
           <div class="product-body">
             <h3>{{ p.name }}</h3>
+            <p class="product-date">{{ formatDate(p.created_at) }}</p>
             <p class="price">${{ Number(p.price).toFixed(2) }}</p>
           </div>
         </RouterLink>
@@ -54,6 +55,22 @@ function getPrimaryImage(product) {
 
 function goToCategory(id) {
   router.push(`/products?category_id=${id}`)
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now - d
+  const diffMin = Math.floor(diffMs / 60000)
+  const diffHr = Math.floor(diffMs / 3600000)
+  const diffDay = Math.floor(diffMs / 86400000)
+
+  if (diffMin < 1) return 'Just now'
+  if (diffMin < 60) return `${diffMin}m ago`
+  if (diffHr < 24) return `${diffHr}h ago`
+  if (diffDay < 7) return `${diffDay}d ago`
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 onMounted(async () => {
@@ -160,6 +177,12 @@ onMounted(async () => {
   margin-top: 0.2rem;
   color: var(--accent);
   font-weight: 600;
+}
+
+.product-date {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
 .product {
