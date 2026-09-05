@@ -52,6 +52,18 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/notifications',
+    name: 'notifications',
+    component: () => import('../views/NotificationsView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/favorites',
+    name: 'favorites',
+    component: () => import('../views/FavoritesView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/products',
     name: 'products',
     component: () => import('../views/ProductsView.vue'),

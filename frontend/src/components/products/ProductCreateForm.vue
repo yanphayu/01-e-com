@@ -71,16 +71,16 @@
       <div class="form-grid">
         <div v-if="showBrand" class="field">
           <label>{{ t('product.brand') }}</label>
-          <input v-model="form.details.brand" class="input" :placeholder="t('product.brandPlaceholder')" list="brand-list" @input="onBrandInput" />
+          <input v-model="form.details.brand_name" class="input" :placeholder="t('product.brandPlaceholder')" list="brand-list" @input="onBrandInput" />
           <datalist id="brand-list">
-            <option v-for="b in brandOptions" :key="b" :value="b" />
+            <option v-for="b in brandOptions" :key="b.id" :value="b.name" />
           </datalist>
         </div>
         <div v-if="showModel" class="field">
           <label>{{ t('product.model') }}</label>
-          <input v-model="form.details.model" class="input" :placeholder="t('product.modelPlaceholder')" list="model-list" @input="onModelInput" />
+          <input v-model="form.details.model_name" class="input" :placeholder="t('product.modelPlaceholder')" list="model-list" @input="onModelInput" />
           <datalist id="model-list">
-            <option v-for="m in modelOptions" :key="m" :value="m" />
+            <option v-for="m in modelOptions" :key="m.id" :value="m.name" />
           </datalist>
         </div>
         <div class="field full">
@@ -187,23 +187,16 @@
     <!-- Step 4: Specifications (Attributes) -->
     <div v-if="currentStep === 3" class="step-content">
       <h2 class="step-title">{{ t('product.stepSpecs') }}</h2>
-      <div v-if="loadingAttributes" class="loading">{{ t('product.loading') }}</div>
+      <div v-if="modelAttributes.length === 0" class="empty">{{ t('product.noAttributes') }}</div>
       <div v-else>
-        <div v-for="(attr, i) in form.attributes" :key="i" class="attr-row">
+        <div v-for="(attr, i) in form.attributes" :key="attr.attribute_id" class="attr-row">
           <div class="field">
-            <label>{{ t('product.attribute') }}</label>
-            <select v-model="attr.attribute_id" class="input">
-              <option value="" disabled>{{ t('product.attribute') }}</option>
-              <option v-for="a in attributes" :key="a.id" :value="a.id">{{ a.name }}</option>
-            </select>
+            <label>{{ attr.name }}</label>
           </div>
           <div class="field">
-            <label>{{ t('product.value') }}</label>
             <input v-model="attr.value" class="input" :placeholder="t('product.valuePlaceholder')" />
           </div>
-          <button type="button" class="remove-btn" @click="form.attributes.splice(i, 1)">✕</button>
         </div>
-        <button type="button" class="add-btn" @click="addAttribute">+ {{ t('product.addSpec') }}</button>
       </div>
     </div>
 
@@ -277,13 +270,13 @@
           <span class="review-label">{{ t('product.condition') }}</span>
           <span>{{ form.details.condition === 'new' ? t('product.conditionNew') : t('product.conditionUsed') }}</span>
         </div>
-        <div v-if="form.details.brand" class="review-row">
+        <div v-if="form.details.brand_name" class="review-row">
           <span class="review-label">{{ t('product.brand') }}</span>
-          <span>{{ form.details.brand }}</span>
+          <span>{{ form.details.brand_name }}</span>
         </div>
-        <div v-if="form.details.model" class="review-row">
+        <div v-if="form.details.model_name" class="review-row">
           <span class="review-label">{{ t('product.model') }}</span>
-          <span>{{ form.details.model }}</span>
+          <span>{{ form.details.model_name }}</span>
         </div>
         <div v-if="form.details.province" class="review-row">
           <span class="review-label">{{ t('product.province') }}</span>
@@ -304,7 +297,7 @@
         <div v-if="activeAttributes.length" class="review-section">
           <span class="review-label">{{ t('product.specifications') }}</span>
           <div v-for="attr in activeAttributes" :key="attr.attribute_id" class="review-attr">
-            {{ getAttributeName(attr.attribute_id) }}: {{ attr.value }}
+            {{ attr.name }}: {{ attr.value }}
           </div>
         </div>
         <div v-if="imagePreviews.length" class="review-section">
@@ -343,7 +336,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { t, getLocale } from '../../i18n'
 import { getCategories, getAttributes, getBrands, getModels, createProduct } from '../../services/products'
@@ -432,11 +425,10 @@ const steps = computed(() => [
 
 const currentStep = ref(0)
 const categories = ref([])
-const attributes = ref([])
+const modelAttributes = ref([])
 const brands = ref([])
 const models = ref([])
 const loadingCategories = ref(true)
-const loadingAttributes = ref(true)
 const selectedCategory = ref(null)
 const dragging = ref(false)
 const imageFiles = ref([])
@@ -457,8 +449,10 @@ const form = reactive({
   phones: [{ code: null, number: '' }],
   details: {
     condition: 'new',
-    brand: '',
-    model: '',
+    brand_id: null,
+    model_id: null,
+    brand_name: '',
+    model_name: '',
     address: '',
     province: '',
     khan: '',
@@ -477,25 +471,35 @@ const selectedSubcategory = computed(() => {
 const showBrand = computed(() => selectedSubcategory.value?.has_brand ?? false)
 const showModel = computed(() => selectedSubcategory.value?.has_model ?? false)
 
-const brandOptions = computed(() => brands.value.map(b => b.name))
+const brandOptions = computed(() => brands.value.map(b => ({ id: b.id, name: b.name })))
 
 let previousAutoName = ''
 
 function onBrandInput() {
-  const brand = brands.value.find(b => b.name === form.details.brand)
+  const brand = brands.value.find(b => b.name === form.details.brand_name)
   if (brand) {
+    form.details.brand_id = brand.id
     loadModels(brand.id)
   } else {
+    form.details.brand_id = null
+    form.details.model_id = null
     models.value = []
   }
+  form.details.model_name = ''
+  form.details.model_id = null
+  modelAttributes.value = []
+  form.attributes = []
   autoFillName()
 }
 
 function onBrandSelect(brandName) {
   const brand = brands.value.find(b => b.name === brandName)
   if (brand) {
+    form.details.brand_id = brand.id
     loadModels(brand.id)
   } else {
+    form.details.brand_id = null
+    form.details.model_id = null
     models.value = []
   }
 }
@@ -509,15 +513,39 @@ async function loadModels(brandId) {
   }
 }
 
-const modelOptions = computed(() => models.value.map(m => m.name))
+const modelOptions = computed(() => models.value.map(m => ({ id: m.id, name: m.name })))
 
-function onModelInput() {
+function findAndSetModel() {
+  const model = models.value.find(m => m.name === form.details.model_name)
+  form.details.model_id = model ? model.id : null
   autoFillName()
+
+  if (model && model.attributes) {
+    modelAttributes.value = model.attributes
+    form.attributes = model.attributes.map(a => ({
+      attribute_id: a.id,
+      name: a.name,
+      value: '',
+    }))
+  } else {
+    modelAttributes.value = []
+    form.attributes = []
+  }
 }
 
+function onModelInput() {
+  findAndSetModel()
+}
+
+watch(models, () => {
+  if (form.details.model_name) {
+    findAndSetModel()
+  }
+})
+
 function autoFillName() {
-  const brand = form.details.brand || ''
-  const model = form.details.model || ''
+  const brand = form.details.brand_name || ''
+  const model = form.details.model_name || ''
   const autoName = `${brand} ${model}`.trim()
 
   if (!form.name || form.name === previousAutoName) {
@@ -547,39 +575,36 @@ onMounted(async () => {
     loadingCategories.value = false
   }
 
-  try {
-    const data = await getAttributes()
-    attributes.value = data.data || []
-  } catch {
-    // attributes are optional
-  } finally {
-    loadingAttributes.value = false
+  if (form.attributes.length === 0) {
+    // will be populated when model is selected
+  }
+})
+
+watch(() => form.subcategory_id, async (subId) => {
+  form.details.brand_id = null
+  form.details.model_id = null
+  form.details.brand_name = ''
+  form.details.model_name = ''
+  models.value = []
+  modelAttributes.value = []
+  form.attributes = []
+
+  if (!subId) {
+    brands.value = []
+    return
   }
 
   try {
-    const data = await getBrands()
+    const data = await getBrands(subId)
     brands.value = data.data || []
   } catch {
-    // brands are optional
-  }
-
-  if (form.attributes.length === 0) {
-    form.attributes.push({ attribute_id: '', value: '' })
+    brands.value = []
   }
 })
 
 function selectCategory(cat) {
   selectedCategory.value = cat
   form.subcategory_id = null
-}
-
-function addAttribute() {
-  form.attributes.push({ attribute_id: '', value: '' })
-}
-
-function getAttributeName(id) {
-  const attr = attributes.value.find(a => a.id === id)
-  return attr?.name || id
 }
 
 async function getLocation() {
@@ -687,8 +712,8 @@ async function submitProduct() {
     fd.append('price', form.price)
 
     if (form.details.condition) fd.append('details[condition]', form.details.condition)
-    if (form.details.brand) fd.append('details[brand]', form.details.brand)
-    if (form.details.model) fd.append('details[model]', form.details.model)
+    if (form.details.brand_id) fd.append('details[brand_id]', form.details.brand_id)
+    if (form.details.model_id) fd.append('details[model_id]', form.details.model_id)
     if (form.details.address) fd.append('details[address]', form.details.address)
     if (form.details.province) fd.append('details[province]', form.details.province)
     if (form.details.khan) fd.append('details[khan]', form.details.khan)

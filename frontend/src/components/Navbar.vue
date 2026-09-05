@@ -125,41 +125,19 @@
           </RouterLink>
 
           <!-- Notifications -->
-          <div class="dropdown" ref="notifDropdownRef">
-            <button class="notif-trigger" @click="showNotifDropdown = !showNotifDropdown">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
-              <span v-if="unreadCount > 0" class="notif-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
-            </button>
-            <div v-if="showNotifDropdown" class="dropdown-menu notif-menu">
-              <div class="notif-header">
-                <span>{{ t('nav.notifications') }}</span>
-                <button v-if="unreadCount > 0" class="notif-mark-all" @click="markAllNotifsRead">{{ t('nav.markAllRead') }}</button>
-              </div>
-              <div v-if="notifications.length === 0" class="notif-empty">{{ t('nav.noNotifications') }}</div>
-              <div v-else class="notif-list">
-                <div
-                  v-for="n in notifications"
-                  :key="n.id"
-                  class="notif-item"
-                  :class="{ unread: !n.read_at }"
-                  @click="onNotifClick(n)"
-                >
-                  <img v-if="n.data.user?.avatar" :src="n.data.user.avatar" class="notif-avatar" alt="" />
-                  <span v-else class="notif-avatar notif-avatar-fallback">{{ (n.data.user?.name || '?')[0] }}</span>
-                  <div class="notif-content">
-                    <p class="notif-text">
-                      <strong>{{ n.data.user?.name }}</strong>
-                      {{ t('nav.commentedOn') }}
-                      <strong>{{ n.data.product_name }}</strong>
-                    </p>
-                    <span class="notif-time">{{ formatNotifTime(n.created_at) }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <RouterLink to="/notifications" class="notif-trigger">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span v-if="unreadCount > 0" class="notif-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+          </RouterLink>
+
+          <!-- Favorites -->
+          <RouterLink to="/favorites" class="notif-trigger">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="var(--accent)" stroke="var(--accent)" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </RouterLink>
 
           <div class="dropdown" ref="userDropdownRef">
             <button class="btn btn-ghost user-trigger" @click="showUserDropdown = !showUserDropdown">
@@ -219,7 +197,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import { t } from '../i18n'
 import { getUser } from '../services/auth'
 import { globalSearch } from '../services/products'
-import { getNotifications, getUnreadCount, markAsRead, markAllAsRead } from '../services/notifications'
+import { getUnreadCount } from '../services/notifications'
 import { initEcho, leaveEcho } from '../services/echo'
 import LocaleSwitcher from './LocaleSwitcher.vue'
 
@@ -237,11 +215,7 @@ const searchData = ref({ products: [], users: [], categories: [], subcategories:
 const searchLoading = ref(false)
 let searchTimer = null
 
-const showNotifDropdown = ref(false)
-const notifDropdownRef = ref(null)
-const notifications = ref([])
 const unreadCount = ref(0)
-let notifPollTimer = null
 
 const hasResults = computed(() => {
   const d = searchData.value
@@ -267,17 +241,17 @@ onMounted(async () => {
     const data = await getUser()
     user.value = data.data || {}
     localStorage.setItem('user', JSON.stringify(user.value))
-    loadNotifications()
-    startNotifPolling()
-    connectEcho()
+    loadUnreadCount()
+    try { connectEcho() } catch {}
+    window.addEventListener('notifications-read', loadUnreadCount)
   } catch {
     logout()
   }
 })
 
 onUnmounted(() => {
-  clearInterval(notifPollTimer)
   leaveEcho()
+  window.removeEventListener('notifications-read', loadUnreadCount)
 })
 
 function connectEcho() {
@@ -296,44 +270,11 @@ function connectEcho() {
     })
 }
 
-async function loadNotifications() {
+async function loadUnreadCount() {
   try {
-    const [notifs, count] = await Promise.all([getNotifications(), getUnreadCount()])
-    notifications.value = notifs.data || []
+    const count = await getUnreadCount()
     unreadCount.value = count.data?.count || 0
   } catch {}
-}
-
-function startNotifPolling() {
-  notifPollTimer = setInterval(loadNotifications, 30000)
-}
-
-async function onNotifClick(n) {
-  if (!n.read_at) {
-    await markAsRead(n.id)
-    n.read_at = new Date().toISOString()
-    unreadCount.value = Math.max(0, unreadCount.value - 1)
-  }
-  showNotifDropdown.value = false
-  if (n.data.product_id) {
-    router.push(`/products/${n.data.product_id}`)
-  }
-}
-
-async function markAllNotifsRead() {
-  await markAllAsRead()
-  notifications.value.forEach(n => { n.read_at = new Date().toISOString() })
-  unreadCount.value = 0
-}
-
-function formatNotifTime(dateStr) {
-  const now = new Date()
-  const date = new Date(dateStr)
-  const diff = Math.floor((now - date) / 1000)
-  if (diff < 60) return 'just now'
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`
-  return `${Math.floor(diff / 86400)}d`
 }
 
 function logout() {
@@ -358,7 +299,7 @@ const otherAccounts = computed(() => {
   return saved.filter(a => a.id !== user.value.id)
 })
 
-function switchAccount(account) {
+async function switchAccount(account) {
   const saved = JSON.parse(localStorage.getItem('saved_accounts') || '[]')
   const current = JSON.parse(localStorage.getItem('user') || '{}')
   const currentToken = localStorage.getItem('token')
@@ -371,9 +312,18 @@ function switchAccount(account) {
   localStorage.setItem('saved_accounts', JSON.stringify(updated))
   localStorage.setItem('user', JSON.stringify(account))
   localStorage.setItem('token', account._token)
-  user.value = account
   showSwitchDropdown.value = false
-  window.location.reload()
+
+  try {
+    const data = await getUser()
+    user.value = data.data || {}
+    localStorage.setItem('user', JSON.stringify(user.value))
+    loadUnreadCount()
+  } catch {
+    user.value = account
+  }
+
+  router.push('/')
 }
 
 function onSearch() {
@@ -420,9 +370,6 @@ function handleClickOutside(e) {
   }
   if (switchDropdownRef.value && !switchDropdownRef.value.contains(e.target)) {
     showSwitchDropdown.value = false
-  }
-  if (notifDropdownRef.value && !notifDropdownRef.value.contains(e.target)) {
-    showNotifDropdown.value = false
   }
   if (searchDropdownRef.value && !searchDropdownRef.value.contains(e.target) && searchInputRef.value && !searchInputRef.value.contains(e.target)) {
     closeSearch()
@@ -489,7 +436,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   gap: 0.4rem;
   width: 100%;
   padding: 0.4rem 0.75rem;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
   transition: border-color 0.15s;
@@ -834,6 +781,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   background: var(--surface);
   color: var(--text-muted);
   cursor: pointer;
+  text-decoration: none;
   transition: border-color 0.15s, color 0.15s;
 }
 
@@ -856,106 +804,5 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   font-weight: 700;
   line-height: 16px;
   text-align: center;
-}
-
-.notif-menu {
-  width: 340px;
-  max-height: 400px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.notif-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.6rem 0.9rem;
-  font-weight: 600;
-  font-size: 0.88rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.notif-mark-all {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font: inherit;
-  font-size: 0.78rem;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.notif-mark-all:hover {
-  text-decoration: underline;
-}
-
-.notif-empty {
-  padding: 1.5rem;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-.notif-list {
-  overflow-y: auto;
-}
-
-.notif-item {
-  display: flex;
-  gap: 0.6rem;
-  padding: 0.65rem 0.9rem;
-  cursor: pointer;
-  transition: background 0.12s;
-}
-
-.notif-item:hover {
-  background: var(--surface-2);
-}
-
-.notif-item.unread {
-  background: var(--accent-soft);
-}
-
-.notif-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.notif-avatar-fallback {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--accent);
-  color: #fff;
-  font-size: 0.72rem;
-  font-weight: 600;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-}
-
-.notif-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.notif-text {
-  font-size: 0.82rem;
-  line-height: 1.4;
-  margin: 0;
-  color: var(--text);
-}
-
-.notif-text strong {
-  font-weight: 600;
-}
-
-.notif-time {
-  font-size: 0.72rem;
-  color: var(--text-muted);
 }
 </style>

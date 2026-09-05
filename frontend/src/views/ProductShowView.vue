@@ -64,13 +64,31 @@
           <span v-if="product.detail?.condition" class="badge">
             {{ product.detail.condition === 'new' ? t('product.conditionNew') : t('product.conditionUsed') }}
           </span>
+          <span v-if="product.detail?.brand" class="badge">
+            {{ product.detail.brand.name }}
+          </span>
+          <span v-if="product.detail?.model" class="badge">
+            {{ product.detail.model.name }}
+          </span>
           <span v-if="product.subcategory?.category" class="breadcrumb">
             {{ product.subcategory.category.name }} → {{ product.subcategory.name }}
           </span>
         </div>
 
         <h1 class="product-title">{{ product.name }}</h1>
-        <p class="product-price">${{ Number(product.price).toFixed(2) }}</p>
+        <div class="product-price-row">
+          <p class="product-price">${{ Number(product.price).toFixed(2) }}</p>
+          <button
+            v-if="isAuthenticated"
+            class="fav-btn"
+            :class="{ active: isFavorited }"
+            @click="onFavorite"
+          >
+            <svg viewBox="0 0 24 24" width="22" height="22" :fill="isFavorited ? 'var(--accent)' : 'none'" :stroke="isFavorited ? 'var(--accent)' : '#999'" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </button>
+        </div>
 
         <div class="info-section">
           <div v-if="product.detail?.province" class="info-row">
@@ -170,6 +188,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { t } from '../i18n'
 import { getProduct, getProducts, getComments, addComment, deleteComment } from '../services/products'
+import { toggleFavorite } from '../services/favorites'
 import ProductCard from '../components/ProductCard.vue'
 import CommentNode from '../components/CommentNode.vue'
 
@@ -185,6 +204,7 @@ const newComment = ref('')
 const replyTo = ref(null)
 const replyBody = ref('')
 const postingComment = ref(false)
+const isFavorited = ref(false)
 
 const isAuthenticated = computed(() => !!localStorage.getItem('token'))
 const currentUserId = computed(() => {
@@ -232,6 +252,7 @@ async function loadProduct(id) {
   try {
     const data = await getProduct(id)
     product.value = data.data || null
+    isFavorited.value = product.value?.is_favorited || false
     if (product.value?.subcategory_id) {
       fetchRelated(product.value.subcategory_id, product.value.id)
     }
@@ -241,6 +262,13 @@ async function loadProduct(id) {
   } finally {
     loading.value = false
   }
+}
+
+async function onFavorite() {
+  try {
+    const res = await toggleFavorite(product.value.id)
+    isFavorited.value = res.data.favorited
+  } catch {}
 }
 
 async function loadComments(productId) {
@@ -470,6 +498,39 @@ watch(() => route.params.id, (newId) => {
   font-weight: 700;
   color: var(--accent);
   margin: 0;
+}
+
+.product-price-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.fav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 1rem;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.fav-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.fav-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .info-section {

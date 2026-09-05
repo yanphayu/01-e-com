@@ -188,12 +188,14 @@ const messages = {
     'nav.brands': 'Brands',
     'nav.models': 'Models',
     'nav.attributes': 'Attributes',
+    'nav.favorites': 'Favorites',
 
     'product.createTitle': 'Post a Product',
     'product.stepCategory': 'Category',
     'product.stepSubcategory': 'Subcategory',
     'product.stepDetails': 'Product Details',
     'product.stepSpecs': 'Specifications',
+    'product.noAttributes': 'No attributes available for this model',
     'product.stepImages': 'Images',
     'product.stepReview': 'Review',
     'product.selectCategory': 'Select a category',
@@ -279,6 +281,9 @@ const messages = {
     'product.noComments': 'No comments yet. Be the first!',
     'product.reply': 'Reply',
     'product.delete': 'Delete',
+    'product.favorite': 'Favorite',
+    'product.unfavorite': 'Unfavorite',
+    'product.noFavorites': 'No favorites yet. Tap the heart icon on a product to save it here.',
   },
 
   kh: {
@@ -462,12 +467,14 @@ const messages = {
     'nav.brands': 'ម៉ាក',
     'nav.models': 'ម៉ូដែល',
     'nav.attributes': 'លក្ខណៈសម្បត្តិ',
+    'nav.favorites': 'ស្រឡាញ់',
 
     'product.createTitle': 'បង្ហោះផលិតផល',
     'product.stepCategory': 'ប្រភេទ',
     'product.stepSubcategory': 'ប្រភេទរង',
     'product.stepDetails': 'ព័ត៌មានលម្អិត',
     'product.stepSpecs': 'លក្ខណៈសម្បត្តិ',
+    'product.noAttributes': 'មិនមានលក្ខណៈសម្បត្តិសម្រាប់ម៉ូដែលនេះទេ',
     'product.stepImages': 'រូបភាព',
     'product.stepReview': 'ពិនិត្យមើល',
     'product.selectCategory': 'ជ្រើសរើសប្រភេទ',
@@ -553,6 +560,9 @@ const messages = {
     'product.noComments': 'គ្មានយោបល់នៅឡើយ។ ជាដំបូង!',
     'product.reply': 'ឆ្លើយតប',
     'product.delete': 'លុប',
+    'product.favorite': 'ស្រឡាញ់',
+    'product.unfavorite': 'ឈប់ស្រឡាញ់',
+    'product.noFavorites': 'មិនទាន់មានស្រឡាញ់នៅឡើយ។ ចុចរូបបេះដូងនៅលើផលិតផលដើម្បីរក្សាទុកនៅទីនេះ។',
   },
 }
 

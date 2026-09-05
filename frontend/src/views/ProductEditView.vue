@@ -11,16 +11,16 @@
       <div class="form-grid">
         <div v-if="showBrand" class="field">
           <label>{{ t('product.brand') }}</label>
-          <input v-model="form.details.brand" class="input" :placeholder="t('product.brandPlaceholder')" list="edit-brand-list" @input="onBrandInput" />
+          <input v-model="form.details.brand_name" class="input" :placeholder="t('product.brandPlaceholder')" list="edit-brand-list" @input="onBrandInput" />
           <datalist id="edit-brand-list">
-            <option v-for="b in brandOptions" :key="b" :value="b" />
+            <option v-for="b in brandOptions" :key="b.id" :value="b.name" />
           </datalist>
         </div>
         <div v-if="showModel" class="field">
           <label>{{ t('product.model') }}</label>
-          <input v-model="form.details.model" class="input" :placeholder="t('product.modelPlaceholder')" list="edit-model-list" @input="onModelInput" />
+          <input v-model="form.details.model_name" class="input" :placeholder="t('product.modelPlaceholder')" list="edit-model-list" @input="onModelInput" />
           <datalist id="edit-model-list">
-            <option v-for="m in modelOptions" :key="m" :value="m" />
+            <option v-for="m in modelOptions" :key="m.id" :value="m.name" />
           </datalist>
         </div>
         <div class="field full">
@@ -243,8 +243,10 @@ const form = reactive({
   price: '',
   phones: [{ code: null, number: '' }],
   details: {
-    brand: '',
-    model: '',
+    brand_id: null,
+    model_id: null,
+    brand_name: '',
+    model_name: '',
     condition: 'new',
     province: '',
     khan: '',
@@ -274,26 +276,28 @@ const showModel = computed(() => {
 })
 
 function onBrandInput() {
-  const val = form.details.brand
-  const found = brandOptions.value.find(b => b.toLowerCase() === val.toLowerCase())
-  if (found) loadModels(found)
+  const val = form.details.brand_name
+  const found = brandOptions.value.find(b => b.name.toLowerCase() === val.toLowerCase())
+  if (found) {
+    form.details.brand_id = found.id
+    loadModels(found.id)
+  } else {
+    form.details.brand_id = null
+    form.details.model_id = null
+    modelOptions.value = []
+  }
 }
 
-function onModelInput() {}
+function onModelInput() {
+  const val = form.details.model_name
+  const found = modelOptions.value.find(m => m.name.toLowerCase() === val.toLowerCase())
+  form.details.model_id = found ? found.id : null
+}
 
-async function loadModels(brandName) {
+async function loadModels(brandId) {
   try {
-    const cats = await getCategories()
-    const allSubs = (cats.data || []).flatMap(c => c.subcategories || [])
-    const sub = allSubs.find(s => s.id === product.value?.subcategory_id)
-    if (!sub) return
-
-    const brands = await getBrands()
-    const brand = (brands.data || []).find(b => b.name.toLowerCase() === brandName.toLowerCase())
-    if (!brand) { modelOptions.value = []; return }
-
-    const models = await getModels(brand.id)
-    modelOptions.value = (models.data || []).map(m => m.name)
+    const data = await getModels(brandId)
+    modelOptions.value = (data.data || []).map(m => ({ id: m.id, name: m.name }))
   } catch {
     modelOptions.value = []
   }
@@ -334,8 +338,8 @@ async function submit() {
       price: form.price,
       phones: form.phones.filter(p => p.number.trim()).map(p => `${p.code}${p.number.trim()}`),
       details: {
-        brand: form.details.brand || null,
-        model: form.details.model || null,
+        brand_id: form.details.brand_id || null,
+        model_id: form.details.model_id || null,
         condition: form.details.condition,
         province: form.details.province || null,
         khan: form.details.khan || null,
@@ -368,8 +372,10 @@ onMounted(async () => {
     form.name = product.value.name
     form.description = product.value.description || ''
     form.price = product.value.price
-    form.details.brand = product.value.detail?.brand || ''
-    form.details.model = product.value.detail?.model || ''
+    form.details.brand_id = product.value.detail?.brand_id || null
+    form.details.model_id = product.value.detail?.model_id || null
+    form.details.brand_name = product.value.detail?.brand?.name || ''
+    form.details.model_name = product.value.detail?.model?.name || ''
     form.details.condition = product.value.detail?.condition || 'new'
     form.details.province = product.value.detail?.province || ''
     form.details.khan = product.value.detail?.khan || ''
@@ -387,9 +393,9 @@ onMounted(async () => {
 
     if (showBrand.value) {
       try {
-        const brands = await getBrands()
-        brandOptions.value = (brands.data || []).map(b => b.name)
-        if (form.details.brand) await loadModels(form.details.brand)
+        const brands = await getBrands(product.value.subcategory_id)
+        brandOptions.value = (brands.data || []).map(b => ({ id: b.id, name: b.name }))
+        if (form.details.brand_id) await loadModels(form.details.brand_id)
       } catch {}
     }
   } catch {

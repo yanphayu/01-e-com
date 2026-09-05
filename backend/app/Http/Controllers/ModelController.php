@@ -9,7 +9,7 @@ class ModelController extends Controller
 {
     public function index(Brand $brand): JsonResponse
     {
-        $models = $brand->models()->orderBy('name')->get();
+        $models = $brand->models()->with('attributes')->orderBy('name')->get();
 
         return response()->json([
             'success' => true,
