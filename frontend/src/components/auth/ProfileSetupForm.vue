@@ -90,14 +90,52 @@
     <div class="edit-section">
       <h2 class="edit-section-title">{{ t('auth.contactInfo') }}</h2>
       <div class="edit-section-body">
-        <BaseInput
-          v-model="phone"
-          :label="t('auth.phone')"
-          type="tel"
-          :placeholder="t('auth.phonePlaceholder')"
-          autocomplete="tel"
-          :error="errors.phone"
-        />
+        <div class="phone-field">
+          <label>{{ t('auth.phone') }}</label>
+          <div class="phone-input-group">
+            <div class="country-select-wrap">
+              <button type="button" class="country-select-btn" @click="showCountryPicker = !showCountryPicker">
+                <span class="country-flag">{{ selectedCountry.flag }}</span>
+                <span class="country-code">{{ selectedCountry.dial }}</span>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+              <div v-if="showCountryPicker" class="country-picker-dropdown">
+                <input
+                  v-model="countrySearch"
+                  type="text"
+                  class="country-search"
+                  :placeholder="t('auth.searchCountry')"
+                  @click.stop
+                />
+                <div class="country-list">
+                  <button
+                    v-for="c in filteredCountries"
+                    :key="c.code"
+                    type="button"
+                    class="country-option"
+                    :class="{ active: c.code === selectedCountry.code }"
+                    @click="selectCountry(c)"
+                  >
+                    <span class="country-flag">{{ c.flag }}</span>
+                    <span class="country-name">{{ c.name }}</span>
+                    <span class="country-dial">{{ c.dial }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <input
+              v-model="phone"
+              type="tel"
+              class="phone-input"
+              :placeholder="t('auth.phonePlaceholder')"
+              autocomplete="tel"
+              @blur="validatePhone"
+            />
+          </div>
+          <p v-if="errors.phone" class="field-error">{{ errors.phone }}</p>
+        </div>
 
         <BaseInput
           v-model="birthDate"
@@ -193,7 +231,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { updateProfile, uploadAvatar, uploadCoverImage, deleteAccount } from '../../services/auth'
 import { t, getLocale } from '../../i18n'
@@ -223,7 +261,67 @@ const initial = computed(() => (stored.name || '?').trim().charAt(0).toUpperCase
 
 const firstName = ref(stored.first_name || storedNameParts[0] || '')
 const lastName = ref(stored.last_name || storedNameParts.slice(1).join(' ') || '')
-const phone = ref(profile.phone || '')
+const phoneRaw = profile.phone || ''
+const matchedCountry = countries.find(c => phoneRaw.startsWith(c.dial))
+const phone = ref(matchedCountry ? phoneRaw.slice(matchedCountry.dial.length) : phoneRaw)
+const phoneCountryCode = ref(matchedCountry?.dial || '+855')
+const showCountryPicker = ref(false)
+const countrySearch = ref('')
+
+const countries = [
+  { code: 'KH', name: 'Cambodia', flag: '\u{1F1F0}\u{1F1ED}', dial: '+855' },
+  { code: 'US', name: 'United States', flag: '\u{1F1FA}\u{1F1F8}', dial: '+1' },
+  { code: 'GB', name: 'United Kingdom', flag: '\u{1F1EC}\u{1F1E7}', dial: '+44' },
+  { code: 'TH', name: 'Thailand', flag: '\u{1F1F9}\u{1F1ED}', dial: '+66' },
+  { code: 'VN', name: 'Vietnam', flag: '\u{1F1FB}\u{1F1F3}', dial: '+84' },
+  { code: 'LA', name: 'Laos', flag: '\u{1F1F1}\u{1F1E6}', dial: '+856' },
+  { code: 'MY', name: 'Malaysia', flag: '\u{1F1F2}\u{1F1FE}', dial: '+60' },
+  { code: 'SG', name: 'Singapore', flag: '\u{1F1F8}\u{1F1EC}', dial: '+65' },
+  { code: 'PH', name: 'Philippines', flag: '\u{1F1F5}\u{1F1ED}', dial: '+63' },
+  { code: 'ID', name: 'Indonesia', flag: '\u{1F1EE}\u{1F1E9}', dial: '+62' },
+  { code: 'JP', name: 'Japan', flag: '\u{1F1EF}\u{1F1F5}', dial: '+81' },
+  { code: 'KR', name: 'South Korea', flag: '\u{1F1F0}\u{1F1F7}', dial: '+82' },
+  { code: 'CN', name: 'China', flag: '\u{1F1E8}\u{1F1F3}', dial: '+86' },
+  { code: 'IN', name: 'India', flag: '\u{1F1EE}\u{1F1F3}', dial: '+91' },
+  { code: 'AU', name: 'Australia', flag: '\u{1F1E6}\u{1F1FA}', dial: '+61' },
+  { code: 'FR', name: 'France', flag: '\u{1F1EB}\u{1F1F7}', dial: '+33' },
+  { code: 'DE', name: 'Germany', flag: '\u{1F1E9}\u{1F1EA}', dial: '+49' },
+  { code: 'ES', name: 'Spain', flag: '\u{1F1EA}\u{1F1F8}', dial: '+34' },
+  { code: 'IT', name: 'Italy', flag: '\u{1F1EE}\u{1F1F9}', dial: '+39' },
+  { code: 'BR', name: 'Brazil', flag: '\u{1F1E7}\u{1F1F7}', dial: '+55' },
+  { code: 'CA', name: 'Canada', flag: '\u{1F1E8}\u{1F1E6}', dial: '+1' },
+  { code: 'NZ', name: 'New Zealand', flag: '\u{1F1F3}\u{1F1FF}', dial: '+64' },
+  { code: 'ZA', name: 'South Africa', flag: '\u{1F1FF}\u{1F1E6}', dial: '+27' },
+  { code: 'AE', name: 'UAE', flag: '\u{1F1E6}\u{1F1EA}', dial: '+971' },
+  { code: 'SA', name: 'Saudi Arabia', flag: '\u{1F1F8}\u{1F1E6}', dial: '+966' },
+  { code: 'TR', name: 'Turkey', flag: '\u{1F1F9}\u{1F1F7}', dial: '+90' },
+  { code: 'RU', name: 'Russia', flag: '\u{1F1F7}\u{1F1FA}', dial: '+7' },
+]
+
+const selectedCountry = computed(() => {
+  return countries.find(c => c.dial === phoneCountryCode.value) || countries[0]
+})
+
+const filteredCountries = computed(() => {
+  if (!countrySearch.value) return countries
+  const q = countrySearch.value.toLowerCase()
+  return countries.filter(c => c.name.toLowerCase().includes(q) || c.dial.includes(q) || c.code.toLowerCase().includes(q))
+})
+
+function selectCountry(c) {
+  phoneCountryCode.value = c.dial
+  showCountryPicker.value = false
+  countrySearch.value = ''
+}
+
+function closeCountryPicker(e) {
+  if (!e.target.closest('.country-select-wrap')) {
+    showCountryPicker.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', closeCountryPicker))
+onBeforeUnmount(() => document.removeEventListener('click', closeCountryPicker))
 const birthDate = ref(profile.birth_date || '')
 const address = ref(addressData.address || '')
 const latitude = ref(addressData.latitude ?? null)
@@ -400,7 +498,8 @@ async function handleSubmit() {
   await submit({
     first_name: firstName.value.trim(),
     last_name: lastName.value.trim(),
-    phone: phone.value,
+    phone: phone.value ? `${phoneCountryCode.value}${phone.value}` : '',
+    phone_country_code: phoneCountryCode.value,
     birth_date: birthDate.value,
     address: address.value,
     latitude: latitude.value,
@@ -749,6 +848,142 @@ async function handleDelete() {
   color: var(--text-muted);
   line-height: 1.4;
   word-break: break-word;
+}
+
+.phone-field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.35rem;
+}
+
+.phone-input-group {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.phone-input-group:focus-within {
+  border-color: var(--accent);
+}
+
+.country-select-wrap {
+  position: relative;
+}
+
+.country-select-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.6rem 0.65rem;
+  background: var(--surface-2);
+  border: none;
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text);
+  height: 100%;
+  transition: background 0.15s;
+}
+
+.country-select-btn:hover {
+  background: var(--surface-3, var(--surface-2));
+}
+
+.country-flag {
+  font-size: 1.1rem;
+}
+
+.country-code {
+  font-weight: 500;
+}
+
+.phone-input {
+  flex: 1;
+  border: none;
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: transparent;
+  outline: none;
+  min-width: 0;
+}
+
+.phone-input::placeholder {
+  color: var(--text-muted);
+}
+
+.country-picker-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  width: 260px;
+  max-height: 300px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.country-search {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  font: inherit;
+  font-size: 0.85rem;
+  background: var(--surface);
+  outline: none;
+  color: var(--text);
+}
+
+.country-search::placeholder {
+  color: var(--text-muted);
+}
+
+.country-list {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.country-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.country-option:hover {
+  background: var(--surface-2);
+}
+
+.country-option.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.country-option .country-name {
+  flex: 1;
+}
+
+.country-option .country-dial {
+  color: var(--text-muted);
+  font-size: 0.8rem;
 }
 
 .field-error {

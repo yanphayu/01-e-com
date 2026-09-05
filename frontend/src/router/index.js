@@ -51,6 +51,33 @@ const routes = [
     component: () => import('../views/auth/ProfileSetupView.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/products',
+    name: 'products',
+    component: () => import('../views/ProductsView.vue'),
+  },
+  {
+    path: '/products/create',
+    name: 'product-create',
+    component: () => import('../views/ProductCreateView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/products/:id/edit',
+    name: 'product-edit',
+    component: () => import('../views/ProductEditView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/products/:id',
+    name: 'product-show',
+    component: () => import('../views/ProductShowView.vue'),
+  },
+  {
+    path: '/users/:id',
+    name: 'user-profile',
+    component: () => import('../views/UserProfileView.vue'),
+  },
 ]
 
 const router = createRouter({

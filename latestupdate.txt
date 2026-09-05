@@ -1,0 +1,99 @@
+Objective
+- Build and iterate on a Laravel 13 + Vue 3 e-commerce app (TRINITY), adding features like comments, notifications via Laravel Reverb, navbar improvements, fixing bugs, and seeding realistic test data.
+Important Details
+- Project root: /home/yu/code/01-e-com/ (Laravel backend + Vite/Vue 3 frontend)
+- i18n supports en and kh (Khmer); all new UI strings need both translations
+- Country codes list: 27 countries, Cambodia (+855) is default reference
+- Product phones: stored in product_phones table (1 product → 0..N phones)
+- Country code selector: phone input disabled until country selected; full number stored as +code+number
+- Switch Account: saves accounts to saved_accounts in localStorage on logout
+- Comments: comments table with self-referencing parent_id for nested replies (up to 3 levels deep)
+- Notifications: Laravel built-in notification system with notifications table + broadcast via Reverb
+- Reverb env: REVERB_APP_ID=app-id-local, REVERB_APP_KEY=app-key-local, REVERB_APP_SECRET=app-secret-local, port 8080
+- Vue click event gotcha: @click="postComment" passes MouseEvent as first arg; must use @click="postComment()" to avoid overriding parentId param
+- CommentNode.vue is a recursive component for nested comment rendering with its own scoped styles
+- Broadcast failure in CommentController is caught with try/catch so comment posting still works even when Reverb server is down
+- Backend error response pattern: Backend returns HTTP 200 with {success: false, message: "..."} for business errors like invalid credentials — frontend must check data.success field, not just HTTP status
+- User credentials: yanphayu@gmail.com / 12345678 (password was 12345678, not password123)
+- SESSION_DOMAIN in .env was fixed from nullw typo to null
+- migrate:fresh --seed was run, wiping all data; user yanphayu@gmail.com recreated without profile/address/images
+- Sanctum v4 does NOT need personal_access_clients table (only personal_access_tokens needed, which exists)
+- Seeder creates 10 users with Cambodian names, profiles, addresses, and 10 products each (100 products total) across all subcategories with picsum.photos images
+Work State
+Completed
+- Seller mini profile card on ProductShowView (avatar, name, "Posted by")
+- Backend eager loads user.profile on product show
+- Contact section showing product phones (from product_phones table)
+- product_phones migration + ProductPhone model + relationships on Product
+- Country calling code selector on ProfileSetupForm, ProductCreateForm, ProductEditView
+- Posted date on ProductCard + HomeView inline cards (relative time)
+- Price moved below date on cards
+- Back button on ProductShowView, ProductCreateForm, ProductsView
+- Navbar: "Post" text link, user dropdown (My Profile + Logout), Switch Account
+- Comment system: comments table, CommentController, nested replies via CommentNode.vue (recursive)
+- Fixed CommentController: changed int $productId to Product $product for route model binding
+- Fixed User model: added missing comments() HasMany relationship
+- Fixed Vue click event: @click="postComment" → @click="postComment()" to prevent MouseEvent being passed as parentId
+- Comment form moved below comment history
+- Comment section spans full width with grid-column: 1 / -1
+- Backend loads 3 levels of nested replies
+- CommentNode.vue created with own scoped styles
+- Laravel Reverb installed (laravel/reverb ^v1.11.1)
+- BROADCAST_CONNECTION=reverb set in .env
+- notifications table migration created and migrated
+- CommentCreated notification class: saves to notifications table + broadcasts
+- NotificationController with index, unread-count, markAsRead, markAllAsRead
+- Notification API routes
+- Frontend: laravel-echo + pusher-js installed
+- services/echo.js: Echo/Reverb connection setup
+- services/notifications.js: API service for notifications
+- Notification bell in Navbar with badge count, dropdown, mark-all-read, Echo listener
+- Tab button hover styles normalized between HomeView and ProductsView
+- Fixed frontend login error display: Added data.success === false check in http.js so invalid credentials show error message instead of causing page reload
+- Fixed SESSION_DOMAIN typo in .env: nullw → null
+- Database wiped and recreated via migrate:fresh (all migrations + seeders run including CategorySeeder, AttributeSeeder, BrandSeeder)
+- Created UserProductSeeder.php: 10 users with profiles/addresses, 100 products with real data across all subcategories
+Active
+- Seeding database with 10 users and 100 products — UserProductSeeder.php written but not yet run (need to add it to DatabaseSeeder and run migrate:fresh --seed)
+Blocked
+- Reverb server not started yet (php artisan reverb:start needed for real-time broadcast)
+- User profile/address/images data lost from migrate:fresh — needs re-setup
+Next Move
+1. Add UserProductSeeder call to DatabaseSeeder.php and run php artisan migrate:fresh --seed to populate all data
+2. Verify seeded users can login (all use password 12345678)
+3. Start Reverb server: cd backend && php artisan reverb:start
+4. Verify user profile after login (redirect to profile-setup since no profile exists for seeded users)
+Relevant Files
+- frontend/src/services/http.js: Modified — added data.success === false throw check
+- backend/.env: Modified — fixed SESSION_DOMAIN=nullw to SESSION_DOMAIN=null; has Reverb config
+- database/seeders/UserProductSeeder.php: Created — 10 users + 100 products seeder
+- database/seeders/DatabaseSeeder.php: Needs update to call UserProductSeeder
+- frontend/src/views/ProductShowView.vue: Product detail with comments section
+- frontend/src/components/CommentNode.vue: Recursive comment component
+- frontend/src/components/Navbar.vue: Navbar with Post button, user dropdown, switch account, notification bell + Echo listener
+- frontend/src/components/ProductCard.vue: Product card with posted date
+- frontend/src/views/HomeView.vue: Home page with inline cards and category tabs
+- frontend/src/views/ProductsView.vue: Products listing with category/subcategory tabs
+- frontend/src/components/auth/ProfileSetupForm.vue: Profile form with country code phone selector
+- frontend/src/components/auth/LoginForm.vue: Login form with error display (uses catch block to show error)
+- frontend/src/components/products/ProductCreateForm.vue: Product creation with phone fields + country codes
+- frontend/src/views/ProductEditView.vue: Product editing with phone fields + country codes
+- frontend/src/services/products.js: API service
+- frontend/src/services/notifications.js: Notifications API service
+- frontend/src/services/echo.js: Laravel Echo/Reverb setup
+- frontend/src/services/auth.js: Auth API (loginUser, getUser, etc.)
+- frontend/src/router/index.js: Vue Router with auth guards
+- frontend/src/i18n/index.js: All EN + KH translations
+- backend/app/Http/Controllers/CommentController.php: Comment CRUD + notification dispatch
+- backend/app/Http/Controllers/NotificationController.php: Notification API endpoints
+- backend/app/Http/Controllers/AuthController.php: Login/register/verify (line 136 for login)
+- backend/app/Models/User.php: User model with Notifiable, comments(), products()
+- backend/app/Models/Product.php: Product model (phones, comments)
+- backend/app/Models/ProductPhone.php: Product phone model
+- backend/app/Models/ProductDetail.php: Product detail (brand, model, condition, province, khan, sangkat, lat/lng)
+- backend/app/Models/ProductImage.php: Product images
+- backend/app/Models/ProductModel.php: Product model brand reference
+- backend/app/Notifications/CommentCreated.php: Notification class
+- backend/routes/api.php: All API routes
+- backend/routes/channels.php: Broadcast channel authorization
+- backend/storage/logs/laravel.log: Error logs
