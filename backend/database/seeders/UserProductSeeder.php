@@ -7,11 +7,11 @@ use App\Models\Brand;
 use App\Models\Product;
 use App\Models\ProductDetail;
 use App\Models\ProductImage;
+use App\Models\ProductModel;
 use App\Models\ProductPhone;
 use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -38,7 +38,7 @@ class UserProductSeeder extends Seeder
             $user = User::create([
                 'name' => $userData['name'],
                 'email' => $userData['email'],
-                'password' => Hash::make('12345678'),
+                'password' => '12345678',
                 'email_verified_at' => now(),
             ]);
 
@@ -68,16 +68,14 @@ class UserProductSeeder extends Seeder
             'user_id' => $userId,
             'subcategory_id' => $data['subcategory_id'],
             'name' => $data['name'],
-            'slug' => Str::slug($data['name']) . '-' . Str::random(5),
+            'slug' => Str::slug($data['name']).'-'.Str::random(5),
             'description' => $data['description'],
             'price' => $data['price'],
             'is_active' => true,
         ]);
 
-        ProductDetail::create([
+        $detailData = [
             'product_id' => $product->id,
-            'brand' => $data['brand'] ?? null,
-            'model' => $data['model'] ?? null,
             'condition' => $data['condition'] ?? 'new',
             'province' => $data['province'],
             'khan' => $data['khan'] ?? null,
@@ -85,9 +83,27 @@ class UserProductSeeder extends Seeder
             'address' => $data['address'] ?? null,
             'latitude' => $data['lat'],
             'longitude' => $data['lng'],
-        ]);
+        ];
 
-        if (!empty($data['phones'])) {
+        if (! empty($data['brand'])) {
+            $brand = Brand::firstOrCreate(
+                ['name' => $data['brand'], 'subcategory_id' => $data['subcategory_id']],
+                ['name' => $data['brand'], 'subcategory_id' => $data['subcategory_id']]
+            );
+            $detailData['brand_id'] = $brand->id;
+
+            if (! empty($data['model'])) {
+                $model = ProductModel::firstOrCreate(
+                    ['brand_id' => $brand->id, 'name' => $data['model']],
+                    ['brand_id' => $brand->id, 'name' => $data['model']]
+                );
+                $detailData['model_id'] = $model->id;
+            }
+        }
+
+        ProductDetail::create($detailData);
+
+        if (! empty($data['phones'])) {
             foreach ($data['phones'] as $i => $phone) {
                 ProductPhone::create([
                     'product_id' => $product->id,
@@ -98,9 +114,9 @@ class UserProductSeeder extends Seeder
         }
 
         $imageSeed = Str::slug($data['name']);
-        $imageUrl = 'https://picsum.photos/seed/' . $imageSeed . '/800/800';
-        $dir = 'products/' . $product->id;
-        $path = $dir . '/main.jpg';
+        $imageUrl = 'https://picsum.photos/seed/'.$imageSeed.'/800/800';
+        $dir = 'products/'.$product->id;
+        $path = $dir.'/main.jpg';
 
         try {
             $imageContent = Http::timeout(10)->get($imageUrl)->body();

@@ -259,15 +259,6 @@ const addressData = profile.address || {}
 
 const initial = computed(() => (stored.name || '?').trim().charAt(0).toUpperCase())
 
-const firstName = ref(stored.first_name || storedNameParts[0] || '')
-const lastName = ref(stored.last_name || storedNameParts.slice(1).join(' ') || '')
-const phoneRaw = profile.phone || ''
-const matchedCountry = countries.find(c => phoneRaw.startsWith(c.dial))
-const phone = ref(matchedCountry ? phoneRaw.slice(matchedCountry.dial.length) : phoneRaw)
-const phoneCountryCode = ref(matchedCountry?.dial || '+855')
-const showCountryPicker = ref(false)
-const countrySearch = ref('')
-
 const countries = [
   { code: 'KH', name: 'Cambodia', flag: '\u{1F1F0}\u{1F1ED}', dial: '+855' },
   { code: 'US', name: 'United States', flag: '\u{1F1FA}\u{1F1F8}', dial: '+1' },
@@ -297,6 +288,15 @@ const countries = [
   { code: 'TR', name: 'Turkey', flag: '\u{1F1F9}\u{1F1F7}', dial: '+90' },
   { code: 'RU', name: 'Russia', flag: '\u{1F1F7}\u{1F1FA}', dial: '+7' },
 ]
+
+const firstName = ref(stored.first_name || storedNameParts[0] || '')
+const lastName = ref(stored.last_name || storedNameParts.slice(1).join(' ') || '')
+const phoneRaw = profile.phone || ''
+const matchedCountry = countries.find(c => phoneRaw.startsWith(c.dial))
+const phone = ref(matchedCountry ? phoneRaw.slice(matchedCountry.dial.length) : phoneRaw)
+const phoneCountryCode = ref(matchedCountry?.dial || '+855')
+const showCountryPicker = ref(false)
+const countrySearch = ref('')
 
 const selectedCountry = computed(() => {
   return countries.find(c => c.dial === phoneCountryCode.value) || countries[0]

@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ModelController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
@@ -75,3 +76,7 @@ Route::get('/notifications', [NotificationController::class, 'index'])->middlewa
 Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->middleware('auth:sanctum');
 Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->middleware('auth:sanctum');
 Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->middleware('auth:sanctum');
+
+// Favorites
+Route::get('/favorites', [FavoriteController::class, 'index'])->middleware('auth:sanctum');
+Route::post('/products/{product}/favorite', [FavoriteController::class, 'toggle'])->middleware('auth:sanctum');

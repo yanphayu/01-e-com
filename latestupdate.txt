@@ -1,5 +1,5 @@
 Objective
-- Build and iterate on a Laravel 13 + Vue 3 e-commerce app (TRINITY), adding features like comments, notifications via Laravel Reverb, navbar improvements, fixing bugs, and seeding realistic test data.
+- Build and iterate on a Laravel 13 + Vue 3 e-commerce app (TRINITY), adding features like favorites, comments, notifications via Laravel Reverb, navbar improvements, fixing bugs, and seeding realistic test data.
 Important Details
 - Project root: /home/yu/code/01-e-com/ (Laravel backend + Vite/Vue 3 frontend)
 - i18n supports en and kh (Khmer); all new UI strings need both translations
@@ -19,6 +19,13 @@ Important Details
 - migrate:fresh --seed was run, wiping all data; user yanphayu@gmail.com recreated without profile/address/images
 - Sanctum v4 does NOT need personal_access_clients table (only personal_access_tokens needed, which exists)
 - Seeder creates 10 users with Cambodian names, profiles, addresses, and 10 products each (100 products total) across all subcategories with picsum.photos images
+- Sanctum v4.3.3 with token-based (Bearer) auth, not SPA cookie auth
+- Reverb (WebSocket) not running yet; Echo connection errors must not trigger logout
+- User model uses hashed cast on password — never use Hash::make() with User::create
+- brands table unique constraint changed from (name) to (name, subcategory_id) so brand names can repeat across subcategories
+- model_attributes pivot table uses model_id (not product_model_id) — belongsToMany must specify foreign keys explicitly
+- Sanctum guard config changed from ['web'] to [] to fix switch-account bug
+- Public routes (e.g. products index) must use PersonalAccessToken::findToken() to resolve user from Bearer token for is_favorited
 Work State
 Completed
 - Seller mini profile card on ProductShowView (avatar, name, "Posted by")
@@ -53,47 +60,73 @@ Completed
 - Fixed SESSION_DOMAIN typo in .env: nullw → null
 - Database wiped and recreated via migrate:fresh (all migrations + seeders run including CategorySeeder, AttributeSeeder, BrandSeeder)
 - Created UserProductSeeder.php: 10 users with profiles/addresses, 100 products with real data across all subcategories
+- Subcategory → Brand hierarchy: brands table has subcategory_id FK
+- Brand → Model FK in product_details: brand_id/model_id replaces text columns
+- Model → Attribute many-to-many: model_attributes pivot table
+- BrandSeeder assigns 83 brands to subcategories; ModelAttributeSeeder assigns 161 model-attribute pivots
+- ProductCreateForm: brands load by subcategory, models load by brand, model attributes auto-populate
+- ProductEditView: brand_id/model_id changes, loads brands by subcategory on mount
+- ProductShowView: brand/model badges from detail.brand.name / detail.model.name
+- Switch account bug fixed: Sanctum guard changed from ['web'] to []; switchAccount made async
+- Reply notifications: CommentCreated notification also notifies parent comment author
+- Navbar auto-logout bug fixed: connectEcho() wrapped in its own try/catch so Reverb errors don't trigger logout
+- Notifications page fix: added missing getUnreadCount import (was causing silent ReferenceError)
+- Notification badge sync: custom event 'notifications-read' dispatched from NotificationsView, Navbar listens and refreshes count
+- Home page now uses ProductCard component instead of inline cards (so favorites heart shows)
+- Favorites feature backend: favorites table (user_id, product_id, unique), Favorite model, FavoriteController (index/toggle), is_favorited in product responses
+- Favorites feature frontend: heart icon on ProductCard + ProductShowView, FavoritesView page at /favorites, favorites.js service
+- Favorites heart icon uses site accent color (var(--accent) #2f9e6b) not red
+- Public product routes resolve user from Bearer token via PersonalAccessToken::findToken() for is_favorited
 Active
-- Seeding database with 10 users and 100 products — UserProductSeeder.php written but not yet run (need to add it to DatabaseSeeder and run migrate:fresh --seed)
+- None
 Blocked
 - Reverb server not started yet (php artisan reverb:start needed for real-time broadcast)
-- User profile/address/images data lost from migrate:fresh — needs re-setup
 Next Move
-1. Add UserProductSeeder call to DatabaseSeeder.php and run php artisan migrate:fresh --seed to populate all data
-2. Verify seeded users can login (all use password 12345678)
-3. Start Reverb server: cd backend && php artisan reverb:start
-4. Verify user profile after login (redirect to profile-setup since no profile exists for seeded users)
+1. Start Reverb server: cd backend && php artisan reverb:start
+2. Verify real-time notifications work with broadcast
 Relevant Files
 - frontend/src/services/http.js: Modified — added data.success === false throw check
 - backend/.env: Modified — fixed SESSION_DOMAIN=nullw to SESSION_DOMAIN=null; has Reverb config
 - database/seeders/UserProductSeeder.php: Created — 10 users + 100 products seeder
-- database/seeders/DatabaseSeeder.php: Needs update to call UserProductSeeder
-- frontend/src/views/ProductShowView.vue: Product detail with comments section
+- database/seeders/BrandSeeder.php: Created — 83 brands assigned to subcategories
+- database/seeders/ModelAttributeSeeder.php: Created — 161 model-attribute pivots
+- frontend/src/views/ProductShowView.vue: Product detail with comments section, favorite button, brand/model badges
 - frontend/src/components/CommentNode.vue: Recursive comment component
-- frontend/src/components/Navbar.vue: Navbar with Post button, user dropdown, switch account, notification bell + Echo listener
-- frontend/src/components/ProductCard.vue: Product card with posted date
-- frontend/src/views/HomeView.vue: Home page with inline cards and category tabs
+- frontend/src/components/Navbar.vue: Post button, user dropdown, switch account, notification bell + Echo listener, favorites link, listens for notifications-read event
+- frontend/src/components/ProductCard.vue: Product card with posted date, favorite heart icon (accent color)
+- frontend/src/views/HomeView.vue: Home page using ProductCard component with category tabs
 - frontend/src/views/ProductsView.vue: Products listing with category/subcategory tabs
+- frontend/src/views/FavoritesView.vue: Created — favorites list page with pagination
+- frontend/src/views/NotificationsView.vue: Notifications page, dispatches notifications-read event
 - frontend/src/components/auth/ProfileSetupForm.vue: Profile form with country code phone selector
 - frontend/src/components/auth/LoginForm.vue: Login form with error display (uses catch block to show error)
-- frontend/src/components/products/ProductCreateForm.vue: Product creation with phone fields + country codes
-- frontend/src/views/ProductEditView.vue: Product editing with phone fields + country codes
+- frontend/src/components/products/ProductCreateForm.vue: Product creation with phone fields + country codes, brand/model selection
+- frontend/src/views/ProductEditView.vue: Product editing with phone fields + country codes, brand/model selection
 - frontend/src/services/products.js: API service
+- frontend/src/services/favorites.js: Created — toggleFavorite, getFavorites API service
 - frontend/src/services/notifications.js: Notifications API service
 - frontend/src/services/echo.js: Laravel Echo/Reverb setup
 - frontend/src/services/auth.js: Auth API (loginUser, getUser, etc.)
-- frontend/src/router/index.js: Vue Router with auth guards
-- frontend/src/i18n/index.js: All EN + KH translations
+- frontend/src/router/index.js: Vue Router with auth guards, /favorites + /notifications routes
+- frontend/src/i18n/index.js: All EN + KH translations (including favorites keys)
 - backend/app/Http/Controllers/CommentController.php: Comment CRUD + notification dispatch
 - backend/app/Http/Controllers/NotificationController.php: Notification API endpoints
+- backend/app/Http/Controllers/FavoriteController.php: Created — index (paginated) + toggle
+- backend/app/Http/Controllers/ProductController.php: Modified — is_favorited in index/show via PersonalAccessToken::findToken()
 - backend/app/Http/Controllers/AuthController.php: Login/register/verify (line 136 for login)
-- backend/app/Models/User.php: User model with Notifiable, comments(), products()
-- backend/app/Models/Product.php: Product model (phones, comments)
+- backend/app/Models/User.php: User model with Notifiable, comments(), products(), favorites(), favoritedProducts()
+- backend/app/Models/Product.php: Product model (phones, comments, favoritedBy)
+- backend/app/Models/Favorite.php: Created — user_id, product_id
 - backend/app/Models/ProductPhone.php: Product phone model
 - backend/app/Models/ProductDetail.php: Product detail (brand, model, condition, province, khan, sangkat, lat/lng)
 - backend/app/Models/ProductImage.php: Product images
-- backend/app/Models/ProductModel.php: Product model brand reference
+- backend/app/Models/ProductModel.php: Product model brand reference, belongsToMany Attribute
+- backend/app/Models/Attribute.php: belongsToMany ProductModel
+- backend/app/Models/Brand.php: belongsTo Subcategory
+- backend/app/Models/Subcategory.php: hasMany Brand
 - backend/app/Notifications/CommentCreated.php: Notification class
-- backend/routes/api.php: All API routes
+- backend/routes/api.php: All API routes (including favorites toggle + index)
 - backend/routes/channels.php: Broadcast channel authorization
+- backend/config/sanctum.php: guard changed from ['web'] to []
+- backend/database/migrations/*_create_favorites_table.php: favorites(user_id, product_id, unique)
 - backend/storage/logs/laravel.log: Error logs

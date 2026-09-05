@@ -12,8 +12,9 @@ export function getAttributes() {
   return request('/attributes')
 }
 
-export function getBrands() {
-  return request('/brands')
+export function getBrands(subcategoryId) {
+  const qs = subcategoryId ? `?subcategory_id=${subcategoryId}` : ''
+  return request(`/brands${qs}`)
 }
 
 export function getModels(brandId) {

@@ -6,12 +6,13 @@ use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class ProductController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Product::with(['subcategory.category', 'images', 'productAttributes.attribute'])
+        $query = Product::with(['subcategory.category', 'images', 'productAttributes.attribute', 'detail.brand', 'detail.model'])
             ->where('is_active', true);
 
         if ($request->has('subcategory_id')) {
@@ -36,6 +37,20 @@ class ProductController extends Controller
 
         $products = $query->latest()->paginate(20);
 
+        $favoriteIds = [];
+        if ($request->bearerToken()) {
+            $token = PersonalAccessToken::findToken($request->bearerToken());
+            if ($token) {
+                $favoriteIds = $token->tokenable->favorites()->pluck('product_id')->toArray();
+            }
+        }
+
+        $products->getCollection()->transform(function ($product) use ($favoriteIds) {
+            $product->is_favorited = in_array($product->id, $favoriteIds);
+
+            return $product;
+        });
+
         return response()->json([
             'success' => true,
             'message' => 'Products retrieved successfully',
@@ -51,8 +66,8 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'details' => 'nullable|array',
-            'details.brand' => 'nullable|string|max:255',
-            'details.model' => 'nullable|string|max:255',
+            'details.brand_id' => 'nullable|exists:brands,id',
+            'details.model_id' => 'nullable|exists:product_models,id',
             'details.address' => 'nullable|string|max:255',
             'details.province' => 'nullable|string|max:255',
             'details.khan' => 'nullable|string|max:255',
@@ -121,7 +136,7 @@ class ProductController extends Controller
             }
         }
 
-        $product->load(['detail', 'images', 'productAttributes.attribute', 'subcategory.category', 'phones']);
+        $product->load(['detail.brand', 'detail.model', 'images', 'productAttributes.attribute', 'subcategory.category', 'phones']);
 
         return response()->json([
             'success' => true,
@@ -132,7 +147,16 @@ class ProductController extends Controller
 
     public function show(Product $product): JsonResponse
     {
-        $product->load(['user.profile', 'subcategory.category', 'detail', 'images', 'productAttributes.attribute', 'phones']);
+        $product->load(['user.profile', 'subcategory.category', 'detail.brand', 'detail.model', 'images', 'productAttributes.attribute', 'phones']);
+
+        $isFavorited = false;
+        if (request()->bearerToken()) {
+            $token = PersonalAccessToken::findToken(request()->bearerToken());
+            if ($token) {
+                $isFavorited = $token->tokenable->favorites()->where('product_id', $product->id)->exists();
+            }
+        }
+        $product->is_favorited = $isFavorited;
 
         return response()->json([
             'success' => true,
@@ -157,8 +181,8 @@ class ProductController extends Controller
             'price' => 'sometimes|numeric|min:0',
             'is_active' => 'boolean',
             'details' => 'nullable|array',
-            'details.brand' => 'nullable|string|max:255',
-            'details.model' => 'nullable|string|max:255',
+            'details.brand_id' => 'nullable|exists:brands,id',
+            'details.model_id' => 'nullable|exists:product_models,id',
             'details.address' => 'nullable|string|max:255',
             'details.province' => 'nullable|string|max:255',
             'details.khan' => 'nullable|string|max:255',
@@ -205,7 +229,7 @@ class ProductController extends Controller
             }
         }
 
-        $product->load(['detail', 'images', 'productAttributes.attribute', 'subcategory.category', 'phones']);
+        $product->load(['detail.brand', 'detail.model', 'images', 'productAttributes.attribute', 'subcategory.category', 'phones']);
 
         return response()->json([
             'success' => true,

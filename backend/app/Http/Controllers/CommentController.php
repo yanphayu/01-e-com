@@ -61,6 +61,17 @@ class CommentController extends Controller
             }
         }
 
+        if ($comment->parent_id) {
+            $parentComment = Comment::find($comment->parent_id);
+            if ($parentComment && $parentComment->user_id !== $request->user()->id && $parentComment->user_id !== $product->user_id) {
+                try {
+                    $parentComment->user->notify(new CommentCreated($comment));
+                } catch (\Exception $e) {
+                    // Broadcast may fail if Reverb is not running — notification is still saved to DB
+                }
+            }
+        }
+
         return response()->json([
             'success' => true,
             'data' => $comment,
