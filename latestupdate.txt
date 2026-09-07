@@ -1,8 +1,8 @@
 Objective
-- Build and iterate on a Laravel 13 + Vue 3 e-commerce app (TRINITY), adding features like favorites, comments, notifications via Laravel Reverb, navbar improvements, fixing bugs, and seeding realistic test data.
+- Build and iterate on a Laravel 13 + Vue 3 e-commerce app (TRINITY), adding features like favorites, comments, notifications via Laravel Reverb, admin dashboard, and seeding realistic test data.
 Important Details
-- Project root: /home/yu/code/01-e-com/ (Laravel backend + Vite/Vue 3 frontend)
-- i18n supports en and kh (Khmer); all new UI strings need both translations
+- Project root: /home/yu/code/01-e-com/ (Laravel backend + Vue 3 frontend + Admin frontend)
+- i18n supports en and kh (Khmer); all new UI strings need both translations (admin frontend is English only)
 - Country codes list: 27 countries, Cambodia (+855) is default reference
 - Product phones: stored in product_phones table (1 product → 0..N phones)
 - Country code selector: phone input disabled until country selected; full number stored as +code+number
@@ -26,6 +26,10 @@ Important Details
 - model_attributes pivot table uses model_id (not product_model_id) — belongsToMany must specify foreign keys explicitly
 - Sanctum guard config changed from ['web'] to [] to fix switch-account bug
 - Public routes (e.g. products index) must use PersonalAccessToken::findToken() to resolve user from Bearer token for is_favorited
+- Admin dashboard is a separate Vue 3 frontend (admin-frontend/) running on port 3001
+- Admin auth: uses same backend login; checks is_admin flag; token stored as admin_token in localStorage
+- Admin images (products, avatars) need backend URL prefix: http://localhost:8000/storage/{path}
+- Product view links in admin point to main frontend: http://localhost:5173/products/{id}
 Work State
 Completed
 - Seller mini profile card on ProductShowView (avatar, name, "Posted by")
@@ -77,6 +81,21 @@ Completed
 - Favorites feature frontend: heart icon on ProductCard + ProductShowView, FavoritesView page at /favorites, favorites.js service
 - Favorites heart icon uses site accent color (var(--accent) #2f9e6b) not red
 - Public product routes resolve user from Bearer token via PersonalAccessToken::findToken() for is_favorited
+- Admin Dashboard: separate Vue 3 frontend (admin-frontend/) on port 3001
+- Admin backend: is_admin column on users table, AdminMiddleware, admin API routes under /api/admin/
+- AdminSeeder: creates admin@trinity.com / password with is_admin=true
+- Admin sidebar layout: dark sidebar with Dashboard, Users, Products, Categories, Subcategories, Brands, Models, Attributes
+- Admin Dashboard view: stats (users, categories, comments) + recent users list
+- Admin Users view: list, search, toggle admin, delete, paginated
+- Admin User Detail view: user info + full products table with image, name, price, status toggle, view link, delete
+- Admin Products view: list, search, filter by status, toggle active, delete, paginated
+- Admin Categories view: list, create/edit modals, toggle active, delete
+- Admin Subcategories view: list, create/edit with category select + has_brand/has_model checkboxes, toggle active, delete
+- Admin Brands view: list, create/edit with subcategory select, delete
+- Admin Models view: list, create/edit with brand select + attribute checkbox picker, delete
+- Admin Attributes view: list, create/edit, delete
+- Admin image handling: relative paths prefixed with http://localhost:8000/storage/
+- Admin product view links: point to main frontend http://localhost:5173/products/{id}
 Active
 - None
 Blocked
@@ -90,6 +109,7 @@ Relevant Files
 - database/seeders/UserProductSeeder.php: Created — 10 users + 100 products seeder
 - database/seeders/BrandSeeder.php: Created — 83 brands assigned to subcategories
 - database/seeders/ModelAttributeSeeder.php: Created — 161 model-attribute pivots
+- database/seeders/AdminSeeder.php: Created — admin user (admin@trinity.com / password)
 - frontend/src/views/ProductShowView.vue: Product detail with comments section, favorite button, brand/model badges
 - frontend/src/components/CommentNode.vue: Recursive comment component
 - frontend/src/components/Navbar.vue: Post button, user dropdown, switch account, notification bell + Echo listener, favorites link, listens for notifications-read event
@@ -125,8 +145,35 @@ Relevant Files
 - backend/app/Models/Brand.php: belongsTo Subcategory
 - backend/app/Models/Subcategory.php: hasMany Brand
 - backend/app/Notifications/CommentCreated.php: Notification class
-- backend/routes/api.php: All API routes (including favorites toggle + index)
+- backend/routes/api.php: All API routes (including favorites toggle + index, admin routes)
 - backend/routes/channels.php: Broadcast channel authorization
 - backend/config/sanctum.php: guard changed from ['web'] to []
 - backend/database/migrations/*_create_favorites_table.php: favorites(user_id, product_id, unique)
+- backend/database/migrations/*_add_is_admin_to_users_table.php: is_admin boolean column
+- backend/app/Http/Middleware/AdminMiddleware.php: Admin guard (checks is_admin flag)
+- backend/bootstrap/app.php: Registered admin middleware alias
+- backend/app/Http/Controllers/Admin/DashboardController.php: Admin dashboard stats
+- backend/app/Http/Controllers/Admin/UserController.php: Admin user management
+- backend/app/Http/Controllers/Admin/ProductController.php: Admin product management
+- backend/app/Http/Controllers/Admin/CategoryController.php: Admin category CRUD
+- backend/app/Http/Controllers/Admin/SubcategoryController.php: Admin subcategory CRUD
+- backend/app/Http/Controllers/Admin/BrandController.php: Admin brand CRUD
+- backend/app/Http/Controllers/Admin/ModelController.php: Admin model CRUD + attribute sync
+- backend/app/Http/Controllers/Admin/AttributeController.php: Admin attribute CRUD
+- admin-frontend/: Separate Vue 3 + Vite app on port 3001
+- admin-frontend/src/services/http.js: HTTP client with admin_token
+- admin-frontend/src/services/auth.js: Login/getUser/logout
+- admin-frontend/src/services/admin.js: All admin API service functions
+- admin-frontend/src/router/index.js: Admin routes + auth guard
+- admin-frontend/src/views/LoginView.vue: Admin login with is_admin check
+- admin-frontend/src/views/AdminLayout.vue: Dark sidebar layout
+- admin-frontend/src/views/DashboardView.vue: Stats + recent users
+- admin-frontend/src/views/UsersView.vue: User list with search, toggle admin, delete
+- admin-frontend/src/views/UserDetailView.vue: User detail + products table with management
+- admin-frontend/src/views/ProductsView.vue: Product list with search, filter, toggle, delete
+- admin-frontend/src/views/CategoriesView.vue: Category CRUD with modals
+- admin-frontend/src/views/SubcategoriesView.vue: Subcategory CRUD with category select
+- admin-frontend/src/views/BrandsView.vue: Brand CRUD with subcategory select
+- admin-frontend/src/views/ModelsView.vue: Model CRUD with brand select + attribute picker
+- admin-frontend/src/views/AttributesView.vue: Attribute CRUD
 - backend/storage/logs/laravel.log: Error logs

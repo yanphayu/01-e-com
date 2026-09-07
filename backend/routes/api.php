@@ -1,5 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\AttributeController as AdminAttributeController;
+use App\Http\Controllers\Admin\BrandController as AdminBrandController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\ModelController as AdminModelController;
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\SubcategoryController as AdminSubcategoryController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BrandController;
@@ -80,3 +88,53 @@ Route::post('/notifications/read-all', [NotificationController::class, 'markAllA
 // Favorites
 Route::get('/favorites', [FavoriteController::class, 'index'])->middleware('auth:sanctum');
 Route::post('/products/{product}/favorite', [FavoriteController::class, 'toggle'])->middleware('auth:sanctum');
+
+// Admin routes
+Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::get('/dashboard', [AdminDashboardController::class, 'index']);
+
+    // Admin Users
+    Route::get('/users', [AdminUserController::class, 'index']);
+    Route::get('/users/{user}', [AdminUserController::class, 'show']);
+    Route::put('/users/{user}', [AdminUserController::class, 'update']);
+    Route::delete('/users/{user}', [AdminUserController::class, 'destroy']);
+    Route::post('/users/{user}/toggle-admin', [AdminUserController::class, 'toggleAdmin']);
+
+    // Admin Products
+    Route::get('/products', [AdminProductController::class, 'index']);
+    Route::get('/products/{product}', [AdminProductController::class, 'show']);
+    Route::post('/products/{product}/toggle-active', [AdminProductController::class, 'toggleActive']);
+    Route::delete('/products/{product}', [AdminProductController::class, 'destroy']);
+
+    // Admin Categories
+    Route::get('/categories', [AdminCategoryController::class, 'index']);
+    Route::post('/categories', [AdminCategoryController::class, 'store']);
+    Route::put('/categories/{category}', [AdminCategoryController::class, 'update']);
+    Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy']);
+    Route::post('/categories/{category}/toggle-active', [AdminCategoryController::class, 'toggleActive']);
+
+    // Admin Subcategories
+    Route::get('/subcategories', [AdminSubcategoryController::class, 'index']);
+    Route::post('/subcategories', [AdminSubcategoryController::class, 'store']);
+    Route::put('/subcategories/{subcategory}', [AdminSubcategoryController::class, 'update']);
+    Route::delete('/subcategories/{subcategory}', [AdminSubcategoryController::class, 'destroy']);
+    Route::post('/subcategories/{subcategory}/toggle-active', [AdminSubcategoryController::class, 'toggleActive']);
+
+    // Admin Brands
+    Route::get('/brands', [AdminBrandController::class, 'index']);
+    Route::post('/brands', [AdminBrandController::class, 'store']);
+    Route::put('/brands/{brand}', [AdminBrandController::class, 'update']);
+    Route::delete('/brands/{brand}', [AdminBrandController::class, 'destroy']);
+
+    // Admin Models
+    Route::get('/models', [AdminModelController::class, 'index']);
+    Route::post('/models', [AdminModelController::class, 'store']);
+    Route::put('/models/{model}', [AdminModelController::class, 'update']);
+    Route::delete('/models/{model}', [AdminModelController::class, 'destroy']);
+
+    // Admin Attributes
+    Route::get('/attributes', [AdminAttributeController::class, 'index']);
+    Route::post('/attributes', [AdminAttributeController::class, 'store']);
+    Route::put('/attributes/{attribute}', [AdminAttributeController::class, 'update']);
+    Route::delete('/attributes/{attribute}', [AdminAttributeController::class, 'destroy']);
+});
