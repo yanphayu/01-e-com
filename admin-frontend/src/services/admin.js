@@ -41,6 +41,14 @@ export function toggleProductActive(id) {
   return request(`/admin/products/${id}/toggle-active`, { method: 'POST' })
 }
 
+export function approveProduct(id) {
+  return request(`/admin/products/${id}/approve`, { method: 'POST' })
+}
+
+export function rejectProduct(id) {
+  return request(`/admin/products/${id}/reject`, { method: 'POST' })
+}
+
 export function deleteProduct(id) {
   return request(`/admin/products/${id}`, { method: 'DELETE' })
 }

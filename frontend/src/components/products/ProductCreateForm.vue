@@ -738,7 +738,7 @@ async function submitProduct() {
     success.value = t('product.postedSuccess')
 
     setTimeout(() => {
-      router.push(`/products/${result.data.id}`)
+      router.push('/')
     }, 1500)
   } catch (err) {
     error.value = err.message

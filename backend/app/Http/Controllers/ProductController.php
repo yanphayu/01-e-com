@@ -13,7 +13,8 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Product::with(['subcategory.category', 'images', 'productAttributes.attribute', 'detail.brand', 'detail.model'])
-            ->where('is_active', true);
+            ->where('is_active', true)
+            ->where('status', 'approved');
 
         if ($request->has('subcategory_id')) {
             $query->where('subcategory_id', $request->subcategory_id);
@@ -99,6 +100,7 @@ class ProductController extends Controller
             'slug' => $slug,
             'description' => $validated['description'] ?? null,
             'price' => $validated['price'],
+            'status' => $request->user()->is_admin ? 'approved' : 'pending',
         ]);
 
         if (isset($validated['details'])) {
@@ -145,13 +147,28 @@ class ProductController extends Controller
         ], 201);
     }
 
-    public function show(Product $product): JsonResponse
+    public function show(Request $request, Product $product): JsonResponse
     {
+        $isOwner = false;
+        if ($request->bearerToken()) {
+            $token = PersonalAccessToken::findToken($request->bearerToken());
+            $isOwner = $token && $token->tokenable_id === $product->user_id;
+        }
+
+        if (! $product->is_active || $product->status !== 'approved') {
+            if (! $isOwner) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found.',
+                ], 404);
+            }
+        }
+
         $product->load(['user.profile', 'subcategory.category', 'detail.brand', 'detail.model', 'images', 'productAttributes.attribute', 'phones']);
 
         $isFavorited = false;
-        if (request()->bearerToken()) {
-            $token = PersonalAccessToken::findToken(request()->bearerToken());
+        if ($request->bearerToken()) {
+            $token = PersonalAccessToken::findToken($request->bearerToken());
             if ($token) {
                 $isFavorited = $token->tokenable->favorites()->where('product_id', $product->id)->exists();
             }

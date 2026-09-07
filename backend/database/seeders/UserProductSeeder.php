@@ -72,6 +72,7 @@ class UserProductSeeder extends Seeder
             'description' => $data['description'],
             'price' => $data['price'],
             'is_active' => true,
+            'status' => 'approved',
         ]);
 
         $detailData = [

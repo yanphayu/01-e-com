@@ -24,6 +24,7 @@ class SearchController extends Controller
 
         $products = Product::with(['images', 'subcategory.category'])
             ->where('is_active', true)
+            ->where('status', 'approved')
             ->where(fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('description', 'like', "%{$search}%"))
             ->limit(5)
             ->get()

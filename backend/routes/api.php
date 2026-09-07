@@ -104,6 +104,8 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::get('/products', [AdminProductController::class, 'index']);
     Route::get('/products/{product}', [AdminProductController::class, 'show']);
     Route::post('/products/{product}/toggle-active', [AdminProductController::class, 'toggleActive']);
+    Route::post('/products/{product}/approve', [AdminProductController::class, 'approve']);
+    Route::post('/products/{product}/reject', [AdminProductController::class, 'reject']);
     Route::delete('/products/{product}', [AdminProductController::class, 'destroy']);
 
     // Admin Categories

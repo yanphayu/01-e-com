@@ -3,10 +3,11 @@
     <div class="page-header">
       <h1 class="page-title">Products</h1>
       <div class="page-actions">
-        <select v-model="filterActive" class="input filter-select" @change="fetchProducts">
+        <select v-model="filterStatus" class="input filter-select" @change="fetchProducts">
           <option value="">All Status</option>
-          <option value="1">Active</option>
-          <option value="0">Inactive</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
         </select>
         <input v-model="search" type="text" class="input search-input" placeholder="Search products..." @input="debouncedFetch" />
       </div>
@@ -43,14 +44,14 @@
               <td>{{ p.subcategory?.category?.name || '-' }}</td>
               <td>{{ p.user?.name || '-' }}</td>
               <td>
-                <button class="badge" :class="p.is_active ? 'badge-success' : 'badge-warning'" @click="handleToggleActive(p)">
-                  {{ p.is_active ? 'Active' : 'Inactive' }}
-                </button>
+                <span class="badge" :class="statusBadgeClass(p.status)">{{ statusLabel(p.status) }}</span>
               </td>
               <td>{{ formatDate(p.created_at) }}</td>
               <td>
                 <div class="action-btns">
-                  <a :href="`http://localhost:5173/products/${p.id}`" target="_blank" class="btn btn-ghost btn-sm">View</a>
+                  <RouterLink :to="`/products/${p.id}`" class="btn btn-ghost btn-sm">View</RouterLink>
+                  <button v-if="p.status !== 'approved'" class="btn btn-ghost btn-sm" @click="handleApprove(p)">Approve</button>
+                  <button v-if="p.status !== 'rejected'" class="btn btn-ghost btn-sm danger-text" @click="handleReject(p)">Reject</button>
                   <button class="btn btn-ghost btn-sm danger-text" @click="handleDelete(p)">Delete</button>
                 </div>
               </td>
@@ -73,12 +74,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getProducts, toggleProductActive, deleteProduct } from '../services/admin'
+import { getProducts, approveProduct, rejectProduct, deleteProduct } from '../services/admin'
 
 const loading = ref(true)
 const products = ref([])
 const search = ref('')
-const filterActive = ref('')
+const filterStatus = ref('')
 const currentPage = ref(1)
 const lastPage = ref(1)
 let searchTimer = null
@@ -98,7 +99,7 @@ async function fetchProducts() {
   try {
     const params = { page: currentPage.value }
     if (search.value) params.search = search.value
-    if (filterActive.value !== '') params.is_active = filterActive.value
+    if (filterStatus.value !== '') params.status = filterStatus.value
     const res = await getProducts(params)
     products.value = res.data.data
     currentPage.value = res.data.current_page
@@ -121,13 +122,30 @@ function goToPage(page) {
   fetchProducts()
 }
 
-async function handleToggleActive(p) {
+async function handleApprove(p) {
   try {
-    const res = await toggleProductActive(p.id)
-    p.is_active = res.data.is_active
+    const res = await approveProduct(p.id)
+    p.status = res.data.status
   } catch (e) {
     alert(e.message)
   }
+}
+
+async function handleReject(p) {
+  try {
+    const res = await rejectProduct(p.id)
+    p.status = res.data.status
+  } catch (e) {
+    alert(e.message)
+  }
+}
+
+function statusLabel(status) {
+  return { pending: 'Pending', approved: 'Approved', rejected: 'Rejected' }[status] || status || '-'
+}
+
+function statusBadgeClass(status) {
+  return { pending: 'badge-warning', approved: 'badge-success', rejected: 'badge-danger' }[status] || 'badge-neutral'
 }
 
 async function handleDelete(p) {
