@@ -42,31 +42,20 @@
     </div>
 
     <!-- Products grid -->
-    <div v-if="loading" class="loading">{{ t('product.loading') }}</div>
-    <div v-else-if="products.length === 0" class="empty">{{ t('product.noProducts') }}</div>
-    <div v-else class="products-grid">
+    <div v-if="products.length === 0 && !loading" class="empty">{{ t('product.noProducts') }}</div>
+    <div class="products-grid">
       <ProductCard v-for="product in products" :key="product.id" :product="product" />
     </div>
 
-    <!-- Pagination -->
-    <div v-if="totalPages > 1" class="pagination">
-      <button
-        class="btn btn-ghost"
-        :disabled="currentPage <= 1"
-        @click="goToPage(currentPage - 1)"
-      >{{ t('product.back') }}</button>
-      <span class="page-info">{{ currentPage }} {{ t('product.of') }} {{ totalPages }}</span>
-      <button
-        class="btn btn-ghost"
-        :disabled="currentPage >= totalPages"
-        @click="goToPage(currentPage + 1)"
-      >{{ t('product.next') }}</button>
+    <!-- Infinite scroll sentinel -->
+    <div ref="sentinel" class="load-more">
+      <div v-if="loadingMore" class="spinner"></div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { t } from '../i18n'
 import { getCategories, getProducts } from '../services/products'
@@ -78,8 +67,11 @@ const router = useRouter()
 const categories = ref([])
 const products = ref([])
 const loading = ref(true)
+const loadingMore = ref(false)
 const currentPage = ref(1)
 const totalPages = ref(1)
+const sentinel = ref(null)
+let observer = null
 
 const filters = reactive({
   category_id: route.query.category_id || '',
@@ -131,8 +123,9 @@ function updateUrl() {
   router.replace({ query })
 }
 
-async function loadProducts(page = 1) {
-  loading.value = true
+async function loadProducts(page = 1, append = false) {
+  if (append) loadingMore.value = true
+  else loading.value = true
   try {
     const params = { page }
     if (filters.category_id) params.category_id = filters.category_id
@@ -140,19 +133,38 @@ async function loadProducts(page = 1) {
     if (filters.q) params.q = filters.q
 
     const data = await getProducts(params)
-    products.value = data.data?.data || []
+    const items = data.data?.data || []
+    products.value = append ? [...products.value, ...items] : items
     currentPage.value = data.data?.current_page || 1
     totalPages.value = data.data?.last_page || 1
   } catch {
-    products.value = []
+    if (!append) products.value = []
   } finally {
     loading.value = false
+    loadingMore.value = false
   }
 }
 
-function goToPage(page) {
-  loadProducts(page)
+async function loadMore() {
+  if (loading.value || loadingMore.value || currentPage.value >= totalPages.value) return
+  await loadProducts(currentPage.value + 1, true)
 }
+
+function setupObserver() {
+  if (!sentinel.value || !('IntersectionObserver' in window)) return
+  observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) loadMore()
+  }, { rootMargin: '300px' })
+  observer.observe(sentinel.value)
+}
+
+onMounted(() => {
+  setupObserver()
+})
+
+onBeforeUnmount(() => {
+  if (observer) observer.disconnect()
+})
 </script>
 
 <style scoped>
@@ -263,17 +275,24 @@ function goToPage(page) {
   margin-top: 1.5rem;
 }
 
-.pagination {
+.load-more {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  margin-top: 2rem;
+  padding: 2rem 0 0.5rem;
 }
 
-.page-info {
-  font-size: 0.9rem;
-  color: var(--text-muted);
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .loading, .empty {

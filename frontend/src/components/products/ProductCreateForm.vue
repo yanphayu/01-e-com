@@ -144,39 +144,7 @@
         <div class="field full">
           <label>{{ t('product.phoneNumbers') }}</label>
           <div v-for="(phone, i) in form.phones" :key="i" class="phone-row">
-            <div class="country-select-wrap">
-              <button type="button" class="country-select-btn" :class="{ placeholder: !phone.code }" @click="toggleCountryPicker(i)">
-                <span v-if="phone.code" class="country-flag">{{ getCountryByCode(phone.code)?.flag }}</span>
-                <span class="country-dial">{{ phone.code ? getCountryByCode(phone.code)?.dial : t('product.selectCountry') }}</span>
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </button>
-              <div v-if="openCountryPicker === i" class="country-picker-dropdown">
-                <input
-                  v-model="countrySearch"
-                  type="text"
-                  class="country-search"
-                  :placeholder="t('auth.searchCountry')"
-                  @click.stop
-                />
-                <div class="country-list">
-                  <button
-                    v-for="c in filteredCountries"
-                    :key="c.code"
-                    type="button"
-                    class="country-option"
-                    :class="{ active: c.code === phone.code }"
-                    @click.stop="selectCountry(i, c)"
-                  >
-                    <span class="country-flag">{{ c.flag }}</span>
-                    <span class="country-name">{{ c.name }}</span>
-                    <span class="country-dial">{{ c.dial }}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-            <input v-model="form.phones[i].number" class="input phone-input" :placeholder="t('product.phonePlaceholder')" type="tel" :disabled="!phone.code" />
+            <input v-model="form.phones[i]" class="input" :placeholder="t('product.phonePlaceholder')" type="tel" />
             <button type="button" v-if="form.phones.length > 1" class="remove-btn" @click="form.phones.splice(i, 1)">✕</button>
           </div>
           <button type="button" class="add-btn" @click="addPhone">+ {{ t('product.addPhone') }}</button>
@@ -336,83 +304,16 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { t, getLocale } from '../../i18n'
 import { getCategories, getAttributes, getBrands, getModels, createProduct } from '../../services/products'
 
 const router = useRouter()
 
-const countries = [
-  { code: 'KH', name: 'Cambodia', flag: '\u{1F1F0}\u{1F1ED}', dial: '+855' },
-  { code: 'US', name: 'United States', flag: '\u{1F1FA}\u{1F1F8}', dial: '+1' },
-  { code: 'GB', name: 'United Kingdom', flag: '\u{1F1EC}\u{1F1E7}', dial: '+44' },
-  { code: 'TH', name: 'Thailand', flag: '\u{1F1F9}\u{1F1ED}', dial: '+66' },
-  { code: 'VN', name: 'Vietnam', flag: '\u{1F1FB}\u{1F1F3}', dial: '+84' },
-  { code: 'LA', name: 'Laos', flag: '\u{1F1F1}\u{1F1E6}', dial: '+856' },
-  { code: 'MY', name: 'Malaysia', flag: '\u{1F1F2}\u{1F1FE}', dial: '+60' },
-  { code: 'SG', name: 'Singapore', flag: '\u{1F1F8}\u{1F1EC}', dial: '+65' },
-  { code: 'PH', name: 'Philippines', flag: '\u{1F1F5}\u{1F1ED}', dial: '+63' },
-  { code: 'ID', name: 'Indonesia', flag: '\u{1F1EE}\u{1F1E9}', dial: '+62' },
-  { code: 'JP', name: 'Japan', flag: '\u{1F1EF}\u{1F1F5}', dial: '+81' },
-  { code: 'KR', name: 'South Korea', flag: '\u{1F1F0}\u{1F1F7}', dial: '+82' },
-  { code: 'CN', name: 'China', flag: '\u{1F1E8}\u{1F1F3}', dial: '+86' },
-  { code: 'IN', name: 'India', flag: '\u{1F1EE}\u{1F1F3}', dial: '+91' },
-  { code: 'AU', name: 'Australia', flag: '\u{1F1E6}\u{1F1FA}', dial: '+61' },
-  { code: 'FR', name: 'France', flag: '\u{1F1EB}\u{1F1F7}', dial: '+33' },
-  { code: 'DE', name: 'Germany', flag: '\u{1F1E9}\u{1F1EA}', dial: '+49' },
-  { code: 'ES', name: 'Spain', flag: '\u{1F1EA}\u{1F1F8}', dial: '+34' },
-  { code: 'IT', name: 'Italy', flag: '\u{1F1EE}\u{1F1F9}', dial: '+39' },
-  { code: 'BR', name: 'Brazil', flag: '\u{1F1E7}\u{1F1F7}', dial: '+55' },
-  { code: 'CA', name: 'Canada', flag: '\u{1F1E8}\u{1F1E6}', dial: '+1' },
-  { code: 'NZ', name: 'New Zealand', flag: '\u{1F1F3}\u{1F1FF}', dial: '+64' },
-  { code: 'ZA', name: 'South Africa', flag: '\u{1F1FF}\u{1F1E6}', dial: '+27' },
-  { code: 'AE', name: 'UAE', flag: '\u{1F1E6}\u{1F1EA}', dial: '+971' },
-  { code: 'SA', name: 'Saudi Arabia', flag: '\u{1F1F8}\u{1F1E6}', dial: '+966' },
-  { code: 'TR', name: 'Turkey', flag: '\u{1F1F9}\u{1F1F7}', dial: '+90' },
-  { code: 'RU', name: 'Russia', flag: '\u{1F1F7}\u{1F1FA}', dial: '+7' },
-]
-
-const openCountryPicker = ref(null)
-const countrySearch = ref('')
-
-const filteredCountries = computed(() => {
-  if (!countrySearch.value) return countries
-  const q = countrySearch.value.toLowerCase()
-  return countries.filter(c => c.name.toLowerCase().includes(q) || c.dial.includes(q) || c.code.toLowerCase().includes(q))
-})
-
-function getCountryByCode(code) {
-  return countries.find(c => c.code === code) || countries[0]
-}
-
-function toggleCountryPicker(i) {
-  openCountryPicker.value = openCountryPicker.value === i ? null : i
-  countrySearch.value = ''
-}
-
-function selectCountry(i, c) {
-  form.phones[i].code = c.code
-  openCountryPicker.value = null
-  countrySearch.value = ''
-}
-
 function addPhone() {
-  form.phones.push({ code: null, number: '' })
+  form.phones.push('')
 }
-
-function closeCountryPicker(e) {
-  if (!e.target.closest('.country-select-wrap')) {
-    openCountryPicker.value = null
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('click', closeCountryPicker)
-})
-onBeforeUnmount(() => {
-  document.removeEventListener('click', closeCountryPicker)
-})
 
 const steps = computed(() => [
   { key: 'category', label: t('product.stepCategory') },
@@ -446,7 +347,7 @@ const form = reactive({
   name: '',
   description: '',
   price: '',
-  phones: [{ code: null, number: '' }],
+  phones: [''],
   details: {
     condition: 'new',
     brand_id: null,
@@ -721,8 +622,8 @@ async function submitProduct() {
     if (form.details.latitude) fd.append('details[latitude]', form.details.latitude)
     if (form.details.longitude) fd.append('details[longitude]', form.details.longitude)
 
-    form.phones.filter(p => p.number.trim()).forEach((phone, i) => {
-      fd.append(`phones[${i}]`, `${phone.code}${phone.number.trim()}`)
+    form.phones.filter(p => p.trim()).forEach((phone, i) => {
+      fd.append(`phones[${i}]`, phone.trim())
     })
 
     activeAttributes.value.forEach((attr, i) => {
@@ -984,13 +885,8 @@ select.input {
   align-items: center;
 }
 
-.phone-row .phone-input {
+.phone-row .input {
   flex: 1;
-}
-
-.phone-row .phone-input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .phone-row .remove-btn {
@@ -1010,111 +906,6 @@ select.input {
 
 .phone-row .remove-btn:hover {
   background: var(--danger-soft);
-}
-
-.country-select-wrap {
-  position: relative;
-}
-
-.country-select-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.6rem 0.5rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 0.85rem;
-  color: var(--text);
-  transition: border-color 0.15s;
-}
-
-.country-select-btn:hover {
-  border-color: var(--border-strong);
-}
-
-.country-select-btn.placeholder {
-  color: var(--text-muted);
-  font-style: italic;
-}
-
-.country-flag {
-  font-size: 1rem;
-}
-
-.country-dial {
-  font-weight: 500;
-  font-size: 0.82rem;
-}
-
-.country-picker-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 100;
-  width: 240px;
-  max-height: 260px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
-}
-
-.country-search {
-  width: 100%;
-  padding: 0.5rem 0.65rem;
-  border: none;
-  border-bottom: 1px solid var(--border);
-  font: inherit;
-  font-size: 0.82rem;
-  background: var(--surface);
-  outline: none;
-  color: var(--text);
-}
-
-.country-search::placeholder {
-  color: var(--text-muted);
-}
-
-.country-list {
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.country-option {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  width: 100%;
-  padding: 0.45rem 0.65rem;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.82rem;
-  color: var(--text);
-  text-align: left;
-  transition: background 0.1s;
-}
-
-.country-option:hover {
-  background: var(--surface-2);
-}
-
-.country-option.active {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.country-option .country-name {
-  flex: 1;
-}
-
-.country-option .country-dial {
-  color: var(--text-muted);
-  font-size: 0.78rem;
 }
 
 /* Upload zone */

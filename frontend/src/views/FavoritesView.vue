@@ -2,72 +2,68 @@
   <div class="favorites-page container">
     <h1 class="page-title">{{ t('nav.favorites') }}</h1>
 
-    <div v-if="loading" class="loading">{{ t('product.loading') }}</div>
+    <div v-if="products.length === 0 && !loading" class="empty">
+      {{ t('product.noFavorites') }}
+    </div>
 
-    <template v-else>
-      <div v-if="products.length === 0" class="empty">
-        {{ t('product.noFavorites') }}
-      </div>
+    <div v-if="products.length" class="products-grid">
+      <ProductCard v-for="product in products" :key="product.id" :product="product" />
+    </div>
 
-      <div v-else class="products-grid">
-        <ProductCard v-for="product in products" :key="product.id" :product="product" />
-      </div>
-
-      <div v-if="lastPage > 1" class="pagination">
-        <button
-          class="page-btn"
-          :disabled="currentPage <= 1"
-          @click="goPage(currentPage - 1)"
-        >←</button>
-        <span class="page-info">{{ currentPage }} / {{ lastPage }}</span>
-        <button
-          class="page-btn"
-          :disabled="currentPage >= lastPage"
-          @click="goPage(currentPage + 1)"
-        >→</button>
-      </div>
-    </template>
+    <div ref="sentinel" class="load-more">
+      <div v-if="loadingMore" class="spinner"></div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { t } from '../i18n'
 import { getFavorites } from '../services/favorites'
 import ProductCard from '../components/ProductCard.vue'
 
-const route = useRoute()
-const router = useRouter()
-
 const products = ref([])
 const loading = ref(true)
+const loadingMore = ref(false)
 const currentPage = ref(1)
 const lastPage = ref(1)
+const sentinel = ref(null)
+let observer = null
 
-async function loadFavorites(page = 1) {
-  loading.value = true
+async function loadFavorites(page = 1, append = false) {
+  if (append) loadingMore.value = true
+  else loading.value = true
   try {
     const res = await getFavorites({ page })
     const paginated = res.data
-    products.value = paginated.data || []
+    const items = paginated.data || []
+    products.value = append ? [...products.value, ...items] : items
     currentPage.value = paginated.current_page
     lastPage.value = paginated.last_page
   } catch {
-    products.value = []
+    if (!append) products.value = []
   } finally {
     loading.value = false
+    loadingMore.value = false
   }
 }
 
-function goPage(page) {
-  router.push({ query: { page } })
-  loadFavorites(page)
+async function loadMore() {
+  if (loading.value || loadingMore.value || currentPage.value >= lastPage.value) return
+  await loadFavorites(currentPage.value + 1, true)
 }
 
-onMounted(() => {
-  const page = parseInt(route.query.page) || 1
-  loadFavorites(page)
+function setupObserver() {
+  if (!sentinel.value || !('IntersectionObserver' in window)) return
+  observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) loadMore()
+  }, { rootMargin: '300px' })
+  observer.observe(sentinel.value)
+}
+
+onMounted(async () => {
+  setupObserver()
+  await loadFavorites(1)
 })
 </script>
 
@@ -89,37 +85,30 @@ onMounted(() => {
   color: var(--text-muted);
 }
 
+.load-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0 0.5rem;
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .products-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1.25rem;
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.page-btn {
-  padding: 0.4rem 0.8rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-
-.page-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.page-info {
-  font-size: 0.88rem;
-  color: var(--text-muted);
 }
 
 @media (max-width: 900px) {

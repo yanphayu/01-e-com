@@ -22,6 +22,17 @@ export async function request(endpoint, options = {}) {
 
   const data = await response.json().catch(() => ({}))
 
+  if (response.status === 401 && token) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    const path = window.location.pathname
+    if (path !== '/login' && path !== '/register') {
+      window.location.href = '/login'
+    }
+    const isUnauth = typeof data.message === 'string' && data.message.startsWith('Unauthenticated')
+    throw new Error(isUnauth ? 'Session expired. Please log in again.' : data.message)
+  }
+
   if (!response.ok) {
     throw new Error(data.message || 'Something went wrong')
   }

@@ -71,8 +71,16 @@ export function uploadCoverImage(file) {
   })
 }
 
-export function deleteAccount() {
+export function sendDeleteOtp() {
+  return request('/profile/delete-otp', {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+export function deleteAccount(payload) {
   return request('/profile', {
     method: 'DELETE',
+    body: JSON.stringify(payload),
   })
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\SendAccountDelete;
 use App\Mail\SendEmailVerify;
 use App\Mail\SendPasswordReset;
 use App\Models\Address;
@@ -10,6 +11,7 @@ use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 
 class AuthController extends Controller
@@ -299,10 +301,69 @@ class AuthController extends Controller
         ]);
     }
 
+    // send account deletion otp
+    public function sendDeleteOtp(Request $request)
+    {
+        $user = $request->user();
+
+        Otp::where('user_id', $user->id)
+            ->where('type', 'account_delete')
+            ->delete();
+
+        $otp = random_int(000000, 999999);
+
+        Otp::create([
+            'user_id' => $user->id,
+            'type' => 'account_delete',
+            'otp' => $otp,
+            'expires_at' => now()->addMinutes(5),
+        ]);
+
+        Mail::to($user->email)->send(new SendAccountDelete($otp));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Verification code sent to your email.',
+        ]);
+    }
+
     // delete account
     public function deleteAccount(Request $request)
     {
+        $validate = $request->validate([
+            'password' => 'required|string',
+            'otp' => 'required|string|digits:6',
+        ]);
+
         $user = $request->user();
+
+        if (! Hash::check($validate['password'], $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Incorrect password.',
+            ], 422);
+        }
+
+        $otp = Otp::where('user_id', $user->id)
+            ->where('type', 'account_delete')
+            ->where('otp', $validate['otp'])
+            ->first();
+
+        if (! $otp) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid OTP.',
+            ], 422);
+        }
+
+        if (now()->greaterThan($otp->expires_at)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'OTP has expired.',
+            ], 422);
+        }
+
+        $otp->delete();
 
         $user->tokens()->delete();
         $user->otps()->delete();

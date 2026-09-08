@@ -37,6 +37,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanc
 Route::get('/me', [AuthController::class, 'me'])->middleware('auth:sanctum');
 Route::put('/profile', [AuthController::class, 'updateProfile'])->middleware('auth:sanctum');
 Route::delete('/profile', [AuthController::class, 'deleteAccount'])->middleware('auth:sanctum');
+Route::post('/profile/delete-otp', [AuthController::class, 'sendDeleteOtp'])->middleware('auth:sanctum');
 Route::post('/avatar', [AuthController::class, 'uploadAvatar'])->middleware('auth:sanctum');
 Route::post('/cover-image', [AuthController::class, 'uploadCoverImage'])->middleware('auth:sanctum');
 
