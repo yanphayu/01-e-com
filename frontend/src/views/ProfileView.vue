@@ -170,14 +170,24 @@
         </div>
 
         <div class="store-footer">
-          <button class="btn btn-ghost btn-block" @click="addNewAccount">
+          <div v-if="otherAccounts.length" class="switch-accounts">
+            <p class="switch-label">{{ t('nav.switchAccount') }}</p>
+            <button
+              v-for="acc in otherAccounts"
+              :key="acc.id"
+              class="switch-account-item"
+              @click="switchAccount(acc)"
+            >
+              <img v-if="acc.profile?.avatar" :src="acc.profile.avatar" class="switch-avatar" alt="" />
+              <span v-else class="switch-avatar switch-avatar-fallback">{{ (acc.name || '?')[0] }}</span>
+              <span class="switch-name">{{ acc.name }}</span>
+            </button>
+          </div>
+          <button class="btn btn-ghost btn-block" @click="logout">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="8.5" cy="7" r="4"/>
-              <line x1="20" y1="8" x2="20" y2="14"/>
-              <line x1="23" y1="11" x2="17" y2="11"/>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
-            {{ t('auth.addNewAccount') }}
+            {{ t('nav.logout') }}
           </button>
         </div>
       </div>
@@ -298,10 +308,32 @@ async function onSaved() {
   editing.value = false
 }
 
-function addNewAccount() {
+const otherAccounts = computed(() => {
+  const saved = JSON.parse(localStorage.getItem('saved_accounts') || '[]')
+  const current = JSON.parse(localStorage.getItem('user') || '{}')
+  return saved.filter(a => a.id !== current.id)
+})
+
+async function switchAccount(account) {
+  const saved = JSON.parse(localStorage.getItem('saved_accounts') || '[]')
+  const current = JSON.parse(localStorage.getItem('user') || '{}')
+  const currentToken = localStorage.getItem('token')
+  if (current.id && currentToken) {
+    if (!saved.find(a => a.id === current.id)) {
+      saved.push({ ...current, _token: currentToken })
+    }
+  }
+  const updated = saved.filter(a => a.id !== account.id)
+  localStorage.setItem('saved_accounts', JSON.stringify(updated))
+  localStorage.setItem('user', JSON.stringify(account))
+  localStorage.setItem('token', account._token)
+  router.push('/')
+}
+
+function logout() {
   localStorage.removeItem('token')
   localStorage.removeItem('user')
-  router.push('/register')
+  router.push('/login')
 }
 
 onMounted(async () => {
@@ -586,6 +618,62 @@ watch(localeRef, () => translateAddress())
 
 .store-footer {
   margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.switch-accounts {
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.switch-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.switch-account-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.6rem 0.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background 0.12s;
+}
+
+.switch-account-item:hover {
+  background: var(--surface-2);
+}
+
+.switch-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.switch-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.switch-name {
+  font-size: 0.9rem;
+  color: var(--text);
 }
 
 .btn-block {
@@ -668,6 +756,7 @@ watch(localeRef, () => translateAddress())
   display: flex;
   gap: 0.5rem;
   margin-top: 0.6rem;
+  flex-wrap: wrap;
 }
 
 .action-btn {
@@ -786,7 +875,11 @@ watch(localeRef, () => translateAddress())
 
 @media (max-width: 560px) {
   .my-products-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .my-product-thumb {
+    height: 180px;
   }
 }
 

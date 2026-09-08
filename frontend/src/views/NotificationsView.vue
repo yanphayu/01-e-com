@@ -190,4 +190,13 @@ function formatNotifTime(dateStr) {
 .btn-ghost:hover {
   background: #f0fdf4;
 }
+
+@media (max-width: 480px) {
+  .notifications-page {
+    padding: 1.5rem 1rem 2rem;
+  }
+  .page-title {
+    font-size: 1.25rem;
+  }
+}
 </style>

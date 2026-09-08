@@ -91,6 +91,7 @@
         </div>
 
         <div class="info-section">
+          <h3>{{ t('product.location') }}</h3>
           <div v-if="product.detail?.province" class="info-row">
             <span class="info-label">{{ t('product.province') }}</span>
             <span>{{ product.detail.province }}</span>
@@ -369,6 +370,7 @@ watch(() => route.params.id, (newId) => {
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
   font-size: 0.85rem;
   color: var(--text-muted);
@@ -467,7 +469,8 @@ watch(() => route.params.id, (newId) => {
 .product-meta {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .badge {

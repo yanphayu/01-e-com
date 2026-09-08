@@ -2,11 +2,6 @@
   <nav class="navbar">
     <div class="container nav-inner">
       <div class="brand-left">
-        <RouterLink v-if="isProfilePage" to="/" class="back-link">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-          </svg>
-        </RouterLink>
         <RouterLink to="/" class="brand">
           <svg class="brand-mark" viewBox="138.8 116 322.4 283" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="TRINITY">
             <path d="M 300 130 L 259.5 276.6 L 152.8 385 L 300 346.8 L 447.2 385 L 340.5 276.6 Z" stroke="currentColor" stroke-width="26" stroke-linejoin="miter" stroke-miterlimit="10" />
@@ -19,7 +14,7 @@
         </RouterLink>
       </div>
 
-      <div v-if="!isProfilePage" class="search-wrapper" ref="searchDropdownRef">
+      <div v-if="!isProfilePage" class="search-wrapper">
         <form class="search-box" @submit.prevent="onSearch">
           <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -30,8 +25,6 @@
             type="text"
             class="search-input"
             :placeholder="t('nav.search')"
-            @input="onSearchInput"
-            @focus="searchFocused = true"
           />
           <button v-if="searchQuery" type="button" class="search-clear" @click="clearSearch">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -39,89 +32,6 @@
             </svg>
           </button>
         </form>
-        <div v-if="searchFocused && searchQuery.length >= 2" class="search-dropdown">
-        <div v-if="searchLoading" class="search-dropdown-loading">{{ t('product.loading') }}</div>
-        <template v-else>
-          <template v-if="hasResults">
-            <div v-if="searchData.products.length" class="search-group">
-              <div class="search-group-label">{{ t('nav.products') }}</div>
-              <RouterLink
-                v-for="item in searchData.products"
-                :key="'p'+item.id"
-                :to="`/products/${item.id}`"
-                class="search-dropdown-item"
-                @click="closeSearch"
-              >{{ item.name }}</RouterLink>
-            </div>
-            <div v-if="searchData.users.length" class="search-group">
-              <div class="search-group-label">{{ t('nav.users') }}</div>
-              <RouterLink
-                v-for="item in searchData.users"
-                :key="'u'+item.id"
-                :to="`/users/${item.id}`"
-                class="search-dropdown-item"
-                @click="closeSearch"
-              >{{ item.name }}</RouterLink>
-            </div>
-            <div v-if="searchData.categories.length" class="search-group">
-              <div class="search-group-label">{{ t('nav.categories') }}</div>
-              <RouterLink
-                v-for="item in searchData.categories"
-                :key="'c'+item.id"
-                :to="`/products?category_id=${item.id}`"
-                class="search-dropdown-item"
-                @click="closeSearch"
-              >{{ item.name }}</RouterLink>
-            </div>
-            <div v-if="searchData.subcategories.length" class="search-group">
-              <div class="search-group-label">{{ t('nav.subcategories') }}</div>
-              <RouterLink
-                v-for="item in searchData.subcategories"
-                :key="'s'+item.id"
-                :to="`/products?category_id=${item.category_id}&subcategory_id=${item.id}`"
-                class="search-dropdown-item"
-                @click="closeSearch"
-              >{{ item.name }}</RouterLink>
-            </div>
-            <div v-if="searchData.brands.length" class="search-group">
-              <div class="search-group-label">{{ t('nav.brands') }}</div>
-              <RouterLink
-                v-for="item in searchData.brands"
-                :key="'b'+item.id"
-                :to="`/products?q=${item.name}`"
-                class="search-dropdown-item"
-                @click="closeSearch"
-              >{{ item.name }}</RouterLink>
-            </div>
-            <div v-if="searchData.models.length" class="search-group">
-              <div class="search-group-label">{{ t('nav.models') }}</div>
-              <RouterLink
-                v-for="item in searchData.models"
-                :key="'m'+item.id"
-                :to="`/products?q=${item.name}`"
-                class="search-dropdown-item"
-                @click="closeSearch"
-              >{{ item.name }}</RouterLink>
-            </div>
-            <div v-if="searchData.attributes.length" class="search-group">
-              <div class="search-group-label">{{ t('nav.attributes') }}</div>
-              <RouterLink
-                v-for="item in searchData.attributes"
-                :key="'a'+item.id"
-                :to="`/products?q=${item.name}`"
-                class="search-dropdown-item"
-                @click="closeSearch"
-              >{{ item.name }}</RouterLink>
-            </div>
-          </template>
-          <div v-if="!hasResults && searchQuery.length >= 2" class="search-dropdown-empty">
-            {{ t('product.noProducts') }}
-          </div>
-          <button v-if="searchQuery.trim()" class="search-dropdown-all" @click="onSearch">
-            {{ t('nav.searchAll') }} "{{ searchQuery }}"
-          </button>
-        </template>
-        </div>
       </div>
 
       <div class="links">
@@ -194,7 +104,43 @@
           <RouterLink to="/register" class="btn btn-primary">{{ t('nav.register') }}</RouterLink>
         </template>
       </div>
+
+      <!-- Mobile search icon -->
+      <RouterLink v-if="!isProfilePage && !isSearchPage" to="/search" class="mobile-search-btn">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </RouterLink>
+
     </div>
+  </nav>
+
+  <!-- Bottom tab bar (mobile/tablet) -->
+  <nav v-if="isAuthenticated" class="bottom-bar">
+    <RouterLink to="/" class="bottom-tab" :class="{ active: route.path === '/' }">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span>{{ t('nav.home') }}</span>
+    </RouterLink>
+    <RouterLink to="/products/create" class="bottom-tab" :class="{ active: route.path === '/products/create' }">
+      <span class="bottom-tab-plus">+</span>
+      <span>{{ t('nav.postProduct') }}</span>
+    </RouterLink>
+    <RouterLink to="/notifications" class="bottom-tab" :class="{ active: route.path === '/notifications' }">
+      <span class="bottom-tab-icon-wrap">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span v-if="unreadCount > 0" class="bottom-notif-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+      </span>
+      <span>{{ t('nav.notifications') }}</span>
+    </RouterLink>
+    <RouterLink to="/profile" class="bottom-tab" :class="{ active: route.path === '/profile' }">
+      <img v-if="userAvatar" :src="userAvatar" class="bottom-tab-avatar" alt="" />
+      <span v-else class="bottom-tab-avatar bottom-tab-avatar-fallback">{{ userInitial }}</span>
+      <span>{{ t('nav.myProfile') }}</span>
+    </RouterLink>
   </nav>
 </template>
 
@@ -203,7 +149,6 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { t } from '../i18n'
 import { getUser } from '../services/auth'
-import { globalSearch } from '../services/products'
 import { getUnreadCount } from '../services/notifications'
 import { initEcho, leaveEcho } from '../services/echo'
 import LocaleSwitcher from './LocaleSwitcher.vue'
@@ -211,6 +156,7 @@ import LocaleSwitcher from './LocaleSwitcher.vue'
 const router = useRouter()
 const route = useRoute()
 const isProfilePage = computed(() => route.name === 'profile')
+const isSearchPage = computed(() => route.name === 'search')
 const isAuthenticated = ref(!!localStorage.getItem('token'))
 const searchQuery = ref('')
 const showUserDropdown = ref(false)
@@ -218,18 +164,8 @@ const userDropdownRef = ref(null)
 const showSwitchDropdown = ref(false)
 const switchDropdownRef = ref(null)
 const searchInputRef = ref(null)
-const searchDropdownRef = ref(null)
-const searchFocused = ref(false)
-const searchData = ref({ products: [], users: [], categories: [], subcategories: [], brands: [], models: [], attributes: [] })
-const searchLoading = ref(false)
-let searchTimer = null
 
 const unreadCount = ref(0)
-
-const hasResults = computed(() => {
-  const d = searchData.value
-  return d.products.length || d.users.length || d.categories.length || d.subcategories.length || d.brands.length || d.models.length || d.attributes.length
-})
 
 const user = ref(readStoredUser())
 const userName = computed(() => user.value.name || '')
@@ -338,39 +274,13 @@ async function switchAccount(account) {
 function onSearch() {
   const q = searchQuery.value.trim()
   if (!q) return
-  closeSearch()
   router.push({ path: '/products', query: { q } })
   searchQuery.value = ''
 }
 
-function onSearchInput() {
-  clearTimeout(searchTimer)
-  const q = searchQuery.value.trim()
-  if (q.length < 2) {
-    searchData.value = { products: [], users: [], categories: [], subcategories: [], brands: [], models: [], attributes: [] }
-    return
-  }
-  searchLoading.value = true
-  searchTimer = setTimeout(async () => {
-    try {
-      const res = await globalSearch(q)
-      searchData.value = res.data || { products: [], users: [], categories: [], subcategories: [], brands: [], models: [], attributes: [] }
-    } catch {
-      searchData.value = { products: [], users: [], categories: [], subcategories: [], brands: [], models: [], attributes: [] }
-    } finally {
-      searchLoading.value = false
-    }
-  }, 300)
-}
-
 function clearSearch() {
   searchQuery.value = ''
-  searchData.value = { products: [], users: [], categories: [], subcategories: [], brands: [], models: [], attributes: [] }
-}
-
-function closeSearch() {
-  searchFocused.value = false
-  searchData.value = { products: [], users: [], categories: [], subcategories: [], brands: [], models: [], attributes: [] }
+  searchInputRef.value?.focus()
 }
 
 function handleClickOutside(e) {
@@ -379,9 +289,6 @@ function handleClickOutside(e) {
   }
   if (switchDropdownRef.value && !switchDropdownRef.value.contains(e.target)) {
     showSwitchDropdown.value = false
-  }
-  if (searchDropdownRef.value && !searchDropdownRef.value.contains(e.target) && searchInputRef.value && !searchInputRef.value.contains(e.target)) {
-    closeSearch()
   }
 }
 
@@ -430,22 +337,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   display: flex;
   align-items: center;
   gap: 0.6rem;
-}
-
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  text-decoration: none;
-  color: var(--text-muted);
-  transition: color 0.15s;
-}
-
-.back-link:hover {
-  border-color: var(--border-strong);
-  color: var(--text);
 }
 
 .links {
@@ -510,85 +401,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
 .search-clear:hover {
   color: var(--text);
-}
-
-.search-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 380px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  z-index: 100;
-  overflow: hidden;
-}
-
-.search-dropdown-loading {
-  padding: 1rem;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-.search-dropdown-item {
-  display: block;
-  padding: 0.5rem 0.8rem;
-  font-size: 0.85rem;
-  text-decoration: none;
-  color: var(--text);
-  transition: background 0.12s;
-}
-
-.search-dropdown-item:hover {
-  background: var(--surface-2);
-}
-
-.search-dropdown-empty {
-  padding: 1rem;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-.search-group {
-  padding: 0.25rem 0;
-}
-
-.search-group:not(:last-child) {
-  border-bottom: 1px solid var(--border);
-}
-
-.search-group-label {
-  padding: 0.35rem 0.8rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-}
-
-.search-dropdown-all {
-  display: block;
-  width: 100%;
-  padding: 0.6rem 0.8rem;
-  text-align: center;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--accent);
-  background: var(--accent-soft);
-  border: none;
-  border-top: 1px solid var(--border);
-  cursor: pointer;
-  transition: background 0.12s;
-}
-
-.search-dropdown-all:hover {
-  background: var(--accent);
-  color: #fff;
 }
 
 .links .btn {
@@ -785,22 +597,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   border-color: var(--border-strong);
 }
 
-@media (max-width: 480px) {
-  .user-name {
-    display: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .brand-name {
-    display: none;
-  }
-  .search-wrapper {
-    margin: 0 0.75rem;
-    max-width: none;
-  }
-}
-
 .notif-trigger {
   position: relative;
   display: inline-flex;
@@ -835,5 +631,146 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   font-weight: 700;
   line-height: 16px;
   text-align: center;
+}
+
+.mobile-search-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.mobile-search-btn:hover {
+  color: var(--text);
+}
+
+@media (max-width: 768px) {
+  .links {
+    display: none;
+  }
+  .search-wrapper {
+    display: none;
+  }
+  .mobile-search-btn {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-name {
+    display: none;
+  }
+  .brand-name {
+    display: none;
+  }
+  .search-wrapper {
+    margin: 0 0.5rem;
+    max-width: none;
+  }
+}
+
+/* Bottom tab bar */
+.bottom-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: var(--navbar-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border);
+  padding: 0.35rem 0 max(0.35rem, env(safe-area-inset-bottom));
+}
+
+.bottom-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  flex: 1;
+  padding: 0.35rem 0;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 500;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-tab.active {
+  color: var(--accent);
+}
+
+.bottom-tab-plus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.bottom-tab-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+}
+
+.bottom-notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+}
+
+.bottom-tab-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.bottom-tab-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .bottom-bar {
+    display: flex;
+  }
 }
 </style>

@@ -190,4 +190,19 @@ function formatDate(dateStr) {
 .product-card-fav.active {
   color: var(--accent);
 }
+
+@media (max-width: 480px) {
+  .product-card-thumb {
+    height: 160px;
+  }
+  .product-card-body {
+    padding: 0.75rem;
+  }
+  .product-card-name {
+    font-size: 0.9rem;
+  }
+  .product-card-price {
+    font-size: 1rem;
+  }
+}
 </style>

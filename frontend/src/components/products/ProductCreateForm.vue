@@ -1088,37 +1088,26 @@ select.input {
 
 .condition-toggle {
   display: flex;
-  gap: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
+  gap: 0.5rem;
 }
 
 .condition-btn {
   flex: 1;
-  padding: 0.6rem 1rem;
-  border: none;
-  background: var(--surface-2);
-  color: var(--text-muted);
-  font: inherit;
-  font-weight: 600;
-  font-size: 0.88rem;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.condition-btn:first-child {
-  border-right: 1px solid var(--border);
-}
-
-.condition-btn:hover {
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   background: var(--surface);
-  color: var(--text);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.15s;
 }
 
 .condition-btn.active {
-  background: var(--accent);
-  color: #fff;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .spinner {

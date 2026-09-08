@@ -28,4 +28,10 @@ const isAuthPage = computed(() =>
 .app-main {
   flex: 1;
 }
+
+@media (max-width: 768px) {
+  .app-main {
+    padding-bottom: 70px;
+  }
+}
 </style>

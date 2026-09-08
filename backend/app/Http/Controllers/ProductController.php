@@ -32,7 +32,12 @@ class ProductController extends Controller
             $search = $request->q;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('detail.brand', fn ($bq) => $bq->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('detail.model', fn ($mq) => $mq->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('productAttributes', fn ($aq) => $aq->where('value', 'like', "%{$search}%"))
+                    ->orWhereHas('subcategory', fn ($sq) => $sq->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('subcategory.category', fn ($cq) => $cq->where('name', 'like', "%{$search}%"));
             });
         }
 
