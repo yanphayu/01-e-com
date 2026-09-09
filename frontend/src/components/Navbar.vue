@@ -56,27 +56,11 @@
             </svg>
           </RouterLink>
 
-          <div class="dropdown" ref="userDropdownRef">
-            <button class="btn btn-ghost user-trigger" @click="showUserDropdown = !showUserDropdown">
-              <span class="user-name">{{ userName }}</span>
-              <img v-if="userAvatar" :src="userAvatar" class="user-avatar" alt="" />
-              <span v-else class="user-avatar user-avatar-fallback">{{ userInitial }}</span>
-            </button>
-            <div v-if="showUserDropdown" class="dropdown-menu">
-              <RouterLink to="/profile" class="dropdown-item" @click="showUserDropdown = false">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                </svg>
-                {{ t('nav.myProfile') }}
-              </RouterLink>
-              <button class="dropdown-item danger" @click="logout">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-                </svg>
-                {{ t('nav.logout') }}
-              </button>
-            </div>
-          </div>
+          <RouterLink to="/profile" class="btn btn-ghost user-trigger">
+            <span class="user-name">{{ userName }}</span>
+            <img v-if="userAvatar" :src="userAvatar" class="user-avatar" alt="" />
+            <span v-else class="user-avatar user-avatar-fallback">{{ userInitial }}</span>
+          </RouterLink>
           <!-- Switch Account -->
           <div v-if="otherAccounts.length" class="dropdown" ref="switchDropdownRef">
             <button class="btn btn-ghost switch-trigger" @click="showSwitchDropdown = !showSwitchDropdown">
@@ -159,8 +143,6 @@ const isProfilePage = computed(() => route.name === 'profile')
 const isSearchPage = computed(() => route.name === 'search')
 const isAuthenticated = ref(!!localStorage.getItem('token'))
 const searchQuery = ref('')
-const showUserDropdown = ref(false)
-const userDropdownRef = ref(null)
 const showSwitchDropdown = ref(false)
 const switchDropdownRef = ref(null)
 const searchInputRef = ref(null)
@@ -180,8 +162,25 @@ function readStoredUser() {
   }
 }
 
-onMounted(async () => {
-  if (!isAuthenticated.value) return
+onMounted(() => {
+  refreshAuth()
+  window.addEventListener('auth-changed', refreshAuth)
+})
+
+onUnmounted(() => {
+  leaveEcho()
+  window.removeEventListener('notifications-read', loadUnreadCount)
+  window.removeEventListener('auth-changed', refreshAuth)
+})
+
+async function refreshAuth() {
+  isAuthenticated.value = !!localStorage.getItem('token')
+
+  if (!isAuthenticated.value) {
+    user.value = {}
+    return
+  }
+
   try {
     const data = await getUser()
     user.value = data.data || {}
@@ -192,12 +191,7 @@ onMounted(async () => {
   } catch {
     logout()
   }
-})
-
-onUnmounted(() => {
-  leaveEcho()
-  window.removeEventListener('notifications-read', loadUnreadCount)
-})
+}
 
 function connectEcho() {
   const echo = initEcho(user.value.id)
@@ -284,9 +278,6 @@ function clearSearch() {
 }
 
 function handleClickOutside(e) {
-  if (userDropdownRef.value && !userDropdownRef.value.contains(e.target)) {
-    showUserDropdown.value = false
-  }
   if (switchDropdownRef.value && !switchDropdownRef.value.contains(e.target)) {
     showSwitchDropdown.value = false
   }

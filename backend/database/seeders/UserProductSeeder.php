@@ -129,6 +129,9 @@ class UserProductSeeder extends Seeder
                 'sort_order' => 0,
             ]);
         } catch (\Exception $e) {
+            if (! Storage::disk('public')->exists('products/default.jpg')) {
+                $this->writeDefaultPlaceholder();
+            }
             ProductImage::create([
                 'product_id' => $product->id,
                 'image' => 'products/default.jpg',
@@ -136,6 +139,27 @@ class UserProductSeeder extends Seeder
                 'sort_order' => 0,
             ]);
         }
+    }
+
+    private function writeDefaultPlaceholder(): void
+    {
+        $path = storage_path('app/public/products/default.jpg');
+        if (! is_dir(dirname($path))) {
+            mkdir(dirname($path), 0755, true);
+        }
+
+        $image = imagecreatetruecolor(800, 800);
+        for ($y = 0; $y < 800; $y++) {
+            $color = imagecolorallocate($image, 235 - ($y / 800) * 20, 240 - ($y / 800) * 15, 245 - ($y / 800) * 10);
+            imageline($image, 0, $y, 800, $y, $color);
+        }
+        $dim = imagecolorallocate($image, 160, 180, 205);
+        imagefilledellipse($image, 400, 400, 496, 496, $dim);
+        $accent = imagecolorallocate($image, 70, 130, 230);
+        imagearc($image, 400, 400, 496, 496, 0, 360, $accent);
+        imagestring($image, 5, 370, 390, 'Trinity', imagecolorallocate($image, 255, 255, 255));
+        imagejpeg($image, $path, 85);
+        imagedestroy($image);
     }
 
     private function getUsers(): array

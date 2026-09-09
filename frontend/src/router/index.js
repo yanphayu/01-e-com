@@ -19,6 +19,11 @@ const routes = [
     meta: { guest: true },
   },
   {
+    path: '/auth/callback',
+    name: 'auth-callback',
+    component: () => import('../views/auth/AuthCallbackView.vue'),
+  },
+  {
     path: '/verify-email',
     name: 'verify-email',
     component: () => import('../views/auth/VerifyEmailView.vue'),

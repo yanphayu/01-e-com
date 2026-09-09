@@ -1,5 +1,15 @@
 <template>
   <form class="auth-card stack" autocomplete="off" @submit.prevent="handleSubmit">
+    <RouterLink to="/" class="auth-brand">
+      <svg class="auth-brand-mark" viewBox="138.8 116 322.4 283" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="TRINITY">
+        <path d="M 300 130 L 259.5 276.6 L 152.8 385 L 300 346.8 L 447.2 385 L 340.5 276.6 Z" stroke="currentColor" stroke-width="26" stroke-linejoin="miter" stroke-miterlimit="10" />
+        <path d="M 259.5 276.6 L 300 346.8 L 340.5 276.6 Z" fill="currentColor" />
+        <circle cx="300" cy="130" r="9" fill="currentColor" />
+        <circle cx="152.8" cy="385" r="9" fill="currentColor" />
+        <circle cx="447.2" cy="385" r="9" fill="currentColor" />
+      </svg>
+    </RouterLink>
+
     <div class="auth-head">
       <h1>{{ t('auth.welcome') }}</h1>
       <p>{{ t('auth.welcomeSub') }}</p>
@@ -51,6 +61,12 @@
       {{ loading ? t('auth.loggingIn') : t('auth.login') }}
     </BaseButton>
 
+    <div class="auth-divider">
+      <span>{{ t('auth.orDivider') }}</span>
+    </div>
+
+    <GoogleAuthButton />
+
     <p class="auth-foot">
       {{ t('auth.noAccount') }}
       <RouterLink to="/register">{{ t('auth.createOne') }}</RouterLink>
@@ -65,6 +81,7 @@ import { loginUser } from '../../services/auth'
 import { t } from '../../i18n'
 import BaseInput from '../../design-system/BaseInput.vue'
 import BaseButton from '../../design-system/BaseButton.vue'
+import GoogleAuthButton from './GoogleAuthButton.vue'
 
 const router = useRouter()
 

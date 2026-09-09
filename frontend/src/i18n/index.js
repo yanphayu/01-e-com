@@ -39,6 +39,9 @@ const messages = {
 
     'auth.welcome': 'Welcome back',
     'auth.welcomeSub': 'Sign in to continue to TRINITY.',
+    'auth.continueWithGoogle': 'Continue with Google',
+    'auth.orDivider': 'or',
+    'auth.signingIn': 'Signing you in…',
     'auth.createAccount': 'Create your account',
     'auth.joinSub': 'Join TRINITY and start shopping.',
     'auth.email': 'Email',
@@ -331,6 +334,9 @@ const messages = {
 
     'auth.welcome': 'ស្វាគមន៍ការវិលត្រឡប់',
     'auth.welcomeSub': 'ចូលដើម្បីបន្តទៅ TRINITY',
+    'auth.continueWithGoogle': 'បន្តជាមួយ Google',
+    'auth.orDivider': 'ឬ',
+    'auth.signingIn': 'កំពុងចូល…',
     'auth.createAccount': 'បង្កើតគណនីរបស់អ្នក',
     'auth.joinSub': 'ចូលរួម TRINITY ហើយចាប់ផ្តើមទិញ',
     'auth.email': 'អ៊ីមែល',

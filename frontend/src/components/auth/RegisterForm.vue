@@ -76,6 +76,12 @@
       {{ loading ? t('auth.creatingAccount') : t('auth.createAccount') }}
     </BaseButton>
 
+    <div class="auth-divider">
+      <span>{{ t('auth.orDivider') }}</span>
+    </div>
+
+    <GoogleAuthButton />
+
     <p class="auth-foot">
       {{ t('auth.alreadyAccount') }}
       <RouterLink to="/login">{{ t('auth.signInLink') }}</RouterLink>
@@ -90,6 +96,7 @@ import { registerUser } from '../../services/auth'
 import { t } from '../../i18n'
 import BaseInput from '../../design-system/BaseInput.vue'
 import BaseButton from '../../design-system/BaseButton.vue'
+import GoogleAuthButton from './GoogleAuthButton.vue'
 
 const router = useRouter()
 

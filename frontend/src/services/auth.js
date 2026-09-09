@@ -1,4 +1,8 @@
-import { request } from './http'
+import { request, API_URL } from './http'
+
+export function googleRedirectUrl() {
+  return `${API_URL}/auth/google/redirect`
+}
 
 export function registerUser(payload) {
   return request('/register', {

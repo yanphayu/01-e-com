@@ -261,6 +261,24 @@ a:not(.btn):hover {
   padding: 2rem 1.75rem;
 }
 
+.auth-brand {
+  display: none;
+  justify-content: center;
+  margin-bottom: 1.1rem;
+  color: var(--accent);
+}
+
+.auth-brand-mark {
+  width: 56px;
+  height: 56px;
+}
+
+@media (max-width: 880px) {
+  .auth-brand {
+    display: flex;
+  }
+}
+
 .auth-head {
   text-align: center;
   margin-bottom: 1.25rem;
@@ -289,6 +307,27 @@ a:not(.btn):hover {
 
 .auth-foot a {
   font-weight: 600;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.auth-divider span {
+  white-space: nowrap;
 }
 
 .forgot-password {
