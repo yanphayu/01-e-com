@@ -38,6 +38,33 @@ class ProductImageController extends Controller
         ], 201);
     }
 
+    public function update(Request $request, Product $product, ProductImage $image): JsonResponse
+    {
+        if ($request->user()->id !== $product->user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'is_primary' => 'boolean',
+            'sort_order' => 'integer|min:0',
+        ]);
+
+        if (isset($validated['is_primary']) && $validated['is_primary']) {
+            $product->images()->where('id', '!=', $image->id)->update(['is_primary' => false]);
+        }
+
+        $image->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Image updated successfully',
+            'data' => $image,
+        ]);
+    }
+
     public function destroy(Request $request, Product $product, ProductImage $image): JsonResponse
     {
         if ($request->user()->id !== $product->user_id) {

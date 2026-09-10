@@ -1,4 +1,5 @@
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+export const STORAGE_URL = API_URL.replace(/\/api\/?$/, '')
 
 import { getLocale } from '../i18n'
 

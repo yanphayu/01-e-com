@@ -37,6 +37,7 @@ import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { t } from '../i18n'
 import { toggleFavorite } from '../services/favorites'
+import { STORAGE_URL } from '../services/http'
 
 const props = defineProps({
   product: { type: Object, required: true },
@@ -51,7 +52,7 @@ watch(() => props.product.is_favorited, (val) => {
 
 const primaryImage = computed(() => {
   const img = props.product.images?.find(i => i.is_primary) || props.product.images?.[0]
-  return img ? `/storage/${img.image}` : null
+  return img ? `${STORAGE_URL}/storage/${img.image}` : null
 })
 
 async function onFavorite() {

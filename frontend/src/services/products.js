@@ -66,6 +66,13 @@ export function uploadProductImage(productId, file) {
   })
 }
 
+export function updateProductImage(productId, imageId, data) {
+  return request(`/products/${productId}/images/${imageId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
 export function deleteProductImage(productId, imageId) {
   return request(`/products/${productId}/images/${imageId}`, {
     method: 'DELETE',

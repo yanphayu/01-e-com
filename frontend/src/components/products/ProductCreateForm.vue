@@ -631,7 +631,13 @@ async function submitProduct() {
       fd.append(`attributes[${i}][value]`, attr.value)
     })
 
-    imageFiles.value.forEach((file) => {
+    const orderedImages = [...imageFiles.value]
+    if (primaryIndex.value > 0 && primaryIndex.value < orderedImages.length) {
+      const [primary] = orderedImages.splice(primaryIndex.value, 1)
+      orderedImages.unshift(primary)
+    }
+
+    orderedImages.forEach((file) => {
       fd.append('images[]', file)
     })
 

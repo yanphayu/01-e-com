@@ -198,14 +198,8 @@ function connectEcho() {
   if (!echo) return
 
   echo.private(`App.Models.User.${user.value.id}`)
-    .notification((notification) => {
+    .notification(() => {
       unreadCount.value++
-      notifications.value.unshift({
-        id: notification.id,
-        data: notification,
-        read_at: null,
-        created_at: notification.created_at,
-      })
     })
 }
 

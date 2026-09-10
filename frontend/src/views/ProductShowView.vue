@@ -41,7 +41,7 @@
             :class="{ active: i === activeImageIndex }"
             @click="activeImageIndex = i"
           >
-            <img :src="`/storage/${img.image}`" alt="" />
+            <img :src="`${STORAGE_URL}/storage/${img.image}`" alt="" />
           </button>
         </div>
       </div>
@@ -190,6 +190,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { t } from '../i18n'
 import { getProduct, getProducts, getComments, addComment, deleteComment } from '../services/products'
 import { toggleFavorite } from '../services/favorites'
+import { STORAGE_URL } from '../services/http'
 import ProductCard from '../components/ProductCard.vue'
 import CommentNode from '../components/CommentNode.vue'
 
@@ -215,7 +216,7 @@ const currentUserId = computed(() => {
 const images = computed(() => product.value?.images || [])
 const mainImage = computed(() => {
   if (!images.value.length) return ''
-  return `/storage/${images.value[activeImageIndex.value]?.image}`
+  return `${STORAGE_URL}/storage/${images.value[activeImageIndex.value]?.image}`
 })
 
 const isOwner = computed(() => {

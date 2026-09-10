@@ -70,6 +70,7 @@ Route::get('/users/{user}', [UserController::class, 'show']);
 
 // Product Images
 Route::post('/products/{product}/images', [ProductImageController::class, 'store'])->middleware('auth:sanctum');
+Route::put('/products/{product}/images/{image}', [ProductImageController::class, 'update'])->middleware('auth:sanctum');
 Route::delete('/products/{product}/images/{image}', [ProductImageController::class, 'destroy'])->middleware('auth:sanctum');
 
 // Comments

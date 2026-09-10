@@ -75,7 +75,14 @@
         <h2 class="section-title">{{ t('product.images') }}</h2>
         <div v-if="existingImages.length" class="existing-images">
           <div v-for="img in existingImages" :key="img.id" class="existing-img">
-            <img :src="`/storage/${img.image}`" :alt="product.name" />
+            <img :src="`${STORAGE_URL}/storage/${img.image}`" :alt="product.name" />
+            <button
+              v-if="img.id !== primaryImageId"
+              type="button"
+              class="set-primary-btn"
+              @click="primaryImageId = img.id; primaryNewIndex = -1"
+            >{{ t('product.setPrimary') }}</button>
+            <span v-else class="primary-badge">{{ t('product.primary') }}</span>
             <button type="button" class="remove-img" @click="removeExistingImage(img)">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"/>
@@ -98,6 +105,13 @@
         <div v-if="newImagePreviews.length" class="new-images">
           <div v-for="(preview, i) in newImagePreviews" :key="i" class="existing-img">
             <img :src="preview" alt="" />
+            <button
+              v-if="i !== primaryNewIndex || primaryImageId !== null"
+              type="button"
+              class="set-primary-btn"
+              @click="primaryNewIndex = i; primaryImageId = null"
+            >{{ t('product.setPrimary') }}</button>
+            <span v-else class="primary-badge">{{ t('product.primary') }}</span>
             <button type="button" class="remove-img" @click="removeNewImage(i)">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"/>
@@ -123,7 +137,8 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { t } from '../i18n'
-import { getProduct, updateProduct, getCategories, getBrands, getModels, deleteProductImage } from '../services/products'
+import { getProduct, updateProduct, getCategories, getBrands, getModels, deleteProductImage, uploadProductImage, updateProductImage } from '../services/products'
+import { STORAGE_URL } from '../services/http'
 
 const route = useRoute()
 const router = useRouter()
@@ -162,6 +177,8 @@ const existingImages = ref([])
 const imagesToRemove = ref([])
 const newImageFiles = ref([])
 const newImagePreviews = ref([])
+const primaryImageId = ref(null)
+const primaryNewIndex = ref(0)
 
 const brandOptions = ref([])
 const modelOptions = ref([])
@@ -216,12 +233,23 @@ function onFilesChange(e) {
 function removeExistingImage(img) {
   imagesToRemove.value.push(img.id)
   existingImages.value = existingImages.value.filter(i => i.id !== img.id)
+  if (primaryImageId.value === img.id) {
+    primaryImageId.value = existingImages.value.length > 0 ? existingImages.value[0].id : null
+  }
 }
 
 function removeNewImage(index) {
-  newImageFiles.value.splice(index, 1)
   URL.revokeObjectURL(newImagePreviews.value[index])
+  newImageFiles.value.splice(index, 1)
   newImagePreviews.value.splice(index, 1)
+  if (primaryImageId.value === null) {
+    if (primaryNewIndex.value >= newImagePreviews.value.length) {
+      primaryNewIndex.value = Math.max(0, newImagePreviews.value.length - 1)
+    }
+    if (newImagePreviews.value.length === 0 && existingImages.value.length > 0) {
+      primaryImageId.value = existingImages.value[0].id
+    }
+  }
 }
 
 async function submit() {
@@ -251,6 +279,25 @@ async function submit() {
 
     for (const imgId of imagesToRemove.value) {
       try { await deleteProductImage(product.value.id, imgId) } catch {}
+    }
+
+    let lastNewImageId = null
+    for (let i = 0; i < newImageFiles.value.length; i++) {
+      try {
+        const res = await uploadProductImage(product.value.id, newImageFiles.value[i])
+        if (res?.data?.id) lastNewImageId = res.data.id
+        if (i === primaryNewIndex.value && primaryImageId.value === null) {
+          if (lastNewImageId) {
+            await updateProductImage(product.value.id, lastNewImageId, { is_primary: true })
+          }
+        }
+      } catch {}
+    }
+
+    if (primaryImageId.value) {
+      try {
+        await updateProductImage(product.value.id, primaryImageId.value, { is_primary: true })
+      } catch {}
     }
 
     success.value = 'Product updated!'
@@ -283,6 +330,8 @@ onMounted(async () => {
     form.details.sangkat = product.value.detail?.sangkat || ''
     form.details.address = product.value.detail?.address || ''
     existingImages.value = [...(product.value.images || [])]
+    const primaryImg = existingImages.value.find(i => i.is_primary)
+    primaryImageId.value = primaryImg ? primaryImg.id : (existingImages.value.length > 0 ? existingImages.value[0].id : null)
     if (product.value.phones?.length) {
       form.phones = product.value.phones.map(p => p.phone)
     }
@@ -454,6 +503,38 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.set-primary-btn {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  right: 4px;
+  padding: 0.2rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.set-primary-btn:hover {
+  background: var(--accent);
+}
+
+.primary-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 600;
 }
 
 .upload-area {

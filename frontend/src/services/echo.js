@@ -1,5 +1,6 @@
 import Echo from 'laravel-echo'
 import Pusher from 'pusher-js'
+import { API_URL } from './http'
 
 window.Pusher = Pusher
 
@@ -20,6 +21,7 @@ export function initEcho(userId) {
     forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
     enabledTransports: ['ws', 'wss'],
     auth: {
+      url: `${API_URL}/broadcasting/auth`,
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/json',

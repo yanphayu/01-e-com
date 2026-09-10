@@ -220,6 +220,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import { t, getLocale, localeRef } from '../i18n'
 import { getUser } from '../services/auth'
 import { getProducts, deleteProduct as apiDeleteProduct } from '../services/products'
+import { STORAGE_URL } from '../services/http'
 import ProfileSetupForm from '../components/auth/ProfileSetupForm.vue'
 
 const router = useRouter()
@@ -243,7 +244,7 @@ const memberSince = computed(() => {
 
 function getPrimaryImage(product) {
   const img = product.images?.find(i => i.is_primary) || product.images?.[0]
-  return img ? `/storage/${img.image}` : null
+  return img ? `${STORAGE_URL}/storage/${img.image}` : null
 }
 
 function confirmDelete(product) {
