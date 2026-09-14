@@ -133,7 +133,7 @@ class ProductApprovalTest extends TestCase
             ->assertJsonPath('data.data.0.status', 'pending');
     }
 
-    public function test_store_endpoint_creates_product_as_pending(): void
+    public function test_store_endpoint_auto_approves_product_and_it_goes_live(): void
     {
         $user = $this->makeUser();
         $subcategory = $this->makeSubcategory();
@@ -143,10 +143,10 @@ class ProductApprovalTest extends TestCase
             'subcategory_id' => $subcategory->id,
             'name' => 'Samsung S24',
             'price' => 800,
-        ])->assertCreated()->assertJsonPath('data.status', 'pending');
+        ])->assertCreated()->assertJsonPath('data.status', 'approved');
 
-        $this->assertDatabaseHas('products', ['name' => 'Samsung S24', 'status' => 'pending']);
-        $this->assertCount(0, $this->getJson('/api/products')->json('data.data'));
+        $this->assertDatabaseHas('products', ['name' => 'Samsung S24', 'status' => 'approved', 'is_active' => true]);
+        $this->assertCount(1, $this->getJson('/api/products')->json('data.data'));
     }
 
     public function test_admin_posted_product_is_auto_approved_and_live_on_frontend(): void

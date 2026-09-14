@@ -105,7 +105,7 @@ class ProductController extends Controller
             'slug' => $slug,
             'description' => $validated['description'] ?? null,
             'price' => $validated['price'],
-            'status' => $request->user()->is_admin ? 'approved' : 'pending',
+            'status' => 'approved',
         ]);
 
         if (isset($validated['details'])) {

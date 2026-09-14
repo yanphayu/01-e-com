@@ -108,16 +108,26 @@
         />
 
         <div class="field">
-          <label>{{ t('auth.address') }}</label>
-          <button type="button" class="loc-btn" :disabled="locating" @click="getLocation">
-            <svg v-if="!locating" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-              <circle cx="12" cy="10" r="3" />
-            </svg>
-            <span v-if="locating" class="spinner" />
-            {{ locating ? t('auth.gettingLocation') : t('auth.getLocation') }}
-          </button>
+          <label>{{ t('auth.address') }} / {{ t('auth.location') }}</label>
+          <div class="loc-row">
+            <button type="button" class="loc-btn" :disabled="locating" @click="getLocation">
+              <svg v-if="!locating" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span v-if="locating" class="spinner" />
+              {{ locating ? t('auth.gettingLocation') : t('auth.getLocation') }}
+            </button>
+            <button type="button" class="loc-btn" @click="showMap = true">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              {{ t('auth.selectLocationOnMap') }}
+            </button>
+          </div>
           <p v-if="address" class="loc-result">{{ address }}</p>
+          <p v-if="latitude && longitude" class="loc-result loc-coords">{{ latitude }}, {{ longitude }}</p>
           <p v-if="locError" class="field-error">{{ locError }}</p>
         </div>
       </div>
@@ -173,6 +183,15 @@
         {{ t('auth.deleteProfile') }}
       </button>
     </div>
+
+    <MapPickerModal
+      v-model="showMap"
+      :latitude="latitude"
+      :longitude="longitude"
+      @update:latitude="latitude = $event"
+      @update:longitude="longitude = $event"
+      @update:address="address = $event"
+    />
 
     <BaseModal
       v-model="confirmingDelete"
@@ -242,6 +261,7 @@ import { t, getLocale } from '../../i18n'
 import BaseInput from '../../design-system/BaseInput.vue'
 import BaseButton from '../../design-system/BaseButton.vue'
 import BaseModal from '../../design-system/BaseModal.vue'
+import MapPickerModal from '../../design-system/MapPickerModal.vue'
 
 const props = defineProps({ redirectOnSave: { type: Boolean, default: true } })
 const emit = defineEmits(['saved', 'cancel'])
@@ -272,6 +292,7 @@ const latitude = ref(addressData.latitude ?? null)
 const longitude = ref(addressData.longitude ?? null)
 const locError = ref(null)
 const locating = ref(false)
+const showMap = ref(false)
 const avatar = ref(profile.avatar || '')
 const avatarName = ref('')
 const avatarPreview = ref(profile.avatar || null)
@@ -854,6 +875,12 @@ async function handleDelete() {
   transition: background 0.15s;
 }
 
+.loc-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
 .loc-btn:hover {
   background: color-mix(in srgb, var(--accent-soft) 80%, var(--accent) 20%);
 }
@@ -868,6 +895,11 @@ async function handleDelete() {
   color: var(--text-muted);
   line-height: 1.4;
   word-break: break-word;
+}
+
+.loc-coords {
+  color: var(--accent);
+  font-family: var(--font-mono, monospace);
 }
 
 .field-error {

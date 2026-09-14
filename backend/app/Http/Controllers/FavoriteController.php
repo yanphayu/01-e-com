@@ -16,6 +16,12 @@ class FavoriteController extends Controller
             ->latest('favorites.created_at')
             ->paginate(12);
 
+        $products->getCollection()->transform(function ($product) {
+            $product->is_favorited = true;
+
+            return $product;
+        });
+
         return response()->json([
             'success' => true,
             'data' => $products,

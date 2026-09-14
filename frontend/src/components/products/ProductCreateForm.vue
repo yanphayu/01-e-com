@@ -127,19 +127,31 @@
           <input v-model="form.details.sangkat" class="input" :placeholder="t('product.sangkatPlaceholder')" />
         </div>
         <div class="field full">
-          <label>{{ t('product.address') }}</label>
-          <button type="button" class="loc-btn" :disabled="locating" @click="getLocation">
-            <svg v-if="!locating" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-              <circle cx="12" cy="10" r="3" />
-            </svg>
-            <span v-if="locating" class="spinner" />
-            {{ locating ? t('product.gettingLocation') : t('product.getLocation') }}
-          </button>
+          <label>{{ t('product.address') }} / {{ t('auth.location') }}</label>
+          <div class="loc-row">
+            <button type="button" class="loc-btn" :disabled="locating" @click="getLocation">
+              <svg v-if="!locating" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span v-if="locating" class="spinner" />
+              {{ locating ? t('product.gettingLocation') : t('product.getLocation') }}
+            </button>
+            <button type="button" class="loc-btn" @click="showMap = true">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              {{ t('auth.selectLocationOnMap') }}
+            </button>
+          </div>
           <p v-if="locError" class="field-error">{{ locError }}</p>
         </div>
         <div class="field full">
           <input v-model="form.details.address" class="input" :placeholder="t('product.addressPlaceholder')" />
+        </div>
+        <div class="field full">
+          <p v-if="form.details.latitude && form.details.longitude" class="loc-result loc-coords">{{ form.details.latitude }}, {{ form.details.longitude }}</p>
         </div>
         <div class="field full">
           <label>{{ t('product.phoneNumbers') }}</label>
@@ -300,6 +312,16 @@
         @click="submitProduct"
       >{{ submitting ? t('product.posting') : t('product.postProduct') }}</button>
     </div>
+
+    <MapPickerModal
+      v-model="showMap"
+      :latitude="form.details.latitude"
+      :longitude="form.details.longitude"
+      @update:latitude="form.details.latitude = $event"
+      @update:longitude="form.details.longitude = $event"
+      @update:address="form.details.address = $event"
+      @confirm="onMapConfirm"
+    />
   </div>
 </template>
 
@@ -308,6 +330,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { t, getLocale } from '../../i18n'
 import { getCategories, getAttributes, getBrands, getModels, createProduct } from '../../services/products'
+import MapPickerModal from '../../design-system/MapPickerModal.vue'
 
 const router = useRouter()
 
@@ -340,6 +363,7 @@ const error = ref(null)
 const success = ref(null)
 const locating = ref(false)
 const locError = ref(null)
+const showMap = ref(false)
 const errors = reactive({ name: null, price: null })
 
 const form = reactive({
@@ -550,6 +574,15 @@ async function getLocation() {
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   )
+}
+
+function onMapConfirm({ latitude: lat, longitude: lng, address, province, khan, sangkat }) {
+  form.details.address = address || form.details.address
+  form.details.latitude = lat
+  form.details.longitude = lng
+  if (province) form.details.province = province
+  if (khan) form.details.khan = khan
+  if (sangkat) form.details.sangkat = sangkat
 }
 
 function nextStep() {
@@ -1085,6 +1118,24 @@ select.input {
 
 .loc-btn:hover {
   background: color-mix(in srgb, var(--accent-soft) 80%, var(--accent) 20%);
+}
+
+.loc-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.loc-result {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.loc-coords {
+  color: var(--accent);
+  font-family: var(--font-mono, monospace);
 }
 
 .loc-btn:disabled {

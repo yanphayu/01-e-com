@@ -57,8 +57,27 @@
           <input v-model="form.details.sangkat" class="input" :placeholder="t('product.sangkatPlaceholder')" />
         </div>
         <div class="field full">
-          <label>{{ t('product.address') }}</label>
+          <label>{{ t('product.address') }} / {{ t('auth.location') }}</label>
+          <div class="loc-row">
+            <button type="button" class="loc-btn" :disabled="locating" @click="getLocation">
+              <svg v-if="!locating" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span v-if="locating" class="spinner" />
+              {{ locating ? t('product.gettingLocation') : t('product.getLocation') }}
+            </button>
+            <button type="button" class="loc-btn" @click="showMap = true">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              {{ t('auth.selectLocationOnMap') }}
+            </button>
+          </div>
           <input v-model="form.details.address" class="input" :placeholder="t('product.addressPlaceholder')" />
+          <p v-if="form.details.latitude && form.details.longitude" class="loc-result loc-coords">{{ form.details.latitude }}, {{ form.details.longitude }}</p>
+          <p v-if="locError" class="field-error">{{ locError }}</p>
         </div>
         <div class="field full">
           <label>{{ t('product.phoneNumbers') }}</label>
@@ -129,6 +148,16 @@
           {{ t('auth.save') }}
         </button>
       </div>
+
+      <MapPickerModal
+        v-model="showMap"
+        :latitude="form.details.latitude"
+        :longitude="form.details.longitude"
+        @update:latitude="form.details.latitude = $event"
+        @update:longitude="form.details.longitude = $event"
+        @update:address="form.details.address = $event"
+        @confirm="onMapConfirm"
+      />
     </template>
   </div>
 </template>
@@ -136,9 +165,10 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
-import { t } from '../i18n'
+import { t, getLocale } from '../i18n'
 import { getProduct, updateProduct, getCategories, getBrands, getModels, deleteProductImage, uploadProductImage, updateProductImage } from '../services/products'
 import { STORAGE_URL } from '../services/http'
+import MapPickerModal from '../design-system/MapPickerModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -152,6 +182,9 @@ const loading = ref(true)
 const submitting = ref(false)
 const error = ref(null)
 const success = ref(null)
+const locating = ref(false)
+const locError = ref(null)
+const showMap = ref(false)
 
 const form = reactive({
   name: '',
@@ -168,6 +201,8 @@ const form = reactive({
     khan: '',
     sangkat: '',
     address: '',
+    latitude: null,
+    longitude: null,
   },
 })
 
@@ -219,6 +254,50 @@ async function loadModels(brandId) {
   } catch {
     modelOptions.value = []
   }
+}
+
+async function getLocation() {
+  if (!navigator.geolocation) {
+    locError.value = t('auth.locationUnsupported')
+    return
+  }
+
+  locating.value = true
+  locError.value = null
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const { latitude: lat, longitude: lng } = position.coords
+      form.details.latitude = lat
+      form.details.longitude = lng
+      try {
+        const lang = getLocale() === 'kh' ? 'km' : getLocale()
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=${lang}`
+        )
+        const data = await res.json()
+        form.details.address = data.display_name || `${lat}, ${lng}`
+      } catch {
+        form.details.address = `${lat}, ${lng}`
+      } finally {
+        locating.value = false
+      }
+    },
+    () => {
+      locError.value = t('auth.locationDenied')
+      locating.value = false
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  )
+}
+
+function onMapConfirm({ latitude: lat, longitude: lng, address, province, khan, sangkat }) {
+  form.details.address = address || form.details.address
+  form.details.latitude = lat
+  form.details.longitude = lng
+  if (province) form.details.province = province
+  if (khan) form.details.khan = khan
+  if (sangkat) form.details.sangkat = sangkat
 }
 
 function onFilesChange(e) {
@@ -274,6 +353,8 @@ async function submit() {
         khan: form.details.khan || null,
         sangkat: form.details.sangkat || null,
         address: form.details.address || null,
+        latitude: form.details.latitude || null,
+        longitude: form.details.longitude || null,
       },
     })
 
@@ -329,6 +410,8 @@ onMounted(async () => {
     form.details.khan = product.value.detail?.khan || ''
     form.details.sangkat = product.value.detail?.sangkat || ''
     form.details.address = product.value.detail?.address || ''
+    form.details.latitude = product.value.detail?.latitude ?? null
+    form.details.longitude = product.value.detail?.longitude ?? null
     existingImages.value = [...(product.value.images || [])]
     const primaryImg = existingImages.value.find(i => i.is_primary)
     primaryImageId.value = primaryImg ? primaryImg.id : (existingImages.value.length > 0 ? existingImages.value[0].id : null)
@@ -399,6 +482,59 @@ onMounted(async () => {
 .input:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+.loc-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.loc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.loc-btn:hover {
+  background: color-mix(in srgb, var(--accent-soft) 80%, var(--accent) 20%);
+}
+
+.loc-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.loc-result {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.loc-coords {
+  color: var(--accent);
+  font-family: var(--font-mono, monospace);
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
 }
 
 .textarea {
