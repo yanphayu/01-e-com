@@ -56,6 +56,13 @@
             </svg>
           </RouterLink>
 
+          <!-- Chat -->
+          <RouterLink to="/chat" class="notif-trigger">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </RouterLink>
+
           <RouterLink to="/profile" class="btn btn-ghost user-trigger">
             <span class="user-name">{{ userName }}</span>
             <img v-if="userAvatar" :src="userAvatar" class="user-avatar" alt="" />
@@ -119,6 +126,12 @@
         <span v-if="unreadCount > 0" class="bottom-notif-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
       </span>
       <span>{{ t('nav.notifications') }}</span>
+    </RouterLink>
+    <RouterLink to="/chat" class="bottom-tab" :class="{ active: route.path === '/chat' }">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      <span>{{ t('nav.chat') }}</span>
     </RouterLink>
     <RouterLink to="/profile" class="bottom-tab" :class="{ active: route.path === '/profile' }">
       <img v-if="userAvatar" :src="userAvatar" class="bottom-tab-avatar" alt="" />

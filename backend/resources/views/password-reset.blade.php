@@ -35,6 +35,14 @@
                 text-align: center;
                 background-color: #111827;
             ">
+                <img src="{{ asset('images/email/jean.jpg') }}" alt="Trinity" style="
+                    width: 80px;
+                    height: 80px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    margin-bottom: 15px;
+                    border: 3px solid #ffffff;
+                ">
                 <h1 style="
                     margin: 0;
                     color: #ffffff;

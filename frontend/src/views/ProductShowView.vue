@@ -79,6 +79,16 @@
         <div class="product-price-row">
           <p class="product-price">${{ Number(product.price).toFixed(2) }}</p>
           <button
+            v-if="isAuthenticated && !isOwner"
+            class="fav-btn"
+            @click="chatWithSeller"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            {{ t('product.chatWithSeller') }}
+          </button>
+          <button
             v-if="isAuthenticated"
             class="fav-btn"
             :class="{ active: isFavorited }"
@@ -190,6 +200,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { t } from '../i18n'
 import { getProduct, getProducts, getComments, addComment, deleteComment } from '../services/products'
 import { toggleFavorite } from '../services/favorites'
+import { createConversation } from '../services/chat'
 import { STORAGE_URL } from '../services/http'
 import ProductCard from '../components/ProductCard.vue'
 import CommentNode from '../components/CommentNode.vue'
@@ -224,7 +235,7 @@ const isOwner = computed(() => {
   if (!stored) return false
   try {
     const me = JSON.parse(stored)
-    return me.id === product.value?.user_id
+    return Number(me.id) === Number(product.value?.user_id)
   } catch {
     return false
   }
@@ -235,6 +246,20 @@ function goToProfile() {
     router.push('/profile')
   } else {
     router.push(`/users/${product.value.user_id}`)
+  }
+}
+
+async function chatWithSeller() {
+  if (!isAuthenticated.value) {
+    router.push('/login')
+    return
+  }
+  try {
+    const data = await createConversation(product.value.user_id)
+    router.push(`/chat?conversation=${data.data.id}`)
+  } catch (e) {
+    console.error('chatWithSeller error:', e)
+    router.push('/chat')
   }
 }
 

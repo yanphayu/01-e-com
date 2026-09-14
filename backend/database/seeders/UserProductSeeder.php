@@ -12,14 +12,19 @@ use App\Models\ProductPhone;
 use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class UserProductSeeder extends Seeder
 {
+    private array $senderImages = [];
+
     public function run(): void
     {
+        $this->copySenderImages();
+
         $users = $this->getUsers();
         $phoneNumbers = [
             '0882376158',
@@ -60,6 +65,45 @@ class UserProductSeeder extends Seeder
                 $this->createProduct($user->id, $productData);
             }
         }
+    }
+
+    private function copySenderImages(): void
+    {
+        $sourceDir = base_path('/../senderImages');
+        $disk = Storage::disk('public');
+
+        $categories = ['jean', 'shirt'];
+        foreach ($categories as $category) {
+            $categoryPath = $sourceDir.'/'.$category;
+            if (! is_dir($categoryPath)) {
+                continue;
+            }
+
+            $files = File::files($categoryPath);
+            foreach ($files as $file) {
+                if ($file->getExtension() !== 'jpg') {
+                    continue;
+                }
+                $destPath = 'sender/'.$category.'/'.$file->getFilename();
+                $disk->put($destPath, file_get_contents($file->getRealPath()));
+                $this->senderImages[$category][] = $destPath;
+            }
+        }
+    }
+
+    private function getSenderImage(string $name): ?string
+    {
+        $nameLower = strtolower($name);
+
+        if (str_contains($nameLower, 'jean')) {
+            $images = $this->senderImages['jean'] ?? [];
+        } elseif (str_contains($nameLower, 'shirt')) {
+            $images = $this->senderImages['shirt'] ?? [];
+        } else {
+            return null;
+        }
+
+        return array_shift($images) ?? null;
     }
 
     private function createProduct(int $userId, array $data): void
@@ -114,13 +158,18 @@ class UserProductSeeder extends Seeder
             }
         }
 
-        $imageSeed = Str::slug($data['name']);
-        $imageUrl = 'https://picsum.photos/seed/'.$imageSeed.'/800/800';
+        $senderImage = $this->getSenderImage($data['name']);
         $dir = 'products/'.$product->id;
         $path = $dir.'/main.jpg';
 
         try {
-            $imageContent = Http::timeout(10)->get($imageUrl)->body();
+            if ($senderImage) {
+                $imageContent = Storage::disk('public')->get($senderImage);
+            } else {
+                $imageSeed = Str::slug($data['name']);
+                $imageUrl = 'https://picsum.photos/seed/'.$imageSeed.'/800/800';
+                $imageContent = Http::timeout(10)->get($imageUrl)->body();
+            }
             Storage::disk('public')->put($path, $imageContent);
             ProductImage::create([
                 'product_id' => $product->id,

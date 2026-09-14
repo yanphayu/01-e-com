@@ -64,4 +64,19 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Product::class, 'favorites')->withTimestamps();
     }
+
+    public function conversationsAsUser1(): HasMany
+    {
+        return $this->hasMany(Conversation::class, 'user1_id');
+    }
+
+    public function conversationsAsUser2(): HasMany
+    {
+        return $this->hasMany(Conversation::class, 'user2_id');
+    }
+
+    public function messages(): HasMany
+    {
+        return $this->hasMany(Message::class);
+    }
 }

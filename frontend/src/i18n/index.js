@@ -299,7 +299,19 @@ const messages = {
     'product.delete': 'Delete',
     'product.favorite': 'Favorite',
     'product.unfavorite': 'Unfavorite',
+    'product.chatWithSeller': 'Chat',
     'product.noFavorites': 'No favorites yet. Tap the heart icon on a product to save it here.',
+
+    'chat.title': 'Messages',
+    'chat.newChat': 'New Conversation',
+    'chat.searchUsers': 'Search by name or email...',
+    'chat.noUsers': 'No users found',
+    'chat.noConversations': 'No conversations yet. Start one by clicking +',
+    'chat.selectConversation': 'Select a conversation to start messaging',
+    'chat.typeMessage': 'Type a message...',
+    'chat.noMessages': 'No messages yet. Say hello!',
+    'chat.uploadImage': 'Upload image',
+    'nav.chat': 'Chat',
   },
 
   kh: {
@@ -594,7 +606,19 @@ const messages = {
     'product.delete': 'លុប',
     'product.favorite': 'ស្រឡាញ់',
     'product.unfavorite': 'ឈប់ស្រឡាញ់',
+    'product.chatWithSeller': 'ជជែក',
     'product.noFavorites': 'មិនទាន់មានស្រឡាញ់នៅឡើយ។ ចុចរូបបេះដូងនៅលើផលិតផលដើម្បីរក្សាទុកនៅទីនេះ។',
+
+    'chat.title': 'សារ',
+    'chat.newChat': 'ការសន្ទនាថ្មី',
+    'chat.searchUsers': 'ស្វែងរកតាមឈ្មោះ ឬអ៊ីមែល...',
+    'chat.noUsers': 'រកមិនឃើញអ្នកប្រើប្រាស់',
+    'chat.noConversations': 'មិនទាន់មានការសន្ទនានៅឡើយ។ ចាប់ផ្តើមដោយចុច +',
+    'chat.selectConversation': 'ជ្រើសរើសការសន្ទនាដើម្បីចាប់ផ្តើមផ្ញើសារ',
+    'chat.typeMessage': 'វាយសារ...',
+    'chat.noMessages': 'មិនទាន់មានសារនៅឡើយ។ សួស្តី!',
+    'chat.uploadImage': 'ផ្ទុករូបភាព',
+    'nav.chat': 'ជជែក',
   },
 }
 
