@@ -56,6 +56,14 @@
             </svg>
           </RouterLink>
 
+          <!-- Chat -->
+          <RouterLink to="/chat" class="notif-trigger chat-trigger" :class="{ 'has-badge': chatUnread > 0 }" @click="onChatClick">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span v-if="chatUnread > 0" class="notif-badge chat-badge">{{ chatUnread > 99 ? '99+' : chatUnread }}</span>
+          </RouterLink>
+
           <RouterLink to="/profile" class="btn btn-ghost user-trigger">
             <span class="user-name">{{ userName }}</span>
             <img v-if="userAvatar" :src="userAvatar" class="user-avatar" alt="" />
@@ -120,6 +128,15 @@
       </span>
       <span>{{ t('nav.notifications') }}</span>
     </RouterLink>
+    <RouterLink to="/chat" class="bottom-tab" :class="{ active: route.path === '/chat' }" @click="onChatClick">
+      <span class="bottom-tab-icon-wrap">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span v-if="chatUnread > 0" class="bottom-notif-badge">{{ chatUnread > 99 ? '99+' : chatUnread }}</span>
+      </span>
+      <span>{{ t('nav.chat') }}</span>
+    </RouterLink>
     <RouterLink to="/profile" class="bottom-tab" :class="{ active: route.path === '/profile' }">
       <img v-if="userAvatar" :src="userAvatar" class="bottom-tab-avatar" alt="" />
       <span v-else class="bottom-tab-avatar bottom-tab-avatar-fallback">{{ userInitial }}</span>
@@ -134,8 +151,10 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { t } from '../i18n'
 import { getUser } from '../services/auth'
 import { getUnreadCount } from '../services/notifications'
+import { getConversations } from '../services/chat'
 import { initEcho, leaveEcho } from '../services/echo'
 import LocaleSwitcher from './LocaleSwitcher.vue'
+import { chatUnread, setChatUnread, resetChatUnread } from '../stores/chat'
 
 const router = useRouter()
 const route = useRoute()
@@ -186,6 +205,7 @@ async function refreshAuth() {
     user.value = data.data || {}
     localStorage.setItem('user', JSON.stringify(user.value))
     loadUnreadCount()
+    loadChatUnread()
     try { connectEcho() } catch {}
     window.addEventListener('notifications-read', loadUnreadCount)
   } catch {
@@ -210,6 +230,17 @@ async function loadUnreadCount() {
   } catch {}
 }
 
+async function loadChatUnread() {
+  if (route.name === 'chat') return
+  try {
+    const data = await getConversations()
+    const list = data.data || []
+    let total = 0
+    for (const conv of list) total += conv.unread_count || 0
+    setChatUnread(total)
+  } catch {}
+}
+
 function logout() {
   const current = JSON.parse(localStorage.getItem('user') || '{}')
   const token = localStorage.getItem('token')
@@ -224,6 +255,7 @@ function logout() {
   localStorage.removeItem('user')
   isAuthenticated.value = false
   user.value = {}
+  resetChatUnread()
   router.push('/login')
 }
 
@@ -274,6 +306,12 @@ function clearSearch() {
 function handleClickOutside(e) {
   if (switchDropdownRef.value && !switchDropdownRef.value.contains(e.target)) {
     showSwitchDropdown.value = false
+  }
+}
+
+function onChatClick() {
+  if (route.path === '/chat') {
+    window.dispatchEvent(new CustomEvent('chat-show-list'))
   }
 }
 
@@ -602,6 +640,36 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   color: var(--text);
 }
 
+.chat-trigger {
+  position: relative;
+}
+
+.chat-trigger::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -1px;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.chat-trigger.router-link-active::after {
+  background: #0084ff;
+}
+
+.chat-trigger.has-badge::after {
+  background: transparent;
+}
+
+.chat-badge {
+  top: -5px;
+  right: -3px;
+}
+
 .notif-badge {
   position: absolute;
   top: -4px;
@@ -636,6 +704,21 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   color: var(--text);
 }
 
+@media (max-width: 1080px) {
+  .search-wrapper {
+    display: none;
+  }
+  .mobile-search-btn {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 920px) {
+  .user-name {
+    display: none;
+  }
+}
+
 @media (max-width: 768px) {
   .links {
     display: none;
@@ -649,9 +732,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 }
 
 @media (max-width: 480px) {
-  .user-name {
-    display: none;
-  }
   .brand-name {
     display: none;
   }

@@ -1,5 +1,5 @@
 <template>
-  <div class="app">
+  <div class="app" :class="{ 'app-chat': route.name === 'chat' }">
     <Navbar v-if="!isAuthPage" />
     <main class="app-main">
       <RouterView />
@@ -27,6 +27,18 @@ const isAuthPage = computed(() =>
 
 .app-main {
   flex: 1;
+}
+
+.app-chat {
+  height: 100dvh;
+}
+
+.app-chat .app-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 @media (max-width: 768px) {

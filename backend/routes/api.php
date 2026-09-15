@@ -12,6 +12,7 @@ use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ModelController;
@@ -95,6 +96,23 @@ Route::post('/notifications/read-all', [NotificationController::class, 'markAllA
 // Favorites
 Route::get('/favorites', [FavoriteController::class, 'index'])->middleware('auth:sanctum');
 Route::post('/products/{product}/favorite', [FavoriteController::class, 'toggle'])->middleware('auth:sanctum');
+
+// Chat
+Route::get('/conversations', [ChatController::class, 'index'])->middleware('auth:sanctum');
+Route::post('/conversations', [ChatController::class, 'store'])->middleware('auth:sanctum');
+Route::patch('/conversations/{conversation}', [ChatController::class, 'update'])->middleware('auth:sanctum');
+Route::delete('/conversations/{conversation}', [ChatController::class, 'destroy'])->middleware('auth:sanctum');
+Route::post('/conversations/{conversation}/unread', [ChatController::class, 'markUnread'])->middleware('auth:sanctum');
+Route::post('/conversations/{conversation}/block', [ChatController::class, 'block'])->middleware('auth:sanctum');
+Route::get('/conversations/{conversation}/messages', [ChatController::class, 'messages'])->middleware('auth:sanctum');
+Route::post('/conversations/{conversation}/messages', [ChatController::class, 'send'])->middleware('auth:sanctum');
+Route::get('/chat/search-users', [ChatController::class, 'searchUsers'])->middleware('auth:sanctum');
+
+// Messages
+Route::patch('/messages/{message}', [ChatController::class, 'updateMessage'])->middleware('auth:sanctum');
+Route::delete('/messages/{message}', [ChatController::class, 'destroyMessage'])->middleware('auth:sanctum');
+Route::post('/messages/{message}/pin', [ChatController::class, 'pinMessage'])->middleware('auth:sanctum');
+Route::post('/messages/{message}/react', [ChatController::class, 'reactToMessage'])->middleware('auth:sanctum');
 
 // Admin routes
 Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function () {
