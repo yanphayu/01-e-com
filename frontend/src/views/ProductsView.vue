@@ -275,6 +275,12 @@ onBeforeUnmount(() => {
   margin-top: 1.5rem;
 }
 
+@media (max-width: 480px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .load-more {
   display: flex;
   align-items: center;

@@ -178,6 +178,12 @@ onMounted(async () => {
   padding-bottom: 3rem;
 }
 
+@media (max-width: 480px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .loading, .empty {
   text-align: center;
   padding: 3rem;

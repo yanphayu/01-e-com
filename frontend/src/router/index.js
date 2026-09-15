@@ -111,6 +111,9 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior() {
+    return { top: 0 }
+  },
 })
 
 const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/set-password']

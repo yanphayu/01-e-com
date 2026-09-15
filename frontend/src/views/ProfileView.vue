@@ -878,7 +878,7 @@ watch(localeRef, () => translateAddress())
 
 @media (max-width: 560px) {
   .my-products-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
   }
   .my-product-thumb {

@@ -44,6 +44,13 @@ const totalPages = ref(1)
 const sentinel = ref(null)
 let observer = null
 
+async function onHomeRefresh() {
+  currentPage.value = 1
+  totalPages.value = 1
+  await loadProducts()
+  if (observer) { observer.disconnect(); setupObserver() }
+}
+
 function goToCategory(id) {
   router.push(`/products?category_id=${id}`)
 }
@@ -79,6 +86,7 @@ function setupObserver() {
 }
 
 onMounted(async () => {
+  window.addEventListener('home-refresh', onHomeRefresh)
   try {
     const catData = await getCategories()
     categories.value = catData.data || []
@@ -91,6 +99,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('home-refresh', onHomeRefresh)
   if (observer) observer.disconnect()
 })
 </script>
@@ -160,7 +169,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 480px) {
   .grid-4 {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
   .section {
     padding: 1.5rem 1rem 2rem;

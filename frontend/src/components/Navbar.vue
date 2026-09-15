@@ -2,7 +2,7 @@
   <nav class="navbar">
     <div class="container nav-inner">
       <div class="brand-left">
-        <RouterLink to="/" class="brand">
+        <RouterLink to="/" class="brand" @click="onHomeTabClick">
           <svg class="brand-mark" viewBox="138.8 116 322.4 283" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="TRINITY">
             <path d="M 300 130 L 259.5 276.6 L 152.8 385 L 300 346.8 L 447.2 385 L 340.5 276.6 Z" stroke="currentColor" stroke-width="26" stroke-linejoin="miter" stroke-miterlimit="10" />
             <path d="M 259.5 276.6 L 300 346.8 L 340.5 276.6 Z" fill="currentColor" />
@@ -104,12 +104,19 @@
         </svg>
       </RouterLink>
 
+      <!-- Mobile favorites icon -->
+      <RouterLink v-if="isAuthenticated" to="/favorites" class="mobile-fav-btn" :class="{ active: route.path === '/favorites' }" aria-label="Favorites">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </RouterLink>
+
     </div>
   </nav>
 
   <!-- Bottom tab bar (mobile/tablet) -->
   <nav v-if="isAuthenticated" class="bottom-bar">
-    <RouterLink to="/" class="bottom-tab" :class="{ active: route.path === '/' }">
+    <RouterLink to="/" class="bottom-tab" :class="{ active: route.path === '/' }" @click="onHomeTabClick">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
       </svg>
@@ -306,6 +313,12 @@ function clearSearch() {
 function handleClickOutside(e) {
   if (switchDropdownRef.value && !switchDropdownRef.value.contains(e.target)) {
     showSwitchDropdown.value = false
+  }
+}
+
+function onHomeTabClick() {
+  if (route.path === '/') {
+    window.dispatchEvent(new CustomEvent('home-refresh'))
   }
 }
 
@@ -704,6 +717,27 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   color: var(--text);
 }
 
+.mobile-fav-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-muted);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.mobile-fav-btn:hover,
+.mobile-fav-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 @media (max-width: 1080px) {
   .search-wrapper {
     display: none;
@@ -724,9 +758,15 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
     display: none;
   }
   .search-wrapper {
-    display: none;
+    display: block;
+    flex: 1;
+    margin: 0 0.75rem;
+    max-width: none;
   }
   .mobile-search-btn {
+    display: none;
+  }
+  .mobile-fav-btn {
     display: inline-flex;
   }
 }
@@ -735,9 +775,8 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   .brand-name {
     display: none;
   }
-  .search-wrapper {
-    margin: 0 0.5rem;
-    max-width: none;
+  .brand-left {
+    margin-right: auto;
   }
 }
 

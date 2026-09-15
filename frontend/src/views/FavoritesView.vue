@@ -119,7 +119,7 @@ onMounted(async () => {
 
 @media (max-width: 640px) {
   .products-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>
