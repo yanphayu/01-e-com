@@ -164,6 +164,19 @@ const messages = {
     'profile.location': 'Location',
     'profile.changeCover': 'Change cover',
 
+    'settings.title': 'Settings',
+    'settings.editProfile': 'Edit profile',
+    'settings.editProfileDesc': 'Name, photo, phone and location',
+    'settings.notifications': 'Notifications',
+    'settings.notificationsDesc': 'In-app alerts and activities',
+    'settings.language': 'Language',
+    'settings.logoutDesc': 'Sign out of your account',
+    'settings.blockedUsers': 'Blocked users',
+    'settings.blockedDesc': 'Users you have blocked',
+
+    'blocked.empty': 'You have not blocked anyone.',
+    'blocked.unblock': 'Unblock',
+
     'auth.editProfileTitle': 'Edit profile',
     'auth.coverPhoto': 'Cover photo',
     'auth.profilePicture': 'Profile picture',
@@ -513,6 +526,19 @@ const messages = {
     'profile.socialLinks': 'តំណភ្ជាប់សង្គម',
     'profile.location': 'ទីតាំង',
     'profile.changeCover': 'ផ្លាស់ប្តូររូបភាពកំពូល',
+
+    'settings.title': 'ការកំណត់',
+    'settings.editProfile': 'កែប្រវត្តិ',
+    'settings.editProfileDesc': 'ឈ្មោះ រូបថត ទូរស័ព្ទ និងទីតាំង',
+    'settings.notifications': 'ការជូនដំណឹង',
+    'settings.notificationsDesc': 'ការជូនដំណឹងក្នុងកម្មវិធី និងសកម្មភាព',
+    'settings.language': 'ភាសា',
+    'settings.logoutDesc': 'ចាកចេញពីគណនីរបស់អ្នក',
+    'settings.blockedUsers': 'អ្នកប្រើប្រាស់ដែលបានប្លុក',
+    'settings.blockedDesc': 'អ្នកដែលអ្នកបានប្លុក',
+
+    'blocked.empty': 'អ្នកមិនទាន់បានប្លុកនរណាម្នាក់ទេ។',
+    'blocked.unblock': 'ដោះប្លុក',
 
     'auth.editProfileTitle': 'កែប្រវត្តិ',
     'auth.coverPhoto': 'រូបភាពកំពូល',

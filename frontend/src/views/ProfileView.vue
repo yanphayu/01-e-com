@@ -35,6 +35,12 @@
               </svg>
               {{ t('auth.editProfile') }}
             </button>
+            <RouterLink to="/settings" class="btn btn-icon" :title="t('settings.title')" aria-label="Settings">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </RouterLink>
           </div>
         </div>
 
@@ -464,6 +470,8 @@ watch(localeRef, () => translateAddress())
 .fb-actions {
   flex-shrink: 0;
   padding-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
 }
 
 .fb-actions .btn {
@@ -478,6 +486,15 @@ watch(localeRef, () => translateAddress())
 
 .fb-actions .btn:hover {
   background: #d8dadf;
+}
+
+.fb-actions .btn-icon {
+  padding: 0.55rem 0.7rem;
+}
+
+.fb-actions .btn-icon:hover {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .fb-divider {
@@ -933,8 +950,12 @@ watch(localeRef, () => translateAddress())
   }
 
   .fb-actions .btn {
-    width: 100%;
+    flex: 1;
     justify-content: center;
+  }
+
+  .fb-actions .btn-icon {
+    flex: 0 0 auto;
   }
 
   .info-grid {

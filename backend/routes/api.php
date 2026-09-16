@@ -107,6 +107,8 @@ Route::post('/conversations/{conversation}/block', [ChatController::class, 'bloc
 Route::get('/conversations/{conversation}/messages', [ChatController::class, 'messages'])->middleware('auth:sanctum');
 Route::post('/conversations/{conversation}/messages', [ChatController::class, 'send'])->middleware('auth:sanctum');
 Route::get('/chat/search-users', [ChatController::class, 'searchUsers'])->middleware('auth:sanctum');
+Route::get('/chat/blocked-users', [ChatController::class, 'blockedUsers'])->middleware('auth:sanctum');
+Route::delete('/chat/blocked-users/{user}', [ChatController::class, 'unblockUser'])->middleware('auth:sanctum');
 
 // Messages
 Route::patch('/messages/{message}', [ChatController::class, 'updateMessage'])->middleware('auth:sanctum');

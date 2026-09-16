@@ -262,7 +262,7 @@
             </div>
 
             <Transition name="rr-pop">
-              <div v-if="reactBarMessage?.id === msg.id || hoverMessage?.id === msg.id" class="reaction-bar" @click.stop>
+              <div v-if="!msg.deleted_at && (reactBarMessage?.id === msg.id || hoverMessage?.id === msg.id)" class="reaction-bar" @click.stop>
                 <button
                   v-for="emoji in REACTIONS"
                   :key="emoji"
@@ -1021,6 +1021,7 @@ let lastHoldTime = 0
 let holdStart = { x: 0, y: 0 }
 
 function onHoldStart(msg, event) {
+  if (msg.deleted_at) return
   holdTriggered = false
   clearTimeout(holdTimer)
   const touch = event.touches && event.touches[0]
@@ -1053,7 +1054,7 @@ function onHoldEnd() {
 const canHover = typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(hover: hover)').matches
 
 function onMessageHover(msg) {
-  if (!canHover) return
+  if (!canHover || msg.deleted_at) return
   hoverMessage.value = msg
 }
 
@@ -1969,7 +1970,7 @@ onUnmounted(() => {
 
 .reaction-bar {
   position: absolute;
-  bottom: calc(100% + 8px);
+  top: calc(100% + 8px);
   display: flex;
   align-items: center;
   gap: 0.15rem;
@@ -2535,12 +2536,12 @@ onUnmounted(() => {
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1300px), (hover: none) and (pointer: coarse) {
   .chat-page {
     position: relative;
     flex-direction: column;
-    height: calc(100vh - 60px);
-    height: calc(100dvh - 60px);
+    height: calc(100vh - 70px);
+    height: calc(100dvh - 70px);
   }
 
   .sidebar-scrim {
@@ -2652,9 +2653,9 @@ onUnmounted(() => {
   --text-muted: #65676b;
   --border: rgba(0, 0, 0, 0.08);
   --border-strong: rgba(0, 0, 0, 0.16);
-  --accent: #0084ff;
-  --accent-dark: #0070dc;
-  --accent-soft: rgba(0, 132, 255, 0.12);
+  --accent: #2f9e6b;
+  --accent-dark: #237a52;
+  --accent-soft: rgba(47, 158, 107, 0.12);
   --danger: #e0413a;
   --danger-soft: rgba(224, 65, 58, 0.1);
   --radius-sm: 8px;
@@ -2828,7 +2829,7 @@ onUnmounted(() => {
 }
 
 .chat-main {
-  background: #f3f3f5;
+  background: #eff6f1;
   min-height: 0;
   min-width: 0;
   overflow: hidden;
@@ -2847,14 +2848,27 @@ onUnmounted(() => {
 }
 
 .messages-area {
+  position: relative;
   min-height: 0;
   flex: 1 1 0;
   padding: 1.1rem 1.25rem;
   gap: 0.6rem;
 }
 
+.messages-area::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/trinity-logo.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: min(380px, 60vw);
+  opacity: 0.1;
+  pointer-events: none;
+}
+
 .message-bubble {
-  background: #e4e6eb;
+  background: #d8ecdf;
   border-color: transparent;
   color: #050505;
   border-radius: 18px;
@@ -2876,7 +2890,7 @@ onUnmounted(() => {
 }
 
 .message-row.mine .message-bubble {
-  background: linear-gradient(135deg, #00a3ff 0%, #0077ff 100%);
+  background: linear-gradient(135deg, #2f9e6b 0%, #1e7d52 100%);
   border-color: transparent;
   color: #fff;
   border-radius: 18px;
@@ -2895,7 +2909,7 @@ onUnmounted(() => {
 }
 
 .reaction-btn.active {
-  background: rgba(0, 132, 255, 0.15);
+  background: rgba(47, 158, 107, 0.15);
 }
 
 .reaction-close {
@@ -2917,12 +2931,12 @@ onUnmounted(() => {
 }
 
 .msg-status.seen {
-  color: #0084ff;
+  color: #2f9e6b;
 }
 
 .msg-forwarded-label,
 .msg-reply-owner {
-  color: #0084ff;
+  color: #2f9e6b;
 }
 
 .message-row.mine .msg-forwarded-label {
@@ -2957,6 +2971,7 @@ onUnmounted(() => {
 }
 
 .chat-input-area {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -2964,6 +2979,23 @@ onUnmounted(() => {
   border-top-color: var(--border);
   padding: 0.6rem 0.85rem 0.85rem;
   flex-shrink: 0;
+}
+
+.chat-input-area::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/trinity-logo.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: min(260px, 55vw);
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.chat-input-area > * {
+  position: relative;
+  z-index: 1;
 }
 
 .img-upload-btn {
@@ -3011,14 +3043,14 @@ onUnmounted(() => {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #00a3ff, #0077ff);
+  background: linear-gradient(135deg, #2f9e6b, #1e7d52);
   color: #fff;
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .send-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #00a3ff, #0077ff);
-  box-shadow: 0 4px 14px rgba(0, 119, 255, 0.4);
+  background: linear-gradient(135deg, #2f9e6b, #1e7d52);
+  box-shadow: 0 4px 14px rgba(47, 158, 107, 0.4);
   transform: none;
 }
 
@@ -3103,7 +3135,7 @@ onUnmounted(() => {
   font-size: 0.9rem;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1300px), (hover: none) and (pointer: coarse) {
   .chat-sidebar {
     background: #ffffff;
   }
@@ -3292,7 +3324,7 @@ onUnmounted(() => {
 }
 
 .pf-cover-empty {
-  background: linear-gradient(135deg, #00a3ff, #7f5cff);
+  background: linear-gradient(135deg, #2f9e6b, #6fb896);
 }
 
 .pf-avatar {
@@ -3315,7 +3347,7 @@ onUnmounted(() => {
   justify-content: center;
   font-weight: 700;
   color: #fff;
-  background: #0084ff;
+  background: #2f9e6b;
 }
 
 .pf-name {
@@ -3334,15 +3366,15 @@ onUnmounted(() => {
   padding: 0.5rem 0.9rem;
   width: fit-content;
   border-radius: 999px;
-  background: #e7f0fe;
-  color: #1b74e4;
+  background: #dcefe4;
+  color: #1f7a50;
   font-weight: 600;
   font-size: 0.95rem;
   text-decoration: none;
 }
 
 .pf-view:hover {
-  background: #d7e6fc;
+  background: #c9e5d6;
 }
 
 .pf-section {
@@ -3382,7 +3414,7 @@ onUnmounted(() => {
 }
 
 .pf-link {
-  color: #1b74e4;
+  color: #1f7a50;
   text-decoration: none;
 }
 

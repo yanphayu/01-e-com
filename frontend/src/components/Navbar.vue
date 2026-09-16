@@ -34,8 +34,26 @@
         </form>
       </div>
 
+      <div class="icon-actions">
+        <!-- Search icon -->
+        <RouterLink v-if="!isProfilePage && !isSearchPage" to="/search" class="mobile-search-btn" :title="t('nav.search')" aria-label="Search">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </RouterLink>
+
+        <!-- Mobile favorites icon -->
+        <RouterLink v-if="isAuthenticated" to="/favorites" class="mobile-fav-btn" :class="{ active: route.path === '/favorites' }" aria-label="Favorites">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </RouterLink>
+
+        <!-- Mobile language switcher -->
+        <LocaleSwitcher class="mobile-locale" />
+      </div>
+
       <div class="links">
-        <LocaleSwitcher />
         <template v-if="isAuthenticated">
           <RouterLink to="/products/create" class="btn btn-primary btn-sm">
             {{ t('nav.postProduct') }}
@@ -91,31 +109,18 @@
             </div>
           </div>
         </template>
-        <template v-else>
+<template v-else>
           <RouterLink to="/login" class="btn btn-ghost">{{ t('nav.login') }}</RouterLink>
           <RouterLink to="/register" class="btn btn-primary">{{ t('nav.register') }}</RouterLink>
         </template>
+<LocaleSwitcher />
       </div>
-
-      <!-- Mobile search icon -->
-      <RouterLink v-if="!isProfilePage && !isSearchPage" to="/search" class="mobile-search-btn">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-      </RouterLink>
-
-      <!-- Mobile favorites icon -->
-      <RouterLink v-if="isAuthenticated" to="/favorites" class="mobile-fav-btn" :class="{ active: route.path === '/favorites' }" aria-label="Favorites">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-      </RouterLink>
 
     </div>
   </nav>
 
   <!-- Bottom tab bar (mobile/tablet) -->
-  <nav v-if="isAuthenticated" class="bottom-bar">
+  <nav class="bottom-bar">
     <RouterLink to="/" class="bottom-tab" :class="{ active: route.path === '/' }" @click="onHomeTabClick">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
@@ -381,7 +386,16 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   align-items: center;
 }
 
+.icon-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-left: auto;
+  margin-right: 0.6rem;
+}
+
 .search-wrapper {
+  display: none;
   position: relative;
   flex: 1;
   max-width: 320px;
@@ -700,6 +714,25 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 }
 
 .mobile-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.mobile-search-btn:hover {
+  color: var(--accent);
+}
+
+.mobile-fav-btn {
   display: none;
   align-items: center;
   justify-content: center;
@@ -710,41 +743,13 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   background: transparent;
   color: var(--text-muted);
   text-decoration: none;
-  transition: color 0.15s;
-}
-
-.mobile-search-btn:hover {
-  color: var(--text);
-}
-
-.mobile-fav-btn {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text-muted);
-  text-decoration: none;
   flex-shrink: 0;
-  transition: border-color 0.15s, color 0.15s;
+  transition: color 0.15s;
 }
 
 .mobile-fav-btn:hover,
 .mobile-fav-btn.active {
-  border-color: var(--accent);
   color: var(--accent);
-}
-
-@media (max-width: 1080px) {
-  .search-wrapper {
-    display: none;
-  }
-  .mobile-search-btn {
-    display: inline-flex;
-  }
 }
 
 @media (max-width: 920px) {
@@ -753,30 +758,21 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
+  .search-wrapper {
+    display: none;
+  }
+
   .links {
     display: none;
   }
-  .search-wrapper {
-    display: block;
-    flex: 1;
-    margin: 0 0.75rem;
-    max-width: none;
-  }
-  .mobile-search-btn {
-    display: none;
-  }
+
   .mobile-fav-btn {
     display: inline-flex;
   }
-}
 
-@media (max-width: 480px) {
-  .brand-name {
-    display: none;
-  }
-  .brand-left {
-    margin-right: auto;
+  :deep(.mobile-locale) {
+    display: inline-flex;
   }
 }
 
@@ -872,7 +868,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   font-weight: 600;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .bottom-bar {
     display: flex;
   }

@@ -471,6 +471,34 @@ class ChatController extends Controller
         ]);
     }
 
+    public function blockedUsers(Request $request): JsonResponse
+    {
+        $userId = $request->user()->id;
+
+        $blocked = Block::where('blocker_id', $userId)
+            ->with('blocked.profile')
+            ->orderByDesc('updated_at')
+            ->get()
+            ->pluck('blocked');
+
+        return response()->json([
+            'success' => true,
+            'data' => $blocked->values(),
+        ]);
+    }
+
+    public function unblockUser(Request $request, User $user): JsonResponse
+    {
+        $deleted = Block::where('blocker_id', $request->user()->id)
+            ->where('blocked_id', $user->id)
+            ->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => $deleted ? 'User unblocked.' : 'No block found.',
+        ]);
+    }
+
     private function isBlocked(int $authId, int $otherId): bool
     {
         return DB::table('blocks')

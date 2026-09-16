@@ -87,3 +87,13 @@ export function reactToMessage(messageId, reaction) {
     body: JSON.stringify({ reaction }),
   })
 }
+
+export function getBlockedUsers() {
+  return request('/chat/blocked-users')
+}
+
+export function unblockUser(userId) {
+  return request(`/chat/blocked-users/${userId}`, {
+    method: 'DELETE',
+  })
+}

@@ -63,6 +63,18 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/settings',
+    name: 'settings',
+    component: () => import('../views/SettingsView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/settings/blocked',
+    name: 'blocked-users',
+    component: () => import('../views/BlockedUsersView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/favorites',
     name: 'favorites',
     component: () => import('../views/FavoritesView.vue'),

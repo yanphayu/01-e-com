@@ -41,7 +41,7 @@ const isAuthPage = computed(() =>
   overflow: hidden;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .app-main {
     padding-bottom: 70px;
   }
