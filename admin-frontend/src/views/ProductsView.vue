@@ -75,6 +75,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getProducts, approveProduct, rejectProduct, deleteProduct } from '../services/admin'
+import { useConfirm } from '../composables/confirm'
+
+const { confirmDialog } = useConfirm()
 
 const loading = ref(true)
 const products = ref([])
@@ -149,7 +152,7 @@ function statusBadgeClass(status) {
 }
 
 async function handleDelete(p) {
-  if (!confirm(`Delete product "${p.name}"?`)) return
+  if (!(await confirmDialog(`Delete product "${p.name}"?`, { confirmText: 'Delete', title: 'Delete product' }))) return
   try {
     await deleteProduct(p.id)
     products.value = products.value.filter(x => x.id !== p.id)

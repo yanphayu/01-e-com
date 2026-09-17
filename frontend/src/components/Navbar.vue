@@ -627,7 +627,6 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    margin-left: auto;
     margin-right: 0.6rem;
 }
 
@@ -638,9 +637,11 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 .search-wrapper {
     display: flex;
     position: relative;
-    flex: 1;
+    flex: none;
+    width: 100%;
     max-width: 320px;
-    margin: 0 1.5rem;
+    margin-left: auto;
+    margin-right: 0.6rem;
 }
 
 .search-box {
@@ -1004,6 +1005,10 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 @media (max-width: 1024px) {
     .search-wrapper {
         display: none;
+    }
+
+    .icon-actions {
+        margin-left: auto;
     }
 
     .mobile-search-btn {

@@ -175,3 +175,15 @@ export function updateAttribute(id, data) {
 export function deleteAttribute(id) {
   return request(`/admin/attributes/${id}`, { method: 'DELETE' })
 }
+
+export function getReports(params = {}) {
+  const qs = new URLSearchParams(params).toString()
+  return request(`/admin/reports${qs ? '?' + qs : ''}`)
+}
+
+export function resolveReport(id, status = 'resolved') {
+  return request(`/admin/reports/${id}/resolve`, {
+    method: 'POST',
+    body: JSON.stringify({ status }),
+  })
+}

@@ -21,6 +21,11 @@ export async function request(endpoint, options = {}) {
   const data = await response.json().catch(() => ({}))
 
   if (!response.ok) {
+    if (response.status === 401 && token && window.location.pathname !== '/login') {
+      localStorage.removeItem('admin_token')
+      localStorage.removeItem('admin_user')
+      window.location.href = '/login'
+    }
     throw new Error(data.message || 'Something went wrong')
   }
 

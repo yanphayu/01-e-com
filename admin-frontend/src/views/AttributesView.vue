@@ -66,6 +66,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getAttributes, createAttribute, updateAttribute, deleteAttribute } from '../services/admin'
+import { useConfirm } from '../composables/confirm'
+
+const { confirmDialog } = useConfirm()
 
 const loading = ref(true)
 const attributes = ref([])
@@ -144,7 +147,7 @@ async function handleSubmit() {
 }
 
 async function handleDelete(a) {
-  if (!confirm(`Delete attribute "${a.name}"?`)) return
+  if (!(await confirmDialog(`Delete attribute "${a.name}"?`, { confirmText: 'Delete', title: 'Delete attribute' }))) return
   try {
     await deleteAttribute(a.id)
     await fetchAttributes()

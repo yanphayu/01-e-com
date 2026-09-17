@@ -75,6 +75,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getCategories, createCategory, updateCategory, deleteCategory, toggleCategoryActive } from '../services/admin'
+import { useConfirm } from '../composables/confirm'
+
+const { confirmDialog } = useConfirm()
 
 const loading = ref(true)
 const categories = ref([])
@@ -140,7 +143,7 @@ async function handleSubmit() {
 }
 
 async function handleDelete(c) {
-  if (!confirm(`Delete category "${c.name}"?`)) return
+  if (!(await confirmDialog(`Delete category "${c.name}"?`, { confirmText: 'Delete', title: 'Delete category' }))) return
   try {
     await deleteCategory(c.id)
     categories.value = categories.value.filter(x => x.id !== c.id)

@@ -96,6 +96,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getSubcategories, createSubcategory, updateSubcategory, deleteSubcategory, toggleSubcategoryActive, getCategories } from '../services/admin'
+import { useConfirm } from '../composables/confirm'
+
+const { confirmDialog } = useConfirm()
 
 const loading = ref(true)
 const subcategories = ref([])
@@ -184,7 +187,7 @@ async function handleSubmit() {
 }
 
 async function handleDelete(s) {
-  if (!confirm(`Delete subcategory "${s.name}"?`)) return
+  if (!(await confirmDialog(`Delete subcategory "${s.name}"?`, { confirmText: 'Delete', title: 'Delete subcategory' }))) return
   try {
     await deleteSubcategory(s.id)
     await fetchSubcategories()

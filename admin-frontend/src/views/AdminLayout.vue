@@ -20,6 +20,12 @@
           </svg>
           Dashboard
         </RouterLink>
+        <RouterLink to="/analytics" class="sidebar-link" :class="{ active: $route.name === 'analytics' }">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          Analytics
+        </RouterLink>
         <RouterLink to="/users" class="sidebar-link" :class="{ active: $route.name === 'users' || $route.name === 'user-detail' }">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
@@ -31,6 +37,12 @@
             <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
           </svg>
           Products
+        </RouterLink>
+        <RouterLink to="/reports" class="sidebar-link" :class="{ active: $route.name === 'reports' }">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          Reports
         </RouterLink>
         <RouterLink to="/categories" class="sidebar-link" :class="{ active: $route.name === 'categories' }">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -81,12 +93,15 @@
     <main class="admin-main">
       <RouterView />
     </main>
+
+    <ConfirmModal />
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
+import ConfirmModal from '../components/ConfirmModal.vue'
 
 const router = useRouter()
 

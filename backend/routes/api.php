@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ModelController as AdminModelController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\SubcategoryController as AdminSubcategoryController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AttributeController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\ModelController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductImageController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\SubcategoryController;
@@ -97,6 +99,9 @@ Route::post('/notifications/read-all', [NotificationController::class, 'markAllA
 Route::get('/favorites', [FavoriteController::class, 'index'])->middleware('auth:sanctum');
 Route::post('/products/{product}/favorite', [FavoriteController::class, 'toggle'])->middleware('auth:sanctum');
 
+// Reports
+Route::post('/products/{product}/reports', [ReportController::class, 'store'])->middleware('auth:sanctum');
+
 // Chat
 Route::get('/conversations', [ChatController::class, 'index'])->middleware('auth:sanctum');
 Route::post('/conversations', [ChatController::class, 'store'])->middleware('auth:sanctum');
@@ -134,6 +139,10 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::post('/products/{product}/approve', [AdminProductController::class, 'approve']);
     Route::post('/products/{product}/reject', [AdminProductController::class, 'reject']);
     Route::delete('/products/{product}', [AdminProductController::class, 'destroy']);
+
+    // Admin Reports
+    Route::get('/reports', [AdminReportController::class, 'index']);
+    Route::post('/reports/{report}/resolve', [AdminReportController::class, 'resolve']);
 
     // Admin Categories
     Route::get('/categories', [AdminCategoryController::class, 'index']);

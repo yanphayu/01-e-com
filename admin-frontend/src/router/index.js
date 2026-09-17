@@ -18,6 +18,11 @@ const routes = [
         component: () => import('../views/DashboardView.vue'),
       },
       {
+        path: 'analytics',
+        name: 'analytics',
+        component: () => import('../views/AnalyticsView.vue'),
+      },
+      {
         path: 'users',
         name: 'users',
         component: () => import('../views/UsersView.vue'),
@@ -61,6 +66,11 @@ const routes = [
         path: 'attributes',
         name: 'attributes',
         component: () => import('../views/AttributesView.vue'),
+      },
+      {
+        path: 'reports',
+        name: 'reports',
+        component: () => import('../views/ReportsView.vue'),
       },
     ],
   },

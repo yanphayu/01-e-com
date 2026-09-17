@@ -65,6 +65,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getUsers, toggleAdmin, deleteUser } from '../services/admin'
+import { useConfirm } from '../composables/confirm'
+
+const { confirmDialog } = useConfirm()
 
 const loading = ref(true)
 const users = ref([])
@@ -120,7 +123,7 @@ async function handleToggleAdmin(u) {
 }
 
 async function handleDelete(u) {
-  if (!confirm(`Delete user "${u.name}"?`)) return
+  if (!(await confirmDialog(`Delete user "${u.name}"?`, { confirmText: 'Delete', title: 'Delete user' }))) return
   try {
     await deleteUser(u.id)
     users.value = users.value.filter(x => x.id !== u.id)

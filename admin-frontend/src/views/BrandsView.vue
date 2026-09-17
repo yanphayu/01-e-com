@@ -77,6 +77,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getBrands, createBrand, updateBrand, deleteBrand, getSubcategories } from '../services/admin'
+import { useConfirm } from '../composables/confirm'
+
+const { confirmDialog } = useConfirm()
 
 const loading = ref(true)
 const brands = ref([])
@@ -165,7 +168,7 @@ async function handleSubmit() {
 }
 
 async function handleDelete(b) {
-  if (!confirm(`Delete brand "${b.name}"?`)) return
+  if (!(await confirmDialog(`Delete brand "${b.name}"?`, { confirmText: 'Delete', title: 'Delete brand' }))) return
   try {
     await deleteBrand(b.id)
     await fetchBrands()

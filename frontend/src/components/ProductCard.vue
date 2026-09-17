@@ -12,16 +12,19 @@
       <span v-if="product.detail?.condition" class="product-card-badge">
         {{ product.detail.condition === 'new' ? t('product.conditionNew') : t('product.conditionUsed') }}
       </span>
-      <button
-        v-if="isAuthenticated"
-        class="product-card-fav"
-        :class="{ active: isFavorited }"
-        @click.prevent.stop="onFavorite"
-      >
-        <svg viewBox="0 0 24 24" width="18" height="18" :fill="isFavorited ? 'var(--accent)' : 'none'" :stroke="isFavorited ? 'var(--accent)' : '#999'" stroke-width="2">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-      </button>
+      <div class="product-card-actions">
+        <button
+          v-if="isAuthenticated"
+          class="product-card-fav"
+          :class="{ active: isFavorited }"
+          :title="t('product.favorite')"
+          @click.prevent.stop="onFavorite"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" :fill="isFavorited ? 'var(--accent)' : 'none'" :stroke="isFavorited ? 'var(--accent)' : '#999'" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </button>
+      </div>
     </div>
     <div class="product-card-body">
       <h3 class="product-card-name">{{ product.name }}</h3>
@@ -134,6 +137,38 @@ function formatDate(dateStr) {
   letter-spacing: 0.04em;
 }
 
+.product-card-actions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.product-card-fav {
+  background: rgba(255,255,255,0.85);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #999;
+  transition: color 0.15s, background 0.15s;
+}
+
+.product-card-fav:hover {
+  background: #fff;
+  color: var(--accent);
+}
+
+.product-card-fav.active {
+  color: var(--accent);
+}
+
 .product-card-body {
   padding: 0.85rem 1rem 1rem;
 }
@@ -164,32 +199,6 @@ function formatDate(dateStr) {
   margin: 0.3rem 0 0;
   font-size: 0.75rem;
   color: var(--text-muted);
-}
-
-.product-card-fav {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: rgba(255,255,255,0.85);
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: #999;
-  transition: color 0.15s, background 0.15s;
-}
-
-.product-card-fav:hover {
-  background: #fff;
-  color: var(--accent);
-}
-
-.product-card-fav.active {
-  color: var(--accent);
 }
 
 @media (max-width: 480px) {

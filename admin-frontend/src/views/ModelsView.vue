@@ -92,6 +92,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getModels, createModel, updateModel, deleteModel, getBrands, getAttributes } from '../services/admin'
+import { useConfirm } from '../composables/confirm'
+
+const { confirmDialog } = useConfirm()
 
 const loading = ref(true)
 const models = ref([])
@@ -194,7 +197,7 @@ async function handleSubmit() {
 }
 
 async function handleDelete(m) {
-  if (!confirm(`Delete model "${m.name}"?`)) return
+  if (!(await confirmDialog(`Delete model "${m.name}"?`, { confirmText: 'Delete', title: 'Delete model' }))) return
   try {
     await deleteModel(m.id)
     await fetchModels()

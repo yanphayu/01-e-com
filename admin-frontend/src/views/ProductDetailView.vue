@@ -116,6 +116,9 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getProduct, approveProduct, rejectProduct, deleteProduct } from '../services/admin'
+import { useConfirm } from '../composables/confirm'
+
+const { confirmDialog } = useConfirm()
 
 const route = useRoute()
 const router = useRouter()
@@ -161,7 +164,7 @@ async function handleReject() {
 }
 
 async function handleDelete() {
-  if (!confirm(`Delete product "${product.value.name}"?`)) return
+  if (!(await confirmDialog(`Delete product "${product.value.name}"?`, { confirmText: 'Delete', title: 'Delete product' }))) return
   try {
     await deleteProduct(product.value.id)
     router.push('/products')
