@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Comment;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\Product;
 use App\Models\Report;
 use App\Models\User;
 
@@ -76,6 +77,28 @@ class DashboardController extends Controller
             ]);
         }
 
+        $since = now()->subDays(29)->startOfDay();
+        $daily = [];
+
+        foreach (['users' => User::class, 'products' => Product::class, 'comments' => Comment::class, 'messages' => Message::class] as $key => $model) {
+            $daily[$key] = $model::selectRaw('date(created_at) as d, count(*) as c')
+                ->where('created_at', '>=', $since)
+                ->groupBy('d')
+                ->pluck('c', 'd');
+        }
+
+        $traffic = collect(range(29, 0))->map(function (int $i) use ($daily) {
+            $date = now()->subDays($i)->toDateString();
+
+            return [
+                'date' => $date,
+                'users' => (int) ($daily['users'][$date] ?? 0),
+                'products' => (int) ($daily['products'][$date] ?? 0),
+                'comments' => (int) ($daily['comments'][$date] ?? 0),
+                'messages' => (int) ($daily['messages'][$date] ?? 0),
+            ];
+        })->values();
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -87,6 +110,7 @@ class DashboardController extends Controller
                 ],
                 'recent_users' => $recentUsers,
                 'recent_reports' => $recentReports,
+                'traffic' => $traffic,
                 'chat' => [
                     'total_conversations' => $totalConversations,
                     'total_messages' => $totalMessages,

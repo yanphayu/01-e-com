@@ -1,7 +1,7 @@
 <template>
   <div class="analytics-page" :class="{ embedded }">
-    <header class="analytics-header">
-      <div>
+    <header class="analytics-header" :class="{ 'is-embedded': embedded }">
+      <div v-if="!embedded">
         <h1 class="analytics-title">Analytics</h1>
         <p class="analytics-subtitle">Track your platform performance, audience growth and engagement over time.</p>
       </div>
@@ -23,11 +23,11 @@
       <div class="card-head">
         <div>
           <h2 class="card-title">Traffic Overview</h2>
-          <p class="card-subtitle">Pageviews and unique visitors over the selected period</p>
+          <p class="card-subtitle">Daily user registrations and new catalog listings over the selected period</p>
         </div>
         <div class="legend">
-          <span class="legend-item"><i class="dot dot-green"></i>Pageviews</span>
-          <span class="legend-item"><i class="dot dot-blue"></i>Unique Visitors</span>
+          <span class="legend-item"><i class="dot dot-green"></i>User registrations</span>
+          <span class="legend-item"><i class="dot dot-blue"></i>New listings</span>
         </div>
       </div>
 
@@ -62,8 +62,8 @@
 
         <div v-if="hoverIndex >= 0" class="chart-tooltip" :style="tooltipStyle">
           <span class="tip-date">{{ dateLabel(hoverIndex) }}</span>
-          <span class="tip-row"><i class="dot dot-green"></i>Pageviews: <b>{{ pageData[hoverIndex] }}</b></span>
-          <span class="tip-row"><i class="dot dot-blue"></i>Visitors: <b>{{ visitData[hoverIndex] }}</b></span>
+          <span class="tip-row"><i class="dot dot-green"></i>Registrations: <b>{{ pageData[hoverIndex] || 0 }}</b></span>
+          <span class="tip-row"><i class="dot dot-blue"></i>Listings: <b>{{ visitData[hoverIndex] || 0 }}</b></span>
         </div>
       </div>
     </section>
@@ -71,15 +71,15 @@
     <section class="kpi-grid">
       <div class="card kpi-card">
         <div class="kpi-head">
-          <span class="kpi-label">Pageviews</span>
+          <span class="kpi-label">New Users</span>
           <span class="kpi-icon pill-green">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
           </span>
         </div>
         <div class="kpi-value-row">
           <div>
-            <span class="kpi-value">{{ formatNumber(kpiPageviews) }}</span>
-            <span class="kpi-delta up"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> {{ kpiPageviewsDelta }}%</span>
+            <span class="kpi-value">{{ formatNumber(kpiUsers) }}</span>
+            <span class="kpi-delta up"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> {{ usersDelta }}%</span>
           </div>
           <svg :viewBox="`0 0 ${SPARK_W} ${SPARK_H}`" class="spark" preserveAspectRatio="none">
             <path :d="pageSparkPath" class="spark-line" fill="none" />
@@ -90,51 +90,51 @@
 
       <div class="card kpi-card">
         <div class="kpi-head">
-          <span class="kpi-label">Bounce Rate</span>
-          <span class="kpi-icon pill-blue">
+          <span class="kpi-label">New Listings</span>
+          <span class="kpi-icon pill-green">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M16 2H8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>
           </span>
         </div>
         <div class="kpi-radial-row">
-          <div class="radial" :style="{ background: `radial-gradient(#fff 58%, transparent 60%), conic-gradient(var(--green) ${bouncePct * 3.6}deg, #E8EDF3 ${bouncePct * 3.6}deg)` }">
-            <span class="radial-value">{{ bounceRate.toFixed(1) }}%</span>
+          <div class="radial" :style="{ background: `radial-gradient(#fff 58%, transparent 60%), conic-gradient(var(--green) ${listingsShare * 3.6}deg, #E8EDF3 ${listingsShare * 3.6}deg)` }">
+            <span class="radial-value">{{ formatNumber(listingsToday) }}</span>
           </div>
           <div>
-            <span class="kpi-delta down"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg> {{ bounceDelta }}%</span>
-            <p class="kpi-note">visitors left after one page</p>
+            <span class="kpi-delta up"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> {{ listingsDelta }}%</span>
+            <p class="kpi-note">catalog items added today</p>
           </div>
         </div>
       </div>
 
       <div class="card kpi-card">
         <div class="kpi-head">
-          <span class="kpi-label">Avg. Duration</span>
-          <span class="kpi-icon pill-green">
+          <span class="kpi-label">Chat Messages</span>
+          <span class="kpi-icon pill-blue">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </span>
         </div>
         <div class="kpi-radial-row">
-          <div class="radial" :style="{ background: `radial-gradient(#fff 58%, transparent 60%), conic-gradient(var(--blue) ${durationPct * 3.6}deg, #E8EDF3 ${durationPct * 3.6}deg)` }">
-            <span class="radial-value">{{ avgDuration }}</span>
+          <div class="radial" :style="{ background: `radial-gradient(#fff 58%, transparent 60%), conic-gradient(var(--blue) ${messagesShare * 3.6}deg, #E8EDF3 ${messagesShare * 3.6}deg)` }">
+            <span class="radial-value">{{ formatNumber(messagesToday) }}</span>
           </div>
           <div>
-            <span class="kpi-delta up"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> {{ durationDelta }}%</span>
-            <p class="kpi-note">avg time on site</p>
+            <span class="kpi-delta up"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> {{ messagesDelta }}%</span>
+            <p class="kpi-note">messages sent today</p>
           </div>
         </div>
       </div>
 
       <div class="card kpi-card">
         <div class="kpi-head">
-          <span class="kpi-label">Sessions</span>
+          <span class="kpi-label">Avg Daily Users</span>
           <span class="kpi-icon pill-blue">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
           </span>
         </div>
         <div class="kpi-value-row">
           <div>
-            <span class="kpi-value">{{ formatNumber(kpiSessions) }}</span>
-            <span class="kpi-delta up"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> {{ sessionsDelta }}%</span>
+            <span class="kpi-value">{{ avgDailyUsers }}</span>
+            <span class="kpi-delta up"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> {{ usersDelta }}%</span>
           </div>
           <div class="mini-bars">
             <span v-for="(b, i) in sessionBars" :key="i" class="mini-bar" :style="{ height: `${b}%` }"></span>
@@ -247,42 +247,45 @@ onMounted(async () => {
   try {
     const res = await getDashboard()
     realChat.value = res.data.chat || { total_messages: 0, total_conversations: 0, today_messages: 0, messages_by_conversation: [] }
+    traffic.value = res.data.traffic || []
   } catch {
     realChat.value = { total_messages: 0, total_conversations: 0, today_messages: 0, messages_by_conversation: [] }
+    traffic.value = []
   }
 })
 
 const ranges = ['7d', '30d', '90d']
 const range = ref('30d')
 
-const DAYS = 90
 const VIEW_W = 820
 const VIEW_H = 300
 const PAD_X = 14
 const PAD_T = 24
 const PAD_B = 22
 
-function genSeries(n, base, vol) {
-  return Array.from({ length: n }, (_, i) => {
-    const wave = Math.sin(i / 9) * vol * 0.45
-    const wave2 = Math.cos(i / 4.7) * vol * 0.18
-    const trend = (i / n) * vol * 0.35 + (i % 5) * vol * 0.05
-    const drift = Math.sin(i * 1.7) * vol * 0.08
-    return Math.max(60, Math.round(base + wave + wave2 + trend + drift))
-  })
+const traffic = ref([])
+const usersFull = computed(() => traffic.value.map(t => t.users || 0))
+const productsFull = computed(() => traffic.value.map(t => t.products || 0))
+const messagesFull = computed(() => traffic.value.map(t => t.messages || 0))
+
+const RANGE_MAP = { '7d': 7, '30d': 30, '90d': 90 }
+const rangeDays = computed(() => Math.max(1, Math.min(RANGE_MAP[range.value], traffic.value.length || 1)))
+
+const chartDates = computed(() => traffic.value.slice(-rangeDays.value).map(t => t.date))
+const pageData = computed(() => usersFull.value.slice(-rangeDays.value))
+const visitData = computed(() => productsFull.value.slice(-rangeDays.value))
+
+function fmtDate(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr + 'T00:00:00')
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
-
-const fullPage = genSeries(DAYS + 30, 4800, 1250)
-const fullVisit = genSeries(DAYS + 30, 2150, 620)
-
-const rangeDays = computed(() => ({ '7d': 7, '30d': 30, '90d': 90 })[range.value])
-const pageData = computed(() => fullPage.slice(fullPage.length - rangeDays.value))
-const visitData = computed(() => fullVisit.slice(fullVisit.length - rangeDays.value))
+const dateLabel = i => fmtDate(chartDates.value[i])
 
 function scaleFor(values) {
-  const all = [...values, ...(range.value === '30d' || range.value === '7d' ? [] : [])]
-  let lo = Math.min(...values)
-  let hi = Math.max(...values)
+  const safe = values.length ? values : [0]
+  let lo = Math.min(...safe)
+  let hi = Math.max(...safe)
   const pad = (hi - lo || hi * 0.1 || 100) * 0.12
   lo -= pad
   hi += pad
@@ -350,7 +353,7 @@ const xLabels = computed(() => {
   const step = Math.max(1, Math.ceil(n / 6))
   const labels = []
   for (let i = 0; i < n; i += step) {
-    labels.push({ x: PAD_X + (i / Math.max(1, n - 1)) * (VIEW_W - PAD_X * 2), label: i === 0 ? 'Start' : `${i}d` })
+    labels.push({ x: PAD_X + (i / Math.max(1, n - 1)) * (VIEW_W - PAD_X * 2), label: fmtDate(chartDates.value[i]) })
   }
   return labels
 })
@@ -373,49 +376,56 @@ const tooltipStyle = computed(() => {
   return { left: (p.x / VIEW_W) * 100 + '%', top: (p.y / VIEW_H) * 100 + '%' }
 })
 
-const startDate = Date.UTC(2026, 7, 1)
-const dateLabel = i => {
-  const d = new Date(startDate + (fullPage.length - rangeDays.value + i) * 86400000)
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
 function formatNumber(n) {
-  return new Intl.NumberFormat('en-US').format(n)
+  return new Intl.NumberFormat('en-US').format(n || 0)
 }
 function formatCompact(n) {
   if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'k'
   return String(n)
 }
 
-function windowSum(arr, days, end) {
-  return arr.slice(end - days, end).reduce((a, b) => a + b, 0)
+function arrSum(arr) {
+  return arr.reduce((a, b) => a + (b || 0), 0)
 }
-function percentDelta(cur, prev) {
+function halfDelta(arr) {
+  if (arr.length < 2) return 0
+  const mid = Math.floor(arr.length / 2)
+  const prev = arrSum(arr.slice(0, mid))
+  const cur = arrSum(arr.slice(mid))
   if (!prev) return 0
   return ((cur - prev) / prev) * 100
 }
 
-const kpiPageviews = computed(() => windowSum(fullPage, rangeDays.value, fullPage.length))
-const kpiPageviewsDelta = computed(() => percentDelta(kpiPageviews.value, windowSum(fullPage, rangeDays.value, fullPage.length - rangeDays.value)).toFixed(1))
+const kpiUsers = computed(() => arrSum(pageData.value))
+const usersDelta = computed(() => halfDelta(pageData.value).toFixed(1))
+const avgDailyUsers = computed(() => (pageData.value.length ? kpiUsers.value / pageData.value.length : 0).toFixed(1))
 
-const bounceRate = computed(() => Math.round((41.5 + (kpiPageviews.value % 9) * 0.21) * 10) / 10)
-const bounceDelta = computed(() => (2.4 + (rangeDays.value % 5) * 0.2).toFixed(1))
-
-const avgDuration = computed(() => {
-  const mins = Math.floor(2 + (kpiPageviews.value % 240) / 60)
-  const secs = 12 + (kpiPageviews.value % 55)
-  return `${mins}m ${secs}s`
+const kpiListings = computed(() => arrSum(visitData.value))
+const listingsToday = computed(() => visitData.value[visitData.value.length - 1] || 0)
+const listingsShare = computed(() => {
+  const last = listingsToday.value
+  return kpiListings.value ? Math.round((last / kpiListings.value) * 100) : 0
 })
-const durationPct = computed(() => Math.min(100, 58 + (kpiPageviews.value % 30) * 0.9))
-const durationDelta = computed(() => (6.1 + (rangeDays.value % 4) * 0.3).toFixed(1))
+const listingsDelta = computed(() => {
+  const a = visitData.value[visitData.value.length - 2] || 0
+  return a ? (((listingsToday.value - a) / a) * 100).toFixed(1) : '0.0'
+})
 
-const kpiSessions = computed(() => windowSum(fullVisit, rangeDays.value, fullVisit.length))
-const sessionsDelta = computed(() => percentDelta(kpiSessions.value, windowSum(fullVisit, rangeDays.value, fullVisit.length - rangeDays.value)).toFixed(1))
+const kpiMessages = computed(() => arrSum(messagesFull.value.slice(-rangeDays.value)))
+const messagesToday = computed(() => messagesFull.value[messagesFull.value.length - 1] || 0)
+const messagesShare = computed(() => {
+  const last = messagesToday.value
+  return kpiMessages.value ? Math.round((last / kpiMessages.value) * 100) : 0
+})
+const messagesDelta = computed(() => {
+  const a = messagesFull.value[messagesFull.value.length - 2] || 0
+  return a ? (((messagesToday.value - a) / a) * 100).toFixed(1) : '0.0'
+})
 
 const sessionBars = computed(() => {
   const last = visitData.value.slice(-7)
   const max = Math.max(...last, 1)
-  return last.map(v => Math.max(8, Math.round((v / max) * 100)))
+  return last.map(v => Math.max(6, Math.round(((v || 0) / max) * 100)))
 })
 
 const SPARK_W = 84
@@ -506,6 +516,11 @@ const deviceSlices = computed(() => {
   gap: 1.5rem;
   flex-wrap: wrap;
   margin-bottom: 1.75rem;
+}
+
+.analytics-header.is-embedded {
+  margin-bottom: 1.25rem;
+  justify-content: flex-end;
 }
 
 .analytics-title {
@@ -954,19 +969,19 @@ const deviceSlices = computed(() => {
 }
 
 .device-donut {
-  width: 150px;
-  height: 150px;
+  width: 176px;
+  height: 176px;
   flex-shrink: 0;
 }
 
 .donut-total {
-  font-size: 1.25rem;
+  font-size: 0.8rem;
   font-weight: 800;
   fill: #0F172A;
 }
 
 .donut-caption {
-  font-size: 0.55rem;
+  font-size: 0.5rem;
   fill: #94A3B8;
   text-transform: uppercase;
   letter-spacing: 0.05em;

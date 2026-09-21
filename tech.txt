@@ -1,0 +1,29 @@
+Backend (Laravel 13)
+- PHP 8.3/8.5, Laravel Framework ^13.17
+- Sanctum ^4.0 — token-based (Bearer) API auth
+- Reverb (v1.11.1) — WebSocket server for real-time notifications
+- Socialite ^5.31 — Google OAuth login (GOOGLE_CLIENT_ID config present)
+- SQLite database (DB_CONNECTION=sqlite)
+- Database queue + cache + session drivers (QUEUE/CACHE/SESSION_DRIVER=database)
+- Notifications — built-in Laravel notification system with notifications table
+- Broadcasting — channels + Echo channel authorization (routes/channels.php)
+- PSR-4 App\ structure, Eloquent ORM, Model Factories, Seeders
+- Dev tools: Laravel Boost ^2.7, Pail ^1.2.5, Pao ^1.0.6, Pint ^1.27, PHPUnit ^12.5, Mockery, Collision, Faker, Laravel Tinker
+Frontend (Vue 3, port 5173)
+- Vue ^3.5.41 (Composition API, SFC)
+- vue-router ^5.2.0 — with auth guards
+- Custom i18n (src/i18n/index.js) — EN + KH (Khmer), not vue-i18n
+- laravel-echo ^2.4.0 + pusher-js ^8.6.0 — real-time via Reverb
+- Leaflet ^1.9.4 — map picker modal (MapPickerModal.vue)
+- Vite ^8.2.2 + @vitejs/plugin-vue
+Admin Frontend (Vue 3, port 3001)
+- Vue ^3.5.41 + vue-router ^5.2.0 (English only)
+- Same backend API with is_admin flag, admin_token in localStorage
+- Vite ^8.2.2 + @vitejs/plugin-vue
+- Separate build (dist/ present)
+Backend frontend tooling
+- Vite + Tailwind CSS ^4 (via @tailwindcss/vite) in Laravel's resources/
+- laravel-vite-plugin, concurrently (dev script)
+Infrastructure
+- Two frontends + one API, dev servers: API :8000, frontend :5173, admin :3001, Reverb :8080
+- Google OAuth, picsum.photos for seeded images, localStorage for saved accounts/locale/tokens.

@@ -24,6 +24,10 @@ export async function request(endpoint, options = {}) {
   const data = await response.json().catch(() => ({}))
 
   if (response.status === 401 && token) {
+    const isAuthCall = /\/me$|\/login$|\/register$|\/auth\/me$|\/user$|^\/(me|user)$/.test(endpoint)
+    if (!isAuthCall) {
+      throw new Error('Unauthenticated. request: ' + endpoint)
+    }
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     const path = window.location.pathname
@@ -34,12 +38,10 @@ export async function request(endpoint, options = {}) {
     throw new Error(isUnauth ? 'Session expired. Please log in again.' : data.message)
   }
 
-  if (!response.ok) {
-    throw new Error(data.message || 'Something went wrong')
-  }
-
-  if (data.success === false) {
-    throw new Error(data.message || 'Something went wrong')
+  if (!response.ok || data.success === false) {
+    const error = new Error(data.message || 'Something went wrong')
+    error.response = { status: response.status, data }
+    throw error
   }
 
   return data

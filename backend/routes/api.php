@@ -176,3 +176,4 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::put('/attributes/{attribute}', [AdminAttributeController::class, 'update']);
     Route::delete('/attributes/{attribute}', [AdminAttributeController::class, 'destroy']);
 });
+

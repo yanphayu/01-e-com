@@ -87,6 +87,8 @@ class AuthController extends Controller
             ]);
         }
 
+        $user->forceFill(['email_verified_at' => now()])->save();
+
         $token = $user->createToken('verify_token')->plainTextToken;
 
         return response()->json([
@@ -155,6 +157,26 @@ class AuthController extends Controller
         }
 
         $user = Auth::user();
+
+        if ($user->email_verified_at === null) {
+            $otp = random_int(000000, 999999);
+
+            Otp::create([
+                'user_id' => $user->id,
+                'type' => 'email_verify',
+                'otp' => $otp,
+                'expires_at' => now()->addMinute(1),
+            ]);
+
+            Mail::to($user->email)->send(new SendEmailVerify($otp));
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Your email is not verified yet. Please verify your email before logging in.',
+                'verify_required' => true,
+                'data' => ['id' => $user->id, 'email' => $user->email],
+            ], 403);
+        }
 
         $token = $user->createToken('login_token')->plainTextToken;
 

@@ -81,10 +81,11 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/chat',
+    path: '/chat/:id?',
     name: 'chat',
     component: () => import('../views/ChatView.vue'),
     meta: { requiresAuth: true },
+    pathToRegexpOptions: { strict: true },
   },
   {
     path: '/products',

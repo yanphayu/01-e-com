@@ -17,6 +17,8 @@ class Message extends Model
         'forwarded',
         'body',
         'image',
+        'images',
+        'voice',
         'read_at',
         'edited_at',
         'deleted_at',
@@ -28,6 +30,7 @@ class Message extends Model
         'deleted_at' => 'datetime',
         'is_pinned' => 'boolean',
         'forwarded' => 'boolean',
+        'images' => 'array',
     ];
 
     public function conversation(): BelongsTo
@@ -63,6 +66,8 @@ class Message extends Model
             'user_id' => $message->user_id,
             'body' => $message->body,
             'image' => $message->image,
+            'images' => $message->images,
+            'voice' => $message->voice,
             'product_id' => $message->product_id,
             'product' => $message->product ? [
                 'id' => $message->product->id,

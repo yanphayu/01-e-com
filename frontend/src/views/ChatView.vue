@@ -340,12 +340,6 @@
             </button>
           </div>
           <form class="msg-form" @submit.prevent="send">
-            <label class="img-upload-btn" :title="t('chat.uploadImage')">
-              <input type="file" accept="image/*" class="sr-only" @change="onImageSelect" />
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-              </svg>
-            </label>
             <input
               ref="msgInput"
               v-model="newMessage"
@@ -354,22 +348,7 @@
               :placeholder="t('chat.typeMessage')"
               @keydown.enter.exact.prevent="send"
             />
-            <button
-              v-if="!canSend"
-              type="button"
-              class="voice-btn"
-              :class="{ recording: isRecording }"
-              :title="t('chat.voice')"
-              @click="toggleVoice"
-            >
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                <line x1="12" y1="19" x2="12" y2="23"/>
-                <line x1="8" y1="23" x2="16" y2="23"/>
-              </svg>
-            </button>
-            <button v-else type="submit" class="send-btn">
+            <button type="submit" class="send-btn">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
               </svg>

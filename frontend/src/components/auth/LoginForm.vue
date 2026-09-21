@@ -93,22 +93,29 @@ const error = ref(null)
 
 async function handleSubmit() {
   loading.value = true
-  error.value = null
+    error.value = null
 
-  try {
-    const data = await loginUser({
-      email: email.value,
-      password: password.value,
-    })
+    try {
+      const data = await loginUser({
+        email: email.value,
+        password: password.value,
+      })
 
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('user', JSON.stringify(data.data))
-    router.push('/')
-  } catch (err) {
-    error.value = err.message
-  } finally {
-    loading.value = false
-  }
+      localStorage.setItem('token', data.token)
+      localStorage.setItem('user', JSON.stringify(data.data))
+      router.push('/')
+    } catch (err) {
+      error.value = err.response?.data?.message || err.message
+      if (err.response?.status === 403 && err.response?.data?.verify_required) {
+        sessionStorage.setItem('verifyEmail', email.value)
+        const userId = err.response?.data?.data?.id
+        if (userId) sessionStorage.setItem('verifyUserId', String(userId))
+        router.push({ name: 'verify-email', query: { email: email.value } })
+        return
+      }
+    } finally {
+      loading.value = false
+    }
 }
 </script>
 

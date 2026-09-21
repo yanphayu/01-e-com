@@ -134,6 +134,9 @@ class ChatController extends Controller
         $request->validate([
             'body' => 'nullable|string|max:5000',
             'image' => 'nullable|image|max:5120',
+            'images' => 'nullable|array|max:10',
+            'images.*' => 'nullable|image|max:5120',
+            'voice' => 'nullable|file|mimes:mp3,wav,ogg,webm,m4a,oga,opus|max:10240',
             'product_id' => 'nullable|exists:products,id',
             'image_path' => 'nullable|string',
             'replied_to' => 'nullable|exists:messages,id',
@@ -172,21 +175,38 @@ class ChatController extends Controller
 
         $hasBody = ! empty($request->body);
         $hasImage = $request->hasFile('image');
+        $hasImages = $request->hasFile('images');
+        $hasVoice = $request->hasFile('voice');
         $hasProduct = ! empty($request->product_id);
         $hasForwardedImage = $request->filled('image_path');
 
-        if (! $hasBody && ! $hasImage && ! $hasProduct && ! $hasForwardedImage) {
+        if (! $hasBody && ! $hasImage && ! $hasImages && ! $hasVoice && ! $hasProduct && ! $hasForwardedImage) {
             return response()->json([
                 'success' => false,
-                'message' => 'Message must have text, image, or product.',
+                'message' => 'Message must have text, image, voice, or product.',
             ], 422);
         }
 
         $imagePath = null;
-        if ($hasImage) {
+        if ($hasImages) {
+            $imagePaths = collect($request->file('images', []))
+                ->map(fn ($image) => $image->store('chat-images', 'public'))
+                ->values()
+                ->all();
+            $imagePath = $imagePaths[0] ?? null;
+        } elseif ($hasImage) {
             $imagePath = $request->file('image')->store('chat-images', 'public');
+            $imagePaths = $imagePath ? [$imagePath] : [];
         } elseif ($hasForwardedImage && str_starts_with($request->image_path, 'chat-images/')) {
             $imagePath = $request->image_path;
+            $imagePaths = [$imagePath];
+        } else {
+            $imagePaths = [];
+        }
+
+        $voicePath = null;
+        if ($hasVoice) {
+            $voicePath = $request->file('voice')->store('chat-audio', 'public');
         }
 
         $message = Message::create([
@@ -197,6 +217,8 @@ class ChatController extends Controller
             'forwarded' => $request->boolean('forwarded'),
             'body' => $request->body,
             'image' => $imagePath,
+            'images' => $imagePaths ?? [],
+            'voice' => $voicePath,
         ])->load([
             'user.profile',
             'product.images',
@@ -290,6 +312,7 @@ class ChatController extends Controller
             $message->update([
                 'body' => null,
                 'image' => null,
+                'voice' => null,
                 'product_id' => null,
                 'deleted_at' => now(),
             ]);

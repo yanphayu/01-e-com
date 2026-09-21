@@ -1,109 +1,145 @@
 <template>
   <div class="admin-layout">
     <aside class="sidebar">
-      <div class="sidebar-brand">
-        <svg viewBox="138.8 116 322.4 283" fill="none" class="sidebar-logo">
-          <path d="M 300 130 L 259.5 276.6 L 152.8 385 L 300 346.8 L 447.2 385 L 340.5 276.6 Z" stroke="currentColor" stroke-width="26" stroke-linejoin="miter" stroke-miterlimit="10" />
-          <path d="M 259.5 276.6 L 300 346.8 L 340.5 276.6 Z" fill="currentColor" />
-          <circle cx="300" cy="130" r="9" fill="currentColor" />
-          <circle cx="152.8" cy="385" r="9" fill="currentColor" />
-          <circle cx="447.2" cy="385" r="9" fill="currentColor" />
-        </svg>
-        <span class="sidebar-brand-name">TRINITY</span>
-        <span class="sidebar-badge">Admin</span>
-      </div>
+      <div class="sidebar-scroll">
+        <header class="sidebar-brand">
+          <div class="sidebar-brand-inner">
+            <svg viewBox="138.8 116 322.4 283" fill="none" class="sidebar-logo">
+              <path d="M 300 130 L 259.5 276.6 L 152.8 385 L 300 346.8 L 447.2 385 L 340.5 276.6 Z" stroke="currentColor" stroke-width="26" stroke-linejoin="miter" stroke-miterlimit="10" />
+              <path d="M 259.5 276.6 L 300 346.8 L 340.5 276.6 Z" fill="currentColor" />
+              <circle cx="300" cy="130" r="9" fill="currentColor" />
+              <circle cx="152.8" cy="385" r="9" fill="currentColor" />
+              <circle cx="447.2" cy="385" r="9" fill="currentColor" />
+            </svg>
+            <span class="sidebar-brand-name">TRINITY</span>
+          </div>
+          <span class="sidebar-badge">Admin</span>
+        </header>
 
-      <nav class="sidebar-nav">
-        <RouterLink to="/" class="sidebar-link" :class="{ active: $route.name === 'dashboard' }">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-          </svg>
-          Dashboard
-        </RouterLink>
-        <RouterLink to="/analytics" class="sidebar-link" :class="{ active: $route.name === 'analytics' }">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-          </svg>
-          Analytics
-        </RouterLink>
-        <RouterLink to="/users" class="sidebar-link" :class="{ active: $route.name === 'users' || $route.name === 'user-detail' }">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-          Users
-        </RouterLink>
-        <RouterLink to="/products" class="sidebar-link" :class="{ active: $route.name === 'products' || $route.name === 'product-detail' }">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
-          </svg>
-          Products
-        </RouterLink>
-        <RouterLink to="/reports" class="sidebar-link" :class="{ active: $route.name === 'reports' }">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
-          Reports
-        </RouterLink>
-        <RouterLink to="/categories" class="sidebar-link" :class="{ active: $route.name === 'categories' }">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-          </svg>
-          Categories
-        </RouterLink>
-        <RouterLink to="/subcategories" class="sidebar-link" :class="{ active: $route.name === 'subcategories' }">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="11" y1="6" x2="21" y2="6"/><line x1="11" y1="12" x2="21" y2="12"/><line x1="11" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-          </svg>
-          Subcategories
-        </RouterLink>
-        <RouterLink to="/brands" class="sidebar-link" :class="{ active: $route.name === 'brands' }">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
-          </svg>
-          Brands
-        </RouterLink>
-        <RouterLink to="/models" class="sidebar-link" :class="{ active: $route.name === 'models' }">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-          </svg>
-          Models
-        </RouterLink>
-        <RouterLink to="/attributes" class="sidebar-link" :class="{ active: $route.name === 'attributes' }">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
-          </svg>
-          Attributes
-        </RouterLink>
-      </nav>
+        <div class="sidebar-group-label">Operational Units</div>
+
+        <nav class="sidebar-nav">
+          <RouterLink to="/" class="sidebar-link" :class="{ active: $route.name === 'dashboard' }">
+            <span class="material-symbols-outlined nav-ic">dashboard</span>
+            <span>Dashboard</span>
+          </RouterLink>
+          <RouterLink to="/analytics" class="sidebar-link" :class="{ active: $route.name === 'analytics' }">
+            <span class="material-symbols-outlined nav-ic">analytics</span>
+            <span>Analytics</span>
+          </RouterLink>
+          <RouterLink to="/users" class="sidebar-link" :class="{ active: $route.name === 'users' || $route.name === 'user-detail' }">
+            <span class="material-symbols-outlined nav-ic">group</span>
+            <span>Users</span>
+          </RouterLink>
+          <RouterLink to="/products" class="sidebar-link" :class="{ active: $route.name === 'products' || $route.name === 'product-detail' }">
+            <span class="material-symbols-outlined nav-ic">inventory_2</span>
+            <span>Products</span>
+          </RouterLink>
+          <RouterLink to="/reports" class="sidebar-link report-link" :class="{ active: $route.name === 'reports' }">
+            <span class="report-link-inner">
+              <span class="material-symbols-outlined nav-ic">summarize</span>
+              <span>Reports</span>
+            </span>
+            <span v-if="pendingReports > 0" class="sidebar-alert-dot"></span>
+          </RouterLink>
+        </nav>
+
+        <div class="sidebar-group-label">Inventory Taxonomies</div>
+
+        <nav class="sidebar-nav">
+          <RouterLink to="/categories" class="sidebar-link" :class="{ active: $route.name === 'categories' }">
+            <span class="material-symbols-outlined nav-ic">category</span>
+            <span>Categories</span>
+          </RouterLink>
+          <RouterLink to="/subcategories" class="sidebar-link" :class="{ active: $route.name === 'subcategories' }">
+            <span class="material-symbols-outlined nav-ic">account_tree</span>
+            <span>Subcategories</span>
+          </RouterLink>
+          <RouterLink to="/brands" class="sidebar-link" :class="{ active: $route.name === 'brands' }">
+            <span class="material-symbols-outlined nav-ic">verified</span>
+            <span>Brands</span>
+          </RouterLink>
+          <RouterLink to="/models" class="sidebar-link" :class="{ active: $route.name === 'models' }">
+            <span class="material-symbols-outlined nav-ic">devices</span>
+            <span>Models</span>
+          </RouterLink>
+          <RouterLink to="/attributes" class="sidebar-link" :class="{ active: $route.name === 'attributes' }">
+            <span class="material-symbols-outlined nav-ic">tune</span>
+            <span>Attributes</span>
+          </RouterLink>
+        </nav>
+      </div>
 
       <div class="sidebar-footer">
         <div class="sidebar-user">
-          <span class="sidebar-user-name">{{ userName }}</span>
-          <span class="sidebar-user-email">{{ userEmail }}</span>
+          <div class="sidebar-avatar">{{ userInitial }}</div>
+          <div class="sidebar-user-details">
+            <span class="sidebar-user-name">{{ userName }}</span>
+            <span class="sidebar-user-role">Super Admin</span>
+          </div>
+          <button class="sidebar-logout" title="Logout" @click="handleLogout">
+            <span class="material-symbols-outlined">logout</span>
+          </button>
         </div>
-        <button class="sidebar-logout" @click="handleLogout">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          Logout
-        </button>
       </div>
     </aside>
 
-    <main class="admin-main">
-      <RouterView />
-    </main>
+    <div class="admin-shell">
+      <header class="topbar">
+        <div class="topbar-search">
+          <span class="material-symbols-outlined search-ic">search</span>
+          <input
+            v-model="search"
+            class="topbar-input"
+            type="text"
+            placeholder="Search commands, SKU, or users..."
+            @keydown.enter="jumpToSearch"
+          />
+          <span class="topbar-kbd">⌘K</span>
+        </div>
+
+        <div class="topbar-end">
+          <div class="health-pill">
+            <span class="health-dot"></span>
+            <span>System Healthy</span>
+          </div>
+
+          <button class="range-btn" type="button">
+            <span class="material-symbols-outlined range-ic">calendar_today</span>
+            <span>Last 30 Days</span>
+            <span class="material-symbols-outlined range-caret">expand_more</span>
+          </button>
+
+          <button class="icon-btn" type="button" title="Notifications" @click="$router.push('/reports')">
+            <span class="material-symbols-outlined">notifications</span>
+            <span v-if="pendingReports > 0" class="notif-dot"></span>
+          </button>
+
+          <div class="topbar-divider"></div>
+
+          <div class="topbar-avatar">{{ userInitial }}</div>
+        </div>
+      </header>
+
+      <main class="admin-main">
+        <RouterView />
+      </main>
+    </div>
 
     <ConfirmModal />
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import ConfirmModal from '../components/ConfirmModal.vue'
+import { getDashboard } from '../services/admin'
 
 const router = useRouter()
+
+const search = ref('')
+const pendingReports = ref(0)
 
 const user = computed(() => {
   try {
@@ -114,13 +150,51 @@ const user = computed(() => {
 })
 
 const userName = computed(() => user.value.name || 'Admin')
-const userEmail = computed(() => user.value.email || '')
+const userInitial = computed(() => (user.value.name || 'A')[0].toUpperCase())
+
+const ROUTE_MAP = {
+  dashboard: '/', analytics: '/analytics', users: '/users', products: '/products',
+  reports: '/reports', categories: '/categories', subcategories: '/subcategories',
+  brands: '/brands', models: '/models', attributes: '/attributes',
+}
+
+function jumpToSearch() {
+  const q = search.value.trim().toLowerCase()
+  if (!q) return
+  for (const [key, path] of Object.entries(ROUTE_MAP)) {
+    if (key.includes(q) || q.includes(key)) {
+      router.push(path)
+      search.value = ''
+      return
+    }
+  }
+  const userMatch = q.match(/^user\s+(\d+)$/)
+  if (userMatch) {
+    router.push(`/users/${userMatch[1]}`)
+    search.value = ''
+    return
+  }
+  const productMatch = q.match(/^product\s+(\d+)$/)
+  if (productMatch) {
+    router.push(`/products/${productMatch[1]}`)
+    search.value = ''
+  }
+}
 
 function handleLogout() {
   localStorage.removeItem('admin_token')
   localStorage.removeItem('admin_user')
   router.push('/login')
 }
+
+onMounted(async () => {
+  try {
+    const res = await getDashboard()
+    pendingReports.value = res.data?.stats?.pending_reports ?? 0
+  } catch {
+    pendingReports.value = 0
+  }
+})
 </script>
 
 <style scoped>
@@ -129,6 +203,7 @@ function handleLogout() {
   min-height: 100vh;
 }
 
+/* ---------- Sidebar ---------- */
 .sidebar {
   width: var(--sidebar-width);
   background: var(--sidebar-bg);
@@ -142,57 +217,88 @@ function handleLogout() {
   z-index: 50;
 }
 
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
 .sidebar-brand {
+  height: 4rem;
+  padding: 0 1rem;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 1.25rem 1.25rem 1rem;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+}
+
+.sidebar-brand-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .sidebar-logo {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   color: var(--accent);
   flex-shrink: 0;
 }
 
 .sidebar-brand-name {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.95rem;
   letter-spacing: 0.12em;
   color: var(--sidebar-active);
+  text-transform: uppercase;
 }
 
 .sidebar-badge {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  background: var(--accent);
   color: #fff;
+  background: var(--accent);
   padding: 0.15rem 0.45rem;
   border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.sidebar-group-label {
+  padding: 1rem 1rem 0.4rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6e7a71;
+  flex-shrink: 0;
 }
 
 .sidebar-nav {
-  flex: 1;
-  padding: 0.5rem 0.75rem;
+  padding: 0 0.5rem;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex-shrink: 0;
 }
 
 .sidebar-link {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.65rem;
-  padding: 0.6rem 0.75rem;
-  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.625rem;
+  border-radius: 6px;
   color: var(--sidebar-text);
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 500;
+  border-left: 2px solid transparent;
   transition: all 0.15s;
+  cursor: pointer;
 }
 
 .sidebar-link:hover {
@@ -202,58 +308,299 @@ function handleLogout() {
 
 .sidebar-link.active {
   color: var(--sidebar-active);
-  background: var(--sidebar-hover);
+  background: rgba(255, 255, 255, 0.10);
+  border-left-color: #5fe0a5;
+  font-weight: 600;
+}
+
+.report-link-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.nav-ic {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.sidebar-alert-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 3px rgba(186, 26, 26, 0.2);
 }
 
 .sidebar-footer {
-  padding: 1rem 1.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 
 .sidebar-user {
-  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.sidebar-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2f9e6b, #0058be);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.sidebar-user-details {
+  flex: 1;
+  min-width: 0;
 }
 
 .sidebar-user-name {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   font-weight: 600;
   color: var(--sidebar-active);
-}
-
-.sidebar-user-email {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--sidebar-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.sidebar-user-role {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6e7a71;
+}
+
 .sidebar-logout {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.5rem 0.75rem;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   background: transparent;
   color: var(--sidebar-text);
-  font-size: 0.85rem;
-  font-weight: 500;
   cursor: pointer;
   transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.sidebar-logout span {
+  font-size: 20px;
 }
 
 .sidebar-logout:hover {
   color: var(--danger);
-  background: rgba(209, 73, 63, 0.1);
+  background: rgba(186, 26, 26, 0.12);
+}
+
+/* ---------- Shell ---------- */
+.admin-shell {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  min-width: 0;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 1.5rem;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar-search {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+}
+
+.search-ic {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.topbar-input {
+  width: 100%;
+  padding: 0.45rem 3.1rem 0.45rem 2.5rem;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--text);
+  outline: none;
+  transition: all 0.15s;
+}
+
+.topbar-input:focus {
+  background: var(--surface-3);
+  border-color: var(--border);
+}
+
+.topbar-input::placeholder {
+  color: var(--text-muted);
+}
+
+.topbar-kbd {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0.15rem 0.4rem;
+}
+
+.topbar-end {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.health-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.75rem;
+  background: var(--surface-2);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.health-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(47, 158, 107, 0.4); }
+  50% { box-shadow: 0 0 0 5px rgba(47, 158, 107, 0); }
+}
+
+.range-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.range-btn:hover {
+  background: var(--surface-3);
+}
+
+.range-ic, .range-caret {
+  font-size: 17px;
+  color: var(--text-muted);
+}
+
+.icon-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.icon-btn:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.icon-btn span {
+  font-size: 22px;
+}
+
+.notif-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.topbar-divider {
+  width: 1px;
+  height: 1.5rem;
+  background: var(--border-strong);
+}
+
+.topbar-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2f9e6b, #0058be);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .admin-main {
-  flex: 1;
-  margin-left: var(--sidebar-width);
-  padding: 2rem 2.5rem;
+  padding: 2rem 2.5rem 3rem;
+  min-height: calc(100vh - 4rem);
+}
+
+@media (max-width: 1100px) {
+  .health-pill {
+    display: none;
+  }
 }
 </style>

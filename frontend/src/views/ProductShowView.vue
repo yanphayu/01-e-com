@@ -200,7 +200,7 @@
       </div>
     </section>
 
-    <ReportModal v-model="showReportModal" :product-id="product?.id" />
+    <ReportModal v-if="product" v-model="showReportModal" :product-id="product.id" />
   </div>
 </template>
 
