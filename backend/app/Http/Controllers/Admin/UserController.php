@@ -4,79 +4,78 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class UserController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function filteredQuery(Request $request): Builder
     {
         $query = User::with('profile');
 
-        if ($request->search) {
-            $query->where(function ($q) use ($request) {
-                $q->where('name', 'like', "%{$request->search}%")
-                    ->orWhere('email', 'like', "%{$request->search}%");
+        if ($request->filled('search')) {
+            $term = $request->string('search')->trim();
+
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%");
             });
         }
 
-        if ($request->has('is_admin')) {
+        if ($request->filled('is_admin')) {
             $query->where('is_admin', $request->boolean('is_admin'));
         }
 
-        $users = $query->latest()->paginate($request->get('per_page', 15));
-
-        return response()->json([
-            'success' => true,
-            'data' => $users,
-        ]);
+        return $query->withCount('products')->latest();
     }
 
-    public function show(User $user): JsonResponse
+    public function index(Request $request): View
     {
-        $user->load('profile', 'products', 'comments');
+        $users = $this->filteredQuery($request)->paginate(15)->withQueryString();
 
-        return response()->json([
-            'success' => true,
-            'data' => $user,
-        ]);
+        return view('admin.users.index', compact('users'));
     }
 
-    public function update(Request $request, User $user): JsonResponse
+    public function show(User $user): View
+    {
+        $user->load('profile', 'products.images', 'comments', 'messages');
+
+        return view('admin.users.show', compact('user'));
+    }
+
+    public function update(Request $request, User $user): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,'.$user->id,
-            'is_admin' => 'sometimes|boolean',
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'unique:users,email,'.$user->id],
         ]);
 
         $user->update($validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User updated successfully.',
-            'data' => $user->fresh(),
-        ]);
+        return back()->with('status', 'User updated.');
     }
 
-    public function destroy(User $user): JsonResponse
+    public function toggleAdmin(User $user): RedirectResponse
     {
-        $user->delete();
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'You cannot change your own admin role.');
+        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User deleted successfully.',
-        ]);
-    }
-
-    public function toggleAdmin(User $user): JsonResponse
-    {
         $user->update(['is_admin' => ! $user->is_admin]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User admin status updated.',
-            'data' => ['is_admin' => $user->is_admin],
-        ]);
+        return back()->with('status', $user->is_admin ? 'User promoted to admin.' : 'Admin rights removed.');
+    }
+
+    public function destroy(User $user): RedirectResponse
+    {
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'You cannot delete your own account.');
+        }
+
+        $user->delete();
+
+        return redirect()->route('admin.users.index')->with('status', 'User deleted.');
     }
 }

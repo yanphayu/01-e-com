@@ -40,6 +40,9 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URI'),
         'cacert' => env('GOOGLE_CACERT_PEM'),
+        'guzzle' => [
+            'verify' => env('GOOGLE_CACERT_PEM') ?: true,
+        ],
     ],
 
 ];

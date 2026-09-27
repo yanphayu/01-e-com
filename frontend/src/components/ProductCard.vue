@@ -20,7 +20,7 @@
           :title="t('product.favorite')"
           @click.prevent.stop="onFavorite"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" :fill="isFavorited ? 'var(--accent)' : 'none'" :stroke="isFavorited ? 'var(--accent)' : '#999'" stroke-width="2">
+          <svg viewBox="0 0 24 24" width="18" height="18" :fill="isFavorited ? 'var(--primary)' : 'none'" :stroke="isFavorited ? 'var(--primary)' : 'var(--text-muted)'" stroke-width="2">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
         </button>
@@ -86,25 +86,22 @@ function formatDate(dateStr) {
 <style scoped>
 .product-card {
   display: block;
-  background: var(--surface);
+  height: 100%;
+  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  overflow: hidden;
-  text-decoration: none;
+  background: var(--surface);
   color: inherit;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.product-card:hover {
-  border-color: var(--border-strong);
+  text-decoration: none;
   box-shadow: var(--shadow-sm);
 }
 
 .product-card-thumb {
   position: relative;
   height: 180px;
-  background: var(--surface-2);
   overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
 }
 
 .product-card-thumb img {
@@ -125,92 +122,106 @@ function formatDate(dateStr) {
 
 .product-card-badge {
   position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  background: var(--accent);
-  color: #fff;
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--radius-sm);
+  top: 0.65rem;
+  left: 0.65rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
+  border-radius: 999px;
+  background: var(--navbar-bg);
+  color: var(--primary);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .product-card-actions {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+  top: 0.65rem;
+  right: 0.65rem;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
 }
 
 .product-card-fav {
-  background: rgba(255,255,255,0.85);
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--navbar-bg);
+  color: var(--text-muted);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   cursor: pointer;
-  color: #999;
-  transition: color 0.15s, background 0.15s;
 }
 
 .product-card-fav:hover {
-  background: #fff;
-  color: var(--accent);
+  border-color: var(--primary);
+  background: var(--surface);
+  color: var(--primary);
 }
 
 .product-card-fav.active {
-  color: var(--accent);
+  color: var(--primary);
+  background: var(--accent-soft);
 }
 
 .product-card-body {
-  padding: 0.85rem 1rem 1rem;
+  padding: 0.9rem 1rem 1rem;
 }
 
 .product-card-name {
-  font-size: 0.95rem;
-  font-weight: 600;
   margin: 0;
   overflow: hidden;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .product-card-location {
-  font-size: 0.8rem;
+  margin: 0.25rem 0 0;
   color: var(--text-muted);
-  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
 }
 
 .product-card-price {
-  margin: 0.35rem 0 0;
-  color: var(--accent);
-  font-weight: 700;
+  margin: 0.55rem 0 0;
+  color: var(--primary);
+  font-family: var(--font-mono);
   font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .product-card-date {
   margin: 0.3rem 0 0;
-  font-size: 0.75rem;
   color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
 }
 
 @media (max-width: 480px) {
   .product-card-thumb {
     height: 160px;
   }
+
   .product-card-body {
     padding: 0.75rem;
   }
+
   .product-card-name {
-    font-size: 0.9rem;
+    font-size: 0.86rem;
   }
+
   .product-card-price {
     font-size: 1rem;
   }

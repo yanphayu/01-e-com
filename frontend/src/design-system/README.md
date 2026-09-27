@@ -8,26 +8,29 @@ Reusable UI primitives and design tokens for the frontend. Components live in
 All tokens are CSS custom properties (see `src/style.css`). A JS mirror is
 available in `tokens.js` for programmatic access.
 
-| Group     | Token            | Value (default)        | Usage                          |
-|-----------|------------------|------------------------|--------------------------------|
-| Color     | `--bg`           | `#fafaf8`              | Page background                |
-| Color     | `--surface`      | `#ffffff`              | Cards, inputs, panels          |
-| Color     | `--surface-2`    | `#f6f5f2`              | Subtle fills                   |
-| Color     | `--text`         | `#1c1b19`              | Primary text                   |
-| Color     | `--text-muted`   | `#76726b`              | Secondary text                 |
-| Color     | `--border`       | `rgba(28,27,25,.10)`   | Hairline borders               |
-| Color     | `--border-strong`| `rgba(28,27,25,.18)`   | Hover borders                  |
-| Color     | `--accent`       | `#2f9e6b`              | Primary brand / actions        |
-| Color     | `--accent-dark`  | `#247a53`              | Accent hover                   |
-| Color     | `--accent-soft`  | `rgba(192,99,63,.10)`  | Soft accent fills              |
-| Color     | `--success`      | `#2f9e6b`              | Positive states                |
-| Color     | `--danger`       | `#d1493f`              | Errors                         |
-| Radius    | `--radius-sm`    | `6px`                  | Inputs, small controls         |
-| Radius    | `--radius-md`    | `10px`                 | Cards                          |
-| Radius    | `--radius-lg`    | `14px`                 | Large panels, modals           |
-| Shadow    | `--shadow-sm/md/lg` | layered soft shadows | Elevation                      |
-| Font      | `--font-sans`    | Inter, system-ui       | Body text                      |
-| Font      | `--font-serif`   | Playfair Display       | Headings / brand               |
+| Group     | Token            | Value (default)                         | Usage                          |
+|-----------|------------------|-----------------------------------------|--------------------------------|
+| Color     | `--bg`           | `#F8FAFC`                               | Page background                |
+| Color     | `--surface`      | `#FFFFFF`                               | Cards, inputs, panels          |
+| Color     | `--surface-2`    | `#F1F5F9`                               | Subtle fills                   |
+| Color     | `--surface-3`    | `#E2E8F0`                               | Strong fills and borders       |
+| Color     | `--text`         | `#0F172A`                               | Primary text                   |
+| Color     | `--text-muted`   | `#64748B`                               | Secondary text                 |
+| Color     | `--border`       | `rgba(15,23,42,.11)`                    | Hairline borders               |
+| Color     | `--border-strong`| `rgba(15,23,42,.22)`                    | Hover borders                  |
+| Color     | `--accent`       | `#2563EB`                               | Primary brand / actions        |
+| Color     | `--accent-dark`  | `#1D4ED8`                               | Accent hover                   |
+| Color     | `--accent-soft`  | `rgba(37,99,235,.10)`                   | Soft accent fills              |
+| Color     | `--success`      | `#059669`                               | Positive states                |
+| Color     | `--danger`       | `#DC2626`                               | Errors                         |
+| Color     | `--warning`      | `#D97706`                               | Warnings                       |
+| Color     | `--info`         | `#0284C7`                               | Informational states           |
+| Radius    | `--radius-sm`    | `9px`                                   | Inputs, small controls         |
+| Radius    | `--radius-md`    | `14px`                                  | Cards                          |
+| Radius    | `--radius-lg`    | `18px`                                  | Large panels, modals           |
+| Shadow    | `--shadow-sm/md/lg` | layered soft shadows                    | Elevation                      |
+| Font      | `--font-sans`    | system stack                            | Body text                      |
+| Font      | `--font-mono`    | JetBrainsMono NF, JetBrains Mono Nerd Font | Headings, code, labels       |
 
 Change the look of the whole app by editing these variables in one place.
 

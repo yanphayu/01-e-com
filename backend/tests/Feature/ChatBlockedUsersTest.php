@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Block;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class ChatBlockedUsersTest extends TestCase
@@ -20,7 +21,9 @@ class ChatBlockedUsersTest extends TestCase
         Block::create(['blocker_id' => $user->id, 'blocked_id' => $firstBlocked->id]);
         Block::create(['blocker_id' => $user->id, 'blocked_id' => $secondBlocked->id]);
 
-        $response = $this->actingAs($user)->getJson('/api/chat/blocked-users');
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/chat/blocked-users');
 
         $response->assertOk()
             ->assertJsonPath('success', true)
@@ -35,8 +38,9 @@ class ChatBlockedUsersTest extends TestCase
 
         Block::create(['blocker_id' => $otherUser->id, 'blocked_id' => $blockedUser->id]);
 
-        $this->actingAs($user)
-            ->getJson('/api/chat/blocked-users')
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/chat/blocked-users')
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
@@ -48,8 +52,9 @@ class ChatBlockedUsersTest extends TestCase
 
         Block::create(['blocker_id' => $user->id, 'blocked_id' => $blockedUser->id]);
 
-        $this->actingAs($user)
-            ->deleteJson("/api/chat/blocked-users/{$blockedUser->id}")
+        Sanctum::actingAs($user);
+
+        $this->deleteJson("/api/chat/blocked-users/{$blockedUser->id}")
             ->assertOk()
             ->assertJsonPath('success', true);
 
@@ -67,8 +72,9 @@ class ChatBlockedUsersTest extends TestCase
 
         Block::create(['blocker_id' => $otherUser->id, 'blocked_id' => $blockedUser->id]);
 
-        $this->actingAs($user)
-            ->deleteJson("/api/chat/blocked-users/{$blockedUser->id}")
+        Sanctum::actingAs($user);
+
+        $this->deleteJson("/api/chat/blocked-users/{$blockedUser->id}")
             ->assertOk();
 
         $this->assertDatabaseHas('blocks', [

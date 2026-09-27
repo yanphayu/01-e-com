@@ -2,7 +2,7 @@
   <div class="comment-item" :class="{ 'reply-item': depth > 0 }">
     <div class="comment-header">
       <RouterLink :to="`/users/${comment.user_id}`" class="comment-user">
-        <img v-if="comment.user?.profile?.avatar" :src="comment.user.profile.avatar" class="comment-avatar" alt="" />
+        <img v-if="comment.user?.profile?.avatar" :src="resolveStorageUrl(comment.user.profile.avatar)" class="comment-avatar" alt="" />
         <span v-else class="comment-avatar comment-avatar-fallback">{{ (comment.user?.name || '?')[0] }}</span>
         <span class="comment-author">{{ comment.user?.name }}</span>
       </RouterLink>
@@ -59,6 +59,7 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import { t } from '../i18n'
+import { resolveStorageUrl } from '../services/http'
 
 defineProps({
   comment: { type: Object, required: true },
@@ -162,7 +163,6 @@ function formatTime(dateStr) {
   color: var(--text-muted);
   cursor: pointer;
   padding: 0;
-  transition: color 0.15s;
 }
 
 .comment-reply-btn:hover {
@@ -189,7 +189,6 @@ function formatTime(dateStr) {
   resize: vertical;
   min-height: 60px;
   margin-bottom: 0.5rem;
-  transition: border-color 0.15s;
 }
 
 .comment-input:focus {
@@ -221,7 +220,6 @@ function formatTime(dateStr) {
   font-weight: 600;
   cursor: pointer;
   border: none;
-  transition: opacity 0.15s;
 }
 
 .btn:disabled {

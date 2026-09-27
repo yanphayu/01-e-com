@@ -172,16 +172,6 @@
       <button v-if="!redirectOnSave" type="button" class="skip" :disabled="loading" @click="emit('cancel')">
         {{ t('auth.cancelEdit') }}
       </button>
-
-      <button
-        v-if="!redirectOnSave"
-        type="button"
-        class="danger-btn"
-        :disabled="loading || deleting"
-        @click="confirmingDelete = true"
-      >
-        {{ t('auth.deleteProfile') }}
-      </button>
     </div>
 
     <MapPickerModal
@@ -192,75 +182,17 @@
       @update:longitude="longitude = $event"
       @update:address="address = $event"
     />
-
-    <BaseModal
-      v-model="confirmingDelete"
-      :title="t('auth.deleteConfirmTitle')"
-      size="sm"
-      @close="resetDeleteForm"
-    >
-      <p class="modal-text">{{ t('auth.deleteConfirmBody') }}</p>
-
-      <div class="field">
-        <label for="delete-password">{{ t('auth.currentPassword') }}</label>
-        <input
-          id="delete-password"
-          v-model="deletePassword"
-          type="password"
-          class="input"
-          :placeholder="t('auth.currentPasswordPlaceholder')"
-          autocomplete="current-password"
-        />
-      </div>
-
-      <div class="field">
-        <label for="delete-otp">{{ t('auth.deleteOtpLabel') }}</label>
-        <div class="otp-row">
-          <input
-            id="delete-otp"
-            v-model="deleteOtp"
-            type="text"
-            inputmode="numeric"
-            maxlength="6"
-            class="input"
-            :placeholder="t('auth.deleteOtpPlaceholder')"
-            @keyup.enter="handleDelete"
-          />
-          <button
-            type="button"
-            class="otp-send-btn"
-            :disabled="sendingOtp"
-            @click="handleSendDeleteOtp"
-          >
-            <span v-if="sendingOtp" class="spinner" />
-            {{ otpSent ? t('auth.resendCode') : t('auth.sendCode') }}
-          </button>
-        </div>
-        <p v-if="otpSent" class="otp-hint">{{ t('auth.deleteOtpSent') }}</p>
-      </div>
-
-      <p v-if="deletingError" class="field-error">{{ deletingError }}</p>
-
-      <template #footer>
-        <BaseButton variant="ghost" :disabled="deleting" @click="confirmingDelete = false">
-          {{ t('auth.cancelEdit') }}
-        </BaseButton>
-        <BaseButton variant="primary" class="btn-danger-solid" :loading="deleting" @click="handleDelete">
-          {{ deleting ? t('auth.deletingAccount') : t('auth.deleteAccount') }}
-        </BaseButton>
-      </template>
-    </BaseModal>
   </form>
 </template>
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { updateProfile, uploadAvatar, uploadCoverImage, deleteAccount, sendDeleteOtp } from '../../services/auth'
+import { updateProfile, uploadAvatar, uploadCoverImage } from '../../services/auth'
 import { t, getLocale } from '../../i18n'
+import { resolveStorageUrl } from '../../services/http'
 import BaseInput from '../../design-system/BaseInput.vue'
 import BaseButton from '../../design-system/BaseButton.vue'
-import BaseModal from '../../design-system/BaseModal.vue'
 import MapPickerModal from '../../design-system/MapPickerModal.vue'
 
 const props = defineProps({ redirectOnSave: { type: Boolean, default: true } })
@@ -295,10 +227,10 @@ const locating = ref(false)
 const showMap = ref(false)
 const avatar = ref(profile.avatar || '')
 const avatarName = ref('')
-const avatarPreview = ref(profile.avatar || null)
+const avatarPreview = ref(resolveStorageUrl(profile.avatar) || null)
 const avatarUploading = ref(false)
 const avatarError = ref(null)
-const coverPreview = ref(profile.cover_image || null)
+const coverPreview = ref(resolveStorageUrl(profile.cover_image) || null)
 const coverName = ref('')
 const coverUploading = ref(false)
 const coverError = ref(null)
@@ -308,13 +240,6 @@ const twitter = ref(profile.twitter || '')
 const loading = ref(false)
 const error = ref(null)
 const success = ref(null)
-const confirmingDelete = ref(false)
-const deleting = ref(false)
-const deletePassword = ref('')
-const deleteOtp = ref('')
-const otpSent = ref(false)
-const sendingOtp = ref(false)
-const deletingError = ref(null)
 const errors = reactive({ firstName: null, lastName: null, phone: null })
 
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp']
@@ -389,7 +314,7 @@ async function onAvatarChange(e) {
     localStorage.setItem('user', JSON.stringify({ ...stored, profile: { ...profile, avatar: data.data.profile?.avatar } }))
   } catch (err) {
     avatarError.value = err.message
-    avatarPreview.value = profile.avatar || null
+    avatarPreview.value = resolveStorageUrl(profile.avatar) || null
     avatarName.value = ''
   } finally {
     avatarUploading.value = false
@@ -420,7 +345,7 @@ async function onCoverChange(e) {
     localStorage.setItem('user', JSON.stringify({ ...stored, profile: { ...profile, cover_image: data.data.profile?.cover_image } }))
   } catch (err) {
     coverError.value = err.message
-    coverPreview.value = profile.cover_image || null
+    coverPreview.value = resolveStorageUrl(profile.cover_image) || null
     coverName.value = ''
   } finally {
     coverUploading.value = false
@@ -477,53 +402,6 @@ async function handleSubmit() {
     instagram: instagram.value.trim(),
     twitter: twitter.value.trim(),
   })
-}
-
-function resetDeleteForm() {
-  deletePassword.value = ''
-  deleteOtp.value = ''
-  otpSent.value = false
-  deletingError.value = null
-}
-
-async function handleSendDeleteOtp() {
-  if (sendingOtp.value) return
-  sendingOtp.value = true
-  deletingError.value = null
-  try {
-    await sendDeleteOtp()
-    otpSent.value = true
-    deleteOtp.value = ''
-  } catch (err) {
-    deletingError.value = err.message
-  } finally {
-    sendingOtp.value = false
-  }
-}
-
-async function handleDelete() {
-  if (!deletePassword.value) {
-    deletingError.value = t('auth.deletePasswordRequired')
-    return
-  }
-  if (!deleteOtp.value) {
-    deletingError.value = t('auth.deleteOtpRequired')
-    return
-  }
-
-  deleting.value = true
-  deletingError.value = null
-
-  try {
-    await deleteAccount({ password: deletePassword.value, otp: deleteOtp.value })
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    router.push('/register')
-  } catch (err) {
-    deletingError.value = err.message
-  } finally {
-    deleting.value = false
-  }
 }
 </script>
 
@@ -598,7 +476,6 @@ async function handleDelete() {
   font-weight: 600;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .cover-upload-btn:hover {
@@ -668,18 +545,17 @@ async function handleDelete() {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #e4e6eb;
-  color: #050505;
+  background: var(--surface-2);
+  color: var(--text);
   display: grid;
   place-items: center;
   cursor: pointer;
   border: 4px solid var(--surface);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: background 0.15s;
 }
 
 .avatar-camera-btn:hover {
-  background: #d8dadf;
+  background: var(--surface-3);
 }
 
 .avatar-camera-btn input {
@@ -706,7 +582,7 @@ async function handleDelete() {
   margin: 0;
   font-size: 1.35rem;
   font-weight: 700;
-  color: #050505;
+  color: var(--text);
 }
 
 .edit-top-sub {
@@ -728,7 +604,7 @@ async function handleDelete() {
   padding: 0.9rem 1.25rem;
   font-size: 1rem;
   font-weight: 700;
-  color: #050505;
+  color: var(--text);
   border-bottom: 1px solid var(--border);
   background: var(--surface-2);
 }
@@ -767,7 +643,6 @@ async function handleDelete() {
   cursor: pointer;
   padding: 0.62rem 1rem;
   border-radius: var(--radius-sm);
-  transition: color 0.15s, border-color 0.15s;
 }
 
 .skip:hover:not(:disabled) {
@@ -778,84 +653,6 @@ async function handleDelete() {
 .skip:disabled {
   cursor: not-allowed;
   opacity: 0.6;
-}
-
-.danger-btn {
-  background: transparent;
-  border: 1px solid var(--danger);
-  color: var(--danger);
-  font: inherit;
-  font-size: 0.88rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0.62rem 1rem;
-  border-radius: var(--radius-sm);
-  transition: background 0.15s, color 0.15s;
-}
-
-.danger-btn:hover:not(:disabled) {
-  background: var(--danger-soft);
-}
-
-.danger-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.btn-danger-solid {
-  background: var(--danger) !important;
-}
-
-.btn-danger-solid:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--danger) 88%, #000 12%) !important;
-}
-
-.modal-text {
-  color: var(--text-muted);
-  line-height: 1.5;
-  margin: 0;
-}
-
-.otp-row {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.otp-row .input {
-  flex: 1;
-}
-
-.otp-send-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.62rem 0.85rem;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-sm);
-  background: var(--accent-soft);
-  color: var(--accent);
-  font: inherit;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
-
-.otp-send-btn:hover {
-  background: color-mix(in srgb, var(--accent-soft) 80%, var(--accent) 20%);
-}
-
-.otp-send-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.otp-hint {
-  font-size: 0.8rem;
-  color: var(--accent);
-  margin: 0.35rem 0 0;
 }
 
 .loc-btn {
@@ -872,7 +669,6 @@ async function handleDelete() {
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .loc-row {

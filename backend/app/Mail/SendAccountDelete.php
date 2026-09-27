@@ -12,24 +12,24 @@ class SendAccountDelete extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $otp;
-
-    public function __construct($otp)
-    {
-        $this->otp = $otp;
+    public function __construct(
+        public string $otp,
+        public int $expiresInMinutes,
+    ) {
+        //
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Confirm Account Deletion',
+            subject: 'Confirm your TRINITY account deletion',
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            view: 'account-delete',
+            view: 'mail.account-delete',
         );
     }
 }

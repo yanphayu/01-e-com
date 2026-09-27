@@ -4,41 +4,63 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Report;
-use Illuminate\Http\JsonResponse;
+use App\Notifications\ProductReported;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class ReportController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function filteredQuery(Request $request): Builder
     {
-        $query = Report::with(['user.profile', 'product.images']);
+        $query = Report::with(['user', 'product.images']);
+        $status = $request->string('status')->toString();
+        $search = trim($request->string('search')->toString());
 
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+        if (in_array($status, ['pending', 'resolved', 'dismissed'], true)) {
+            $query->where('status', $status);
         }
 
-        $reports = $query->latest()->paginate($request->get('per_page', 15));
+        if ($search !== '') {
+            $query->where(function (Builder $query) use ($search): void {
+                $query
+                    ->where('reason', 'like', "%{$search}%")
+                    ->orWhere('details', 'like', "%{$search}%")
+                    ->orWhereHas('product', fn (Builder $query): Builder => $query->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('user', fn (Builder $query): Builder => $query
+                        ->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%"));
+            });
+        }
 
-        return response()->json([
-            'success' => true,
-            'data' => $reports,
-        ]);
+        return $query->latest();
     }
 
-    public function resolve(Report $report, Request $request): JsonResponse
+    public function index(Request $request): View
+    {
+        $readAt = now();
+        $request->user()
+            ->unreadNotifications()
+            ->where('type', ProductReported::class)
+            ->update([
+                'read_at' => $readAt,
+                'updated_at' => $readAt,
+            ]);
+
+        $reports = $this->filteredQuery($request)->paginate(15)->withQueryString();
+
+        return view('admin.reports.index', compact('reports'));
+    }
+
+    public function resolve(Request $request, Report $report): RedirectResponse
     {
         $validated = $request->validate([
-            'status' => 'sometimes|in:resolved,dismissed,pending',
+            'status' => ['required', 'in:resolved,dismissed,pending'],
         ]);
 
-        $status = $validated['status'] ?? 'resolved';
+        $report->update(['status' => $validated['status']]);
 
-        $report->update(['status' => $status]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Report updated.',
-            'data' => $report,
-        ]);
+        return back()->with('status', 'Report updated.');
     }
 }

@@ -42,17 +42,21 @@ function close() {
   display: grid;
   place-items: center;
   padding: 1.25rem;
-  background: rgba(28, 27, 25, 0.45);
-  backdrop-filter: blur(2px);
+  background: var(--overlay);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .modal {
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  background: var(--surface);
+  max-height: calc(100dvh - 2.5rem);
+  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  background: var(--surface);
   box-shadow: var(--shadow-lg);
-  overflow: hidden;
 }
 
 .modal-sm {
@@ -70,29 +74,54 @@ function close() {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.1rem 1.25rem;
+  flex-shrink: 0;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
 }
 
 .modal-head h3 {
-  font-family: var(--font-serif);
-  font-size: 1.25rem;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.modal-head h3::before {
+  content: '';
+  width: 4px;
+  height: 1.15em;
+  border-radius: 999px;
+  background: var(--primary);
 }
 
 .modal-close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  line-height: 1;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
   color: var(--text-muted);
+  font-size: 1.45rem;
+  line-height: 1;
   cursor: pointer;
 }
+
 .modal-close:hover {
   color: var(--text);
+  background: var(--surface-3);
+  border-color: var(--border-strong);
 }
 
 .modal-body {
+  min-height: 0;
+  overflow-y: auto;
   padding: 1.25rem;
 }
 
@@ -100,7 +129,26 @@ function close() {
   display: flex;
   justify-content: flex-end;
   gap: 0.6rem;
+  flex-shrink: 0;
   padding: 1rem 1.25rem;
   border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+@media (max-width: 480px) {
+  .modal-overlay {
+    align-items: end;
+    padding: 0.75rem;
+  }
+
+  .modal {
+    max-height: calc(100dvh - 1.5rem);
+  }
+
+  .modal-body,
+  .modal-head,
+  .modal-foot {
+    padding-inline: 1rem;
+  }
 }
 </style>

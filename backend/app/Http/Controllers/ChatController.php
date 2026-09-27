@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ChatUnreadEvent;
 use App\Events\MessageUpdatedEvent;
 use App\Events\NewMessageEvent;
 use App\Models\Block;
@@ -231,6 +232,12 @@ class ChatController extends Controller
 
         try {
             broadcast(new NewMessageEvent($message));
+        } catch (\Exception $e) {
+            // Broadcast failure should not prevent message from being saved
+        }
+
+        try {
+            broadcast(new ChatUnreadEvent($otherId, $message));
         } catch (\Exception $e) {
             // Broadcast failure should not prevent message from being saved
         }

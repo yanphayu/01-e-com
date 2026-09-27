@@ -4,71 +4,79 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
-use Illuminate\Http\JsonResponse;
+use App\Models\Subcategory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class BrandController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function filteredQuery(Request $request): Builder
     {
-        $query = Brand::with('subcategory');
+        $query = Brand::with('subcategory')->withCount('models');
 
-        if ($request->search) {
-            $query->where('name', 'like', "%{$request->search}%");
+        if ($request->filled('search')) {
+            $query->where('name', 'like', "%{$request->string('search')->trim()}%");
         }
 
-        if ($request->has('subcategory_id')) {
-            $query->where('subcategory_id', $request->subcategory_id);
+        if ($request->filled('subcategory_id')) {
+            $query->where('subcategory_id', $request->integer('subcategory_id'));
         }
 
-        $brands = $query->latest()->paginate($request->get('per_page', 15));
-
-        return response()->json([
-            'success' => true,
-            'data' => $brands,
-        ]);
+        return $query->latest();
     }
 
-    public function store(Request $request): JsonResponse
+    public function index(Request $request): View
     {
-        $validated = $request->validate([
-            'subcategory_id' => 'required|exists:subcategories,id',
-            'name' => 'required|string|max:255',
-        ]);
+        $brands = $this->filteredQuery($request)->paginate(15)->withQueryString();
+        $subcategories = Subcategory::orderBy('name')->get(['id', 'name']);
 
-        $brand = Brand::create($validated);
-        $brand->load('subcategory');
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Brand created successfully.',
-            'data' => $brand,
-        ], 201);
+        return view('admin.brands.index', compact('brands', 'subcategories'));
     }
 
-    public function update(Request $request, Brand $brand): JsonResponse
+    public function create(): View
+    {
+        $subcategories = Subcategory::orderBy('name')->get(['id', 'name']);
+
+        return view('admin.brands.form', ['subcategories' => $subcategories, 'brand' => null]);
+    }
+
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'subcategory_id' => 'sometimes|exists:subcategories,id',
-            'name' => 'sometimes|required|string|max:255',
+            'subcategory_id' => ['required', 'exists:subcategories,id'],
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        Brand::create($validated);
+
+        return redirect()->route('admin.brands.index')->with('status', 'Brand created.');
+    }
+
+    public function edit(Brand $brand): View
+    {
+        $subcategories = Subcategory::orderBy('name')->get(['id', 'name']);
+
+        return view('admin.brands.form', compact('subcategories', 'brand'));
+    }
+
+    public function update(Request $request, Brand $brand): RedirectResponse
+    {
+        $validated = $request->validate([
+            'subcategory_id' => ['required', 'exists:subcategories,id'],
+            'name' => ['required', 'string', 'max:255'],
         ]);
 
         $brand->update($validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Brand updated successfully.',
-            'data' => $brand->fresh('subcategory'),
-        ]);
+        return redirect()->route('admin.brands.index')->with('status', 'Brand updated.');
     }
 
-    public function destroy(Brand $brand): JsonResponse
+    public function destroy(Brand $brand): RedirectResponse
     {
         $brand->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Brand deleted successfully.',
-        ]);
+        return redirect()->route('admin.brands.index')->with('status', 'Brand deleted.');
     }
 }

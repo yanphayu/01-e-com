@@ -1,12 +1,15 @@
 <template>
-  <div class="notifications-page">
-    <h1 class="page-title">{{ t('nav.notifications') }}</h1>
+  <div class="notifications-page page-shell">
+    <h1 class="page-title section-title">{{ t('nav.notifications') }}</h1>
 
     <div v-if="loading" class="loading">{{ t('product.loading') }}</div>
 
     <template v-else>
-      <div v-if="unreadCount > 0" class="notif-actions">
-        <button class="btn btn-ghost" @click="markAllRead">{{ t('nav.markAllRead') }}</button>
+      <div v-if="unreadCount > 0 || readCount > 0" class="notif-actions">
+        <button v-if="readCount > 0" class="btn btn-ghost" @click="clearRead">
+          {{ t('nav.clearRead') }}
+        </button>
+        <button v-if="unreadCount > 0" class="btn btn-ghost" @click="markAllRead">{{ t('nav.markAllRead') }}</button>
       </div>
 
       <div v-if="notifications.length === 0" class="empty">
@@ -21,7 +24,7 @@
           :class="{ unread: !n.read_at }"
           @click="onNotifClick(n)"
         >
-          <img v-if="n.data.user?.avatar" :src="n.data.user.avatar" class="notif-avatar" alt="" />
+          <img v-if="n.data.user?.avatar" :src="resolveStorageUrl(n.data.user.avatar)" class="notif-avatar" alt="" />
           <span v-else class="notif-avatar notif-avatar-fallback">{{ (n.data.user?.name || '?')[0] }}</span>
           <div class="notif-content">
             <p class="notif-text">
@@ -38,15 +41,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { t } from '../i18n'
-import { getNotifications, getUnreadCount, markAsRead, markAllAsRead } from '../services/notifications'
+import { getNotifications, getUnreadCount, markAsRead, markAllAsRead, clearReadNotifications } from '../services/notifications'
+import { resolveStorageUrl } from '../services/http'
 
 const router = useRouter()
 const notifications = ref([])
 const unreadCount = ref(0)
 const loading = ref(true)
+
+const readCount = computed(() => notifications.value.filter(n => n.read_at).length)
 
 onMounted(async () => {
   try {
@@ -79,6 +85,12 @@ async function markAllRead() {
   window.dispatchEvent(new Event('notifications-read'))
 }
 
+async function clearRead() {
+  await clearReadNotifications()
+  notifications.value = notifications.value.filter(n => !n.read_at)
+  window.dispatchEvent(new Event('notifications-read'))
+}
+
 function formatNotifTime(dateStr) {
   const now = new Date()
   const date = new Date(dateStr)
@@ -92,53 +104,66 @@ function formatNotifTime(dateStr) {
 
 <style scoped>
 .notifications-page {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 2rem 1.5rem 3rem;
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
 }
 
 .page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
   margin-bottom: 1.5rem;
 }
 
 .notif-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
+.loading,
 .empty {
+  padding: 4rem 1.5rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-muted);
   text-align: center;
-  color: #888;
-  padding: 3rem 0;
 }
 
 .notif-list {
   display: flex;
   flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .notif-item {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.875rem 0;
-  border-bottom: 1px solid #eee;
+  gap: 0.85rem;
+  padding: 0.9rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .notif-item:hover {
-  background: #f9f9f9;
+  background: var(--surface-2);
 }
 
 .notif-item.unread {
-  background: #f0fdf4;
+  border-color: color-mix(in srgb, var(--primary) 20%, transparent);
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--primary);
 }
 
 .notif-avatar {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
@@ -148,55 +173,60 @@ function formatNotifTime(dateStr) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e0e0e0;
-  color: #555;
-  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--surface-3);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-weight: 700;
   font-size: 0.875rem;
 }
 
 .notif-content {
   flex: 1;
   min-width: 0;
+  padding-top: 0.1rem;
 }
 
 .notif-text {
   font-size: 0.9rem;
-  line-height: 1.4;
+  line-height: 1.5;
   margin: 0;
+  color: var(--text-muted);
+}
+
+.notif-text strong {
+  color: var(--text);
 }
 
 .notif-time {
-  font-size: 0.75rem;
-  color: #999;
-  margin-top: 0.25rem;
   display: block;
-}
-
-.btn {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  transition: background 0.15s;
+  margin-top: 0.3rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
 }
 
 .btn-ghost {
-  background: transparent;
-  color: #16a34a;
+  color: var(--primary);
+  background: var(--surface);
+  border-color: var(--border);
 }
 
-.btn-ghost:hover {
-  background: #f0fdf4;
+.btn-ghost:hover:not(:disabled) {
+  color: var(--primary);
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--primary) 32%, transparent);
 }
 
 @media (max-width: 480px) {
-  .notifications-page {
-    padding: 1.5rem 1rem 2rem;
+  .notif-item {
+    gap: 0.65rem;
+    padding: 0.8rem 0.65rem;
   }
-  .page-title {
-    font-size: 1.25rem;
+
+  .notif-avatar {
+    width: 36px;
+    height: 36px;
   }
 }
 </style>

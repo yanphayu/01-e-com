@@ -5,21 +5,19 @@
     <template v-else>
       <div class="fb-header container">
         <div class="fb-cover">
-          <img v-if="user.profile?.cover_image" :src="user.profile.cover_image" class="cover-img" alt="" />
+            <img v-if="user.profile?.cover_image" :src="resolveStorageUrl(user.profile.cover_image)" class="cover-img" alt="" />
           <div class="cover-gradient"></div>
         </div>
         <div class="fb-header-inner">
           <div class="fb-avatar-col">
             <div class="avatar-wrap">
-              <img v-if="user.profile?.avatar" :src="user.profile.avatar" class="store-avatar" :alt="user.name" />
+              <img v-if="user.profile?.avatar" :src="resolveStorageUrl(user.profile.avatar)" class="store-avatar" :alt="user.name" />
               <span v-else class="store-avatar avatar-fallback">{{ initials }}</span>
             </div>
           </div>
-          <div class="fb-meta">
-            <h1 class="store-name">{{ user.name }}</h1>
-            <p v-if="user.profile?.address?.address" class="store-location">{{ user.profile.address.address }}</p>
-            <p class="store-joined">{{ t('product.joined') }} {{ new Date(user.created_at).toLocaleDateString() }}</p>
-          </div>
+            <div class="fb-meta">
+              <h1 class="store-name">{{ user.name }}</h1>
+            </div>
         </div>
       </div>
 
@@ -42,6 +40,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { t } from '../i18n'
 import { getUser } from '../services/products'
+import { resolveStorageUrl } from '../services/http'
 import ProductCard from '../components/ProductCard.vue'
 
 const route = useRoute()
@@ -100,7 +99,7 @@ onMounted(async () => {
 
 .fb-header-inner {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 1.25rem;
   position: relative;
   background: var(--surface);
@@ -139,13 +138,9 @@ onMounted(async () => {
   color: var(--accent);
 }
 
-.fb-meta {
-  padding-top: 0.75rem;
-}
-
 .store-name {
   font-family: var(--font-serif);
-  font-size: 1.4rem;
+  font-size: 2rem;
   font-weight: 600;
   margin: 0;
 }
@@ -153,12 +148,6 @@ onMounted(async () => {
 .store-location {
   color: var(--text-muted);
   font-size: 0.9rem;
-  margin: 0.2rem 0 0;
-}
-
-.store-joined {
-  color: var(--text-muted);
-  font-size: 0.8rem;
   margin: 0.2rem 0 0;
 }
 

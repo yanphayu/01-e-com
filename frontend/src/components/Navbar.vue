@@ -29,7 +29,7 @@
                 </RouterLink>
             </div>
 
-            <div v-if="!isProfilePage" class="search-wrapper">
+            <div class="search-wrapper">
                 <form class="search-box" @submit.prevent="onSearch">
                     <svg
                         class="search-icon"
@@ -49,7 +49,7 @@
                         ref="searchInputRef"
                         v-model="searchQuery"
                         type="text"
-                        class="search-input"
+                        class="search-input input-bare"
                         :placeholder="t('nav.search')"
                     />
                     <button
@@ -122,6 +122,47 @@
 
                 <!-- Mobile language switcher -->
                 <LocaleSwitcher class="mobile-locale" />
+                <button
+                    class="theme-toggle"
+                    type="button"
+                    :aria-label="isDarkTheme ? 'Switch to light theme' : 'Switch to dark theme'"
+                    :title="isDarkTheme ? 'Switch to light theme' : 'Switch to dark theme'"
+                    @click="toggleTheme"
+                >
+                    <svg
+                        v-if="isDarkTheme"
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                    >
+                        <circle cx="12" cy="12" r="4" />
+                        <line x1="12" y1="2" x2="12" y2="4" />
+                        <line x1="12" y1="20" x2="12" y2="22" />
+                        <line x1="4.93" y1="4.93" x2="6.34" y2="6.34" />
+                        <line x1="17.66" y1="17.66" x2="19.07" y2="19.07" />
+                        <line x1="2" y1="12" x2="4" y2="12" />
+                        <line x1="20" y1="12" x2="22" y2="12" />
+                        <line x1="4.93" y1="19.07" x2="6.34" y2="17.66" />
+                        <line x1="17.66" y1="6.34" x2="19.07" y2="4.93" />
+                    </svg>
+                    <svg
+                        v-else
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                </button>
             </div>
 
             <div class="links">
@@ -174,8 +215,7 @@
                     <!-- Chat -->
                     <RouterLink
                         to="/chat"
-                        class="notif-trigger chat-trigger"
-                        :class="{ 'has-badge': chatUnread > 0 }"
+                        class="notif-trigger"
                         @click="onChatClick"
                     >
                         <svg
@@ -214,62 +254,6 @@
                             userInitial
                         }}</span>
                     </RouterLink>
-                    <!-- Switch Account -->
-                    <div
-                        v-if="otherAccounts.length"
-                        class="dropdown"
-                        ref="switchDropdownRef"
-                    >
-                        <button
-                            class="btn btn-ghost switch-trigger"
-                            @click="showSwitchDropdown = !showSwitchDropdown"
-                        >
-                            <svg
-                                viewBox="0 0 24 24"
-                                width="16"
-                                height="16"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <path
-                                    d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
-                                />
-                                <circle cx="9" cy="7" r="4" />
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                            </svg>
-                        </button>
-                        <div
-                            v-if="showSwitchDropdown"
-                            class="dropdown-menu switch-menu"
-                        >
-                            <div class="switch-label">
-                                {{ t("nav.switchAccount") }}
-                            </div>
-                            <button
-                                v-for="acc in otherAccounts"
-                                :key="acc.id"
-                                class="dropdown-item switch-item"
-                                @click="switchAccount(acc)"
-                            >
-                                <img
-                                    v-if="acc.profile?.avatar"
-                                    :src="acc.profile.avatar"
-                                    class="switch-avatar"
-                                    alt=""
-                                />
-                                <span
-                                    v-else
-                                    class="switch-avatar switch-avatar-fallback"
-                                    >{{ (acc.name || "?")[0] }}</span
-                                >
-                                <span class="switch-name">{{ acc.name }}</span>
-                            </button>
-                        </div>
-                    </div>
                 </template>
                 <template v-else>
                     <RouterLink to="/login" class="btn btn-ghost">{{
@@ -391,11 +375,13 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import { t } from "../i18n";
 import { getUser } from "../services/auth";
+import { resolveStorageUrl } from "../services/http";
 import { getUnreadCount } from "../services/notifications";
 import { getConversations } from "../services/chat";
 import { initEcho, leaveEcho } from "../services/echo";
 import LocaleSwitcher from "./LocaleSwitcher.vue";
-import { chatUnread, setChatUnread, resetChatUnread } from "../stores/chat";
+import { chatUnread, setChatUnread, addChatUnread, resetChatUnread } from "../stores/chat";
+import { pushToast } from "../stores/toast";
 
 const router = useRouter();
 const route = useRoute();
@@ -403,15 +389,15 @@ const isProfilePage = computed(() => route.name === "profile");
 const isSearchPage = computed(() => route.name === "search");
 const isAuthenticated = ref(!!localStorage.getItem("token"));
 const searchQuery = ref("");
-const showSwitchDropdown = ref(false);
-const switchDropdownRef = ref(null);
 const searchInputRef = ref(null);
+const isDarkTheme = ref(document.documentElement.dataset.theme === "dark");
 
 const unreadCount = ref(0);
+const conversations = ref([]);
 
 const user = ref(readStoredUser());
 const userName = computed(() => user.value.name || "");
-const userAvatar = computed(() => user.value.profile?.avatar || "");
+const userAvatar = computed(() => resolveStorageUrl(user.value.profile?.avatar || ""));
 const userInitial = computed(() =>
     (userName.value || "?").trim().charAt(0).toUpperCase(),
 );
@@ -427,12 +413,14 @@ function readStoredUser() {
 onMounted(() => {
     refreshAuth();
     window.addEventListener("auth-changed", refreshAuth);
+    window.addEventListener("storage", handleThemeStorage);
 });
 
 onUnmounted(() => {
     leaveEcho();
     window.removeEventListener("notifications-read", loadUnreadCount);
     window.removeEventListener("auth-changed", refreshAuth);
+    window.removeEventListener("storage", handleThemeStorage);
 });
 
 async function refreshAuth() {
@@ -462,8 +450,64 @@ function connectEcho() {
     const echo = initEcho(user.value.id);
     if (!echo) return;
 
-    echo.private(`App.Models.User.${user.value.id}`).notification(() => {
+    const userChannel = echo.private(`App.Models.User.${user.value.id}`);
+
+    userChannel.listen(".notification.created", (payload) => {
         unreadCount.value++;
+        notifyLive(payload);
+    });
+
+    userChannel.listen(".chat.unread", (event) => {
+        if (route.name === "chat") {
+            window.dispatchEvent(
+                new CustomEvent("chat-unread", { detail: event }),
+            );
+            return;
+        }
+
+        addChatUnread();
+        notifyChat(event);
+    });
+}
+
+function notifyLive(payload) {
+    const data = payload?.data || payload || {};
+    const who = data.user?.name;
+
+    const message = data.type === "comment_created" && who
+        ? t("toast.commentedOn", { name: who, product: data.product_name || "" })
+        : t("toast.newActivity");
+
+    pushToast({
+        type: "info",
+        title: t("toast.title"),
+        message,
+        action: t("toast.view"),
+        onAction: () => router.push("/notifications"),
+    });
+}
+
+function notifyChat(event) {
+    const conversationId = event?.conversation_id;
+    const message = event?.message;
+    if (!conversationId || !message) return;
+
+    const conversation = conversations.value.find(
+        (conv) => conv.id === conversationId,
+    );
+    const who =
+        conversation?.user1?.name || conversation?.user2?.name || "";
+
+    let preview = message.body || "";
+    if (!preview && message.image) preview = t("toast.sentImage");
+    if (!preview && message.voice) preview = t("toast.sentVoice");
+
+    pushToast({
+        type: "info",
+        title: t("toast.newMessage"),
+        message: who ? `${who}: ${preview}`.trim() : preview,
+        action: t("toast.openChat"),
+        onAction: () => router.push(`/chat/${conversationId}`),
     });
 }
 
@@ -479,6 +523,7 @@ async function loadChatUnread() {
     try {
         const data = await getConversations();
         const list = data.data || [];
+        conversations.value = list;
         let total = 0;
         for (const conv of list) total += conv.unread_count || 0;
         setChatUnread(total);
@@ -505,38 +550,6 @@ function logout() {
     router.push("/login");
 }
 
-const otherAccounts = computed(() => {
-    const saved = JSON.parse(localStorage.getItem("saved_accounts") || "[]");
-    return saved.filter((a) => a.id !== user.value.id);
-});
-
-async function switchAccount(account) {
-    const saved = JSON.parse(localStorage.getItem("saved_accounts") || "[]");
-    const current = JSON.parse(localStorage.getItem("user") || "{}");
-    const currentToken = localStorage.getItem("token");
-    if (current.id && currentToken) {
-        if (!saved.find((a) => a.id === current.id)) {
-            saved.push({ ...current, _token: currentToken });
-        }
-    }
-    const updated = saved.filter((a) => a.id !== account.id);
-    localStorage.setItem("saved_accounts", JSON.stringify(updated));
-    localStorage.setItem("user", JSON.stringify(account));
-    localStorage.setItem("token", account._token);
-    showSwitchDropdown.value = false;
-
-    try {
-        const data = await getUser();
-        user.value = data.data || {};
-        localStorage.setItem("user", JSON.stringify(user.value));
-        loadUnreadCount();
-    } catch {
-        user.value = account;
-    }
-
-    router.push("/");
-}
-
 function onSearch() {
     const q = searchQuery.value.trim();
     if (!q) return;
@@ -549,12 +562,28 @@ function clearSearch() {
     searchInputRef.value?.focus();
 }
 
-function handleClickOutside(e) {
-    if (
-        switchDropdownRef.value &&
-        !switchDropdownRef.value.contains(e.target)
-    ) {
-        showSwitchDropdown.value = false;
+function applyTheme(theme) {
+    isDarkTheme.value = theme === "dark";
+    document.documentElement.dataset.theme = isDarkTheme.value
+        ? "dark"
+        : "light";
+}
+
+function toggleTheme() {
+    const theme = isDarkTheme.value ? "light" : "dark";
+    applyTheme(theme);
+    try {
+        localStorage.setItem("trinity-theme", theme);
+    } catch {}
+    window.dispatchEvent(
+        new CustomEvent("theme-changed", { detail: { theme } }),
+    );
+}
+
+function handleThemeStorage(e) {
+    if (e.key !== "trinity-theme") return;
+    if (e.newValue === "light" || e.newValue === "dark") {
+        applyTheme(e.newValue);
     }
 }
 
@@ -569,28 +598,31 @@ function onChatClick() {
         window.dispatchEvent(new CustomEvent("chat-show-list"));
     }
 }
-
-onMounted(() => document.addEventListener("click", handleClickOutside));
-onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 </script>
 
 <style scoped>
 .navbar {
+    --nav-btn-size: 38px;
     position: sticky;
     top: 0;
     z-index: 50;
     background: var(--navbar-bg);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--border);
+    box-shadow: 0 1px 0 var(--border), var(--shadow-sm);
 }
 
 .nav-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-top: 0.85rem;
-    padding-bottom: 0.85rem;
+    min-height: 70px;
+    padding-top: 0.7rem;
+    padding-bottom: 0.7rem;
+}
+
+.nav-inner .links > *,
+.icon-actions > * {
+    flex: 0 0 auto;
 }
 
 .brand {
@@ -630,6 +662,26 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
     margin-right: 0.6rem;
 }
 
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--nav-btn-size);
+    height: var(--nav-btn-size);
+    padding: 0;
+    flex: 0 0 var(--nav-btn-size);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-muted);
+}
+
+.theme-toggle:hover {
+    color: var(--primary);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
 :deep(.mobile-locale) {
     display: none;
 }
@@ -649,11 +701,11 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
     align-items: center;
     gap: 0.4rem;
     width: 100%;
-    padding: 0.4rem 0.75rem;
+    height: var(--nav-btn-size);
+    padding: 0 0.75rem;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border);
     background: var(--surface);
-    transition: border-color 0.15s;
 }
 
 .search-box:focus-within {
@@ -666,13 +718,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 }
 
 .search-input {
-    border: none;
-    outline: none;
-    background: transparent;
     font-size: 0.85rem;
-    color: var(--text);
-    width: 100%;
-    padding: 0;
 }
 
 .search-input::placeholder {
@@ -696,119 +742,10 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 }
 
 .links .btn {
-    padding: 0.4rem 0.85rem;
+    min-height: var(--nav-btn-size);
+    height: var(--nav-btn-size);
+    padding: 0 0.85rem;
     font-size: 0.85rem;
-}
-
-.dropdown {
-    position: relative;
-}
-
-.dropdown-trigger {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.4rem !important;
-}
-
-.dropdown-menu {
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    min-width: 180px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
-    z-index: 100;
-    overflow: hidden;
-}
-
-.dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-    padding: 0.6rem 0.9rem;
-    border: none;
-    background: transparent;
-    color: var(--text);
-    font: inherit;
-    font-size: 0.85rem;
-    text-decoration: none;
-    cursor: pointer;
-    text-align: left;
-    transition: background 0.12s;
-}
-
-.dropdown-item:hover {
-    background: var(--surface-2);
-}
-
-.dropdown-item.danger {
-    color: var(--danger);
-}
-
-.dropdown-item.danger:hover {
-    background: var(--danger-soft);
-}
-
-.switch-trigger {
-    padding: 0.45rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--surface);
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: border-color 0.15s;
-}
-
-.switch-trigger:hover {
-    border-color: var(--border-strong);
-    color: var(--text);
-}
-
-.switch-menu {
-    min-width: 180px;
-}
-
-.switch-label {
-    padding: 0.5rem 0.9rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    border-bottom: 1px solid var(--border);
-}
-
-.switch-item {
-    gap: 0.6rem;
-}
-
-.switch-avatar {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    object-fit: cover;
-    flex-shrink: 0;
-}
-
-.switch-avatar-fallback {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--accent);
-    color: #fff;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-.switch-name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .link {
@@ -822,7 +759,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 
 .link:hover {
     color: var(--text);
-    background: rgba(28, 27, 25, 0.04);
+    background: var(--surface-2);
 }
 
 .link.router-link-active {
@@ -840,7 +777,6 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
     border-radius: 999px;
     border: 1px solid var(--border);
     background: var(--navbar-bg);
-    transition: border-color 0.15s;
 }
 
 .user-chip:hover {
@@ -876,14 +812,16 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 .user-trigger {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
-    padding: 0.45rem 0.85rem;
+    height: var(--nav-btn-size);
+    padding: 0 0.85rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--surface);
     cursor: pointer;
-    transition: border-color 0.15s;
 }
+
 
 .user-trigger:hover {
     border-color: var(--border-strong);
@@ -894,46 +832,21 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.45rem;
+    width: var(--nav-btn-size);
+    height: var(--nav-btn-size);
+    padding: 0;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--surface);
     color: var(--text-muted);
     cursor: pointer;
     text-decoration: none;
-    transition:
-        border-color 0.15s,
-        color 0.15s;
 }
+
 
 .notif-trigger:hover {
     border-color: var(--border-strong);
     color: var(--text);
-}
-
-.chat-trigger {
-    position: relative;
-}
-
-.chat-trigger::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    right: -1px;
-    transform: translateY(-50%);
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: transparent;
-    transition: background 0.15s;
-}
-
-.chat-trigger.router-link-active::after {
-    background: #0084ff;
-}
-
-.chat-trigger.has-badge::after {
-    background: transparent;
 }
 
 .chat-badge {
@@ -961,18 +874,19 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
     display: none;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    border: none;
+    width: var(--nav-btn-size);
+    height: var(--nav-btn-size);
+    padding: 0;
+    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    background: transparent;
+    background: var(--surface);
     color: var(--text-muted);
     text-decoration: none;
-    flex-shrink: 0;
-    transition: color 0.15s;
+    flex: 0 0 var(--nav-btn-size);
 }
 
 .mobile-search-btn:hover {
+    border-color: var(--border-strong);
     color: var(--accent);
 }
 
@@ -980,29 +894,37 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
     display: none;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    border: none;
+    width: var(--nav-btn-size);
+    height: var(--nav-btn-size);
+    padding: 0;
+    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    background: transparent;
+    background: var(--surface);
     color: var(--text-muted);
     text-decoration: none;
-    flex-shrink: 0;
-    transition: color 0.15s;
+    flex: 0 0 var(--nav-btn-size);
 }
 
 .mobile-fav-btn:hover,
 .mobile-fav-btn.active {
+    border-color: var(--border-strong);
     color: var(--accent);
 }
 
-@media (max-width: 920px) {
+.links :deep(.locale-trigger),
+.icon-actions :deep(.locale-trigger) {
+    height: var(--nav-btn-size);
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+@media (max-width: 992px) {
     .user-name {
         display: none;
     }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 992px) {
     .search-wrapper {
         display: none;
     }
@@ -1028,6 +950,33 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
     }
 }
 
+@media (max-width: 480px) {
+    .brand {
+        font-size: 0.95rem;
+        letter-spacing: 0.06em;
+    }
+
+    .brand-mark {
+        width: 20px;
+        height: 20px;
+    }
+
+    .icon-actions {
+        gap: 0.25rem;
+        margin-right: 0;
+    }
+
+    .icon-actions :deep(.locale-trigger) {
+        width: var(--nav-btn-size);
+        padding: 0;
+        justify-content: center;
+    }
+
+    .icon-actions :deep(.locale-code) {
+        display: none;
+    }
+}
+
 /* Bottom tab bar */
 .bottom-bar {
     display: none;
@@ -1037,8 +986,6 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
     right: 0;
     z-index: 50;
     background: var(--navbar-bg);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
     border-top: 1px solid var(--border);
     padding: 0.35rem 0 max(0.35rem, env(safe-area-inset-bottom));
 }
@@ -1054,7 +1001,6 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
     color: var(--text-muted);
     font-size: 0.65rem;
     font-weight: 500;
-    transition: color 0.15s;
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -1120,7 +1066,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
     font-weight: 600;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 992px) {
     .bottom-bar {
         display: flex;
     }

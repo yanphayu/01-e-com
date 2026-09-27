@@ -64,7 +64,8 @@ import { t } from '../../i18n'
 
 const router = useRouter()
 
-const OTP_TTL = 60
+const OTP_TTL = 600
+const RESEND_COOLDOWN = 60
 
 const email = ref(sessionStorage.getItem('verifyEmail') || '')
 const userId = sessionStorage.getItem('verifyUserId')
@@ -153,17 +154,17 @@ async function resend() {
   }
   error.value = null
   try {
-    await resendVerification({ user_id: userId, email: email.value })
-    startCountdown(OTP_TTL)
-    startExpiry()
+    const res = await resendVerification({ user_id: userId, email: email.value })
+    startCountdown(RESEND_COOLDOWN)
+    startExpiry(res.expires_in || OTP_TTL)
   } catch (err) {
     error.value = err.message
   }
 }
 
-function startExpiry() {
+function startExpiry(ttl = OTP_TTL) {
   expired.value = false
-  codeExpiry.value = OTP_TTL
+  codeExpiry.value = ttl
   clearInterval(expiryTimer)
   expiryTimer = setInterval(() => {
     if (codeExpiry.value > 0) {
@@ -197,7 +198,7 @@ function goBack() {
 onMounted(() => {
   focus(0)
   startExpiry()
-  startCountdown(OTP_TTL)
+  startCountdown(RESEND_COOLDOWN)
 })
 onUnmounted(() => {
   clearInterval(expiryTimer)

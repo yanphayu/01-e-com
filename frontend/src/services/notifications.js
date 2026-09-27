@@ -15,3 +15,7 @@ export function markAsRead(id) {
 export function markAllAsRead() {
   return request('/notifications/read-all', { method: 'POST' })
 }
+
+export function clearReadNotifications() {
+  return request('/notifications/read', { method: 'DELETE' })
+}

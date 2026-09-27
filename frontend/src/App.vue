@@ -4,6 +4,7 @@
     <main class="app-main">
       <RouterView />
     </main>
+    <ToastHost />
   </div>
 </template>
 
@@ -11,10 +12,18 @@
 import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import Navbar from './components/Navbar.vue'
+import ToastHost from './components/ToastHost.vue'
 
 const route = useRoute()
 const isAuthPage = computed(() =>
-  ['login', 'register', 'verify-email'].includes(route.name)
+  [
+    'login',
+    'register',
+    'verify-email',
+    'forgot-password',
+    'reset-password',
+    'set-password',
+  ].includes(route.name)
 )
 </script>
 

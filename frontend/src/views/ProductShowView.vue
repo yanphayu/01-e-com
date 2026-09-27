@@ -1,5 +1,5 @@
 <template>
-  <div class="product-show container">
+  <div class="product-show container page-shell">
     <button type="button" class="back-btn" @click="$router.back()">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M19 12H5"/>
@@ -51,7 +51,7 @@
         <!-- Seller Mini Profile -->
         <div class="seller-mini-profile" @click="goToProfile" role="link" tabindex="0">
           <div class="seller-avatar">
-            <img v-if="product.user?.profile?.avatar" :src="product.user.profile.avatar" :alt="product.user?.name" />
+            <img v-if="product.user?.profile?.avatar" :src="resolveStorageUrl(product.user.profile.avatar)" :alt="product.user?.name" />
             <span v-else class="avatar-placeholder">{{ (product.user?.name || '?')[0] }}</span>
           </div>
           <div class="seller-details">
@@ -94,7 +94,7 @@
             :class="{ active: isFavorited }"
             @click="onFavorite"
           >
-            <svg viewBox="0 0 24 24" width="22" height="22" :fill="isFavorited ? 'var(--accent)' : 'none'" :stroke="isFavorited ? 'var(--accent)' : '#999'" stroke-width="2">
+            <svg viewBox="0 0 24 24" width="22" height="22" :fill="isFavorited ? 'var(--primary)' : 'none'" :stroke="isFavorited ? 'var(--primary)' : 'var(--text-muted)'" stroke-width="2">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
           </button>
@@ -155,7 +155,7 @@
 
     <!-- Comments Section -->
     <section class="comments-section">
-      <h2 class="related-title">{{ t('product.comments') }} ({{ comments.length }})</h2>
+      <h2 class="related-title section-title">{{ t('product.comments') }} ({{ comments.length }})</h2>
 
       <div v-if="comments.length === 0" class="comment-empty">{{ t('product.noComments') }}</div>
 
@@ -194,7 +194,7 @@
 
     <!-- Related Products -->
     <section v-if="relatedProducts.length" class="related-section">
-      <h2 class="related-title">{{ t('product.relatedProducts') }}</h2>
+      <h2 class="related-title section-title">{{ t('product.relatedProducts') }}</h2>
       <div class="related-grid">
         <ProductCard v-for="rp in relatedProducts" :key="rp.id" :product="rp" />
       </div>
@@ -211,7 +211,7 @@ import { t } from '../i18n'
 import { getProduct, getProducts, getComments, addComment, deleteComment } from '../services/products'
 import { toggleFavorite } from '../services/favorites'
 import { createConversation } from '../services/chat'
-import { STORAGE_URL } from '../services/http'
+import { STORAGE_URL, resolveStorageUrl } from '../services/http'
 import ProductCard from '../components/ProductCard.vue'
 import CommentNode from '../components/CommentNode.vue'
 import ReportModal from '../components/ReportModal.vue'
@@ -387,32 +387,34 @@ watch(() => route.params.id, (newId) => {
 
 <style scoped>
 .product-show {
-  padding: 2rem 1.5rem 3rem;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 2rem;
-  max-width: 1200px;
+  max-width: var(--container);
+  padding-block: 2rem 3rem;
 }
 
 .back-btn {
   grid-column: 1 / -1;
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  background: none;
-  border: none;
+  gap: 0.45rem;
+  width: fit-content;
+  margin-bottom: 0.25rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
   color: var(--text-muted);
-  font: inherit;
-  font-size: 0.88rem;
-  font-weight: 500;
+  font-size: 0.82rem;
+  font-weight: 600;
   cursor: pointer;
-  padding: 0;
-  margin-bottom: 0.5rem;
-  transition: color 0.15s;
 }
 
 .back-btn:hover {
-  color: var(--accent);
+  border-color: var(--primary);
+  background: var(--accent-soft);
+  color: var(--primary);
 }
 
 .breadcrumb-nav {
@@ -420,20 +422,20 @@ watch(() => route.params.id, (newId) => {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  font-size: 0.85rem;
+  gap: 0.55rem;
+  margin-bottom: 0.25rem;
   color: var(--text-muted);
-  margin-bottom: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
 }
 
 .breadcrumb-nav a {
   color: var(--text-muted);
   text-decoration: none;
-  transition: color 0.15s;
 }
 
 .breadcrumb-nav a:hover {
-  color: var(--accent);
+  color: var(--primary);
 }
 
 .breadcrumb-nav .sep {
@@ -442,6 +444,7 @@ watch(() => route.params.id, (newId) => {
 
 .product-images {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 0.75rem;
 }
@@ -449,14 +452,17 @@ watch(() => route.params.id, (newId) => {
 .main-image {
   position: relative;
   aspect-ratio: 1;
-  border-radius: var(--radius-md);
   overflow: hidden;
-  background: var(--surface-2);
   border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-sm);
 }
 
 .main-image img {
+  display: block;
   width: 100%;
+  max-width: 100%;
   height: 100%;
   object-fit: cover;
 }
@@ -471,36 +477,48 @@ watch(() => route.params.id, (newId) => {
 
 .image-counter {
   position: absolute;
-  bottom: 0.75rem;
   right: 0.75rem;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  font-size: 0.8rem;
-  padding: 0.25rem 0.6rem;
-  border-radius: var(--radius-sm);
+  bottom: 0.75rem;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.76);
+  color: var(--on-primary);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
 }
 
 .thumb-strip {
   display: flex;
-  gap: 0.5rem;
+  width: 100%;
+  max-width: 100%;
+  gap: 0.55rem;
   overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: x proximity;
+  padding: 0.15rem;
 }
 
 .thumb-btn {
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  border: 2px solid var(--border);
-  cursor: pointer;
-  padding: 0;
-  background: none;
+  width: 58px;
+  height: 58px;
   flex-shrink: 0;
-  transition: border-color 0.15s;
+  overflow: hidden;
+  padding: 0;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+  scroll-snap-align: start;
+  opacity: 0.7;
 }
 
+.thumb-btn:hover,
 .thumb-btn.active {
-  border-color: var(--accent);
+  border-color: var(--primary);
+  opacity: 1;
 }
 
 .thumb-btn img {
@@ -511,111 +529,156 @@ watch(() => route.params.id, (newId) => {
 
 .product-info {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 1rem;
+  align-self: start;
+  padding: 1.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .product-meta {
   display: flex;
+  min-width: 0;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
 .badge {
-  display: inline-block;
-  padding: 0.2rem 0.6rem;
-  border-radius: var(--radius-sm);
-  background: var(--accent);
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.32rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--primary);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .breadcrumb {
-  font-size: 0.85rem;
+  min-width: 0;
   color: var(--text-muted);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
 }
 
 .product-title {
-  font-family: var(--font-serif);
-  font-size: 1.5rem;
-  font-weight: 600;
   margin: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  font-size: clamp(1.45rem, 2.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.2;
 }
 
 .product-price {
+  margin: 0;
+  color: var(--primary);
+  font-family: var(--font-mono);
   font-size: 1.8rem;
   font-weight: 700;
-  color: var(--accent);
-  margin: 0;
+  letter-spacing: -0.04em;
 }
 
 .product-price-row {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.65rem;
 }
 
 .fav-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
-  background: var(--surface);
+  min-height: 40px;
+  padding: 0.55rem 0.85rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 0.5rem 1rem;
-  font: inherit;
-  font-size: 0.88rem;
-  font-weight: 500;
+  background: var(--surface-2);
   color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
 }
 
 .fav-btn:hover {
-  color: var(--accent);
-  border-color: var(--accent);
+  border-color: var(--primary);
+  background: var(--accent-soft);
+  color: var(--primary);
 }
 
 .fav-btn.active {
-  color: var(--accent);
-  border-color: var(--accent);
+  border-color: var(--primary);
   background: var(--accent-soft);
+  color: var(--primary);
 }
 
 .info-section {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: 1rem 0;
+  padding: 1rem 0 0.25rem;
   border-top: 1px solid var(--border);
 }
 
-.info-section h3 {
-  font-size: 1rem;
-  font-weight: 600;
+.info-section h3,
+.contact-section h3 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   margin: 0 0 0.25rem;
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.info-section h3::before,
+.contact-section h3::before {
+  content: '';
+  width: 4px;
+  height: 1.15em;
+  flex: 0 0 4px;
+  border-radius: 999px;
+  background: var(--primary);
 }
 
 .info-row {
   display: flex;
   justify-content: space-between;
-  font-size: 0.9rem;
+  gap: 1rem;
   padding: 0.2rem 0;
+  font-size: 0.88rem;
 }
 
 .info-label {
   color: var(--text-muted);
-  font-weight: 500;
+  font-weight: 600;
+}
+
+.info-row > span:last-child {
+  min-width: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .product-desc {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  line-height: 1.6;
   margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.7;
 }
 
 .seller-mini-profile {
@@ -624,14 +687,14 @@ watch(() => route.params.id, (newId) => {
   gap: 0.75rem;
   padding: 0.75rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
 }
 
 .seller-mini-profile:hover {
-  background: var(--surface-2);
-  border-color: var(--accent);
+  border-color: var(--primary);
+  background: var(--accent-soft);
 }
 
 .seller-avatar {
@@ -663,13 +726,16 @@ watch(() => route.params.id, (newId) => {
 
 .seller-details {
   display: flex;
+  min-width: 0;
   flex-direction: column;
 }
 
 .seller-details .seller-name {
+  min-width: 0;
   font-weight: 600;
   font-size: 0.95rem;
   color: var(--text);
+  overflow-wrap: anywhere;
 }
 
 .seller-details .seller-phone {
@@ -686,14 +752,8 @@ watch(() => route.params.id, (newId) => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding: 1rem 0;
+  padding: 1rem 0 0.25rem;
   border-top: 1px solid var(--border);
-}
-
-.contact-section h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0;
 }
 
 .contact-row {
@@ -704,9 +764,10 @@ watch(() => route.params.id, (newId) => {
 }
 
 .contact-phone {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--accent);
+  color: var(--primary);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
   text-decoration: none;
 }
 
@@ -714,86 +775,150 @@ watch(() => route.params.id, (newId) => {
   text-decoration: underline;
 }
 
-.loading, .empty {
+.loading,
+.empty {
   grid-column: 1 / -1;
-  text-align: center;
-  padding: 3rem;
+  padding: 4rem 1.5rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
   color: var(--text-muted);
+  text-align: center;
+}
+
+.related-section,
+.comments-section {
+  grid-column: 1 / -1;
+  padding: 1.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .related-section {
-  grid-column: 1 / -1;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--border);
+  margin-top: 0.5rem;
+}
+
+.comments-section {
+  margin-top: 0.5rem;
 }
 
 .related-title {
-  font-size: 1.15rem;
-  font-weight: 600;
-  margin: 0 0 1rem;
+  margin: 0 0 1.1rem;
+  font-size: 1rem;
 }
 
 .related-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.25rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
 }
 
 @media (max-width: 900px) {
   .related-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .product-show {
     grid-template-columns: 1fr;
   }
 }
 
-/* Comments */
+@media (max-width: 600px) {
+  .product-info,
+  .related-section,
+  .comments-section {
+    padding: 1rem;
+  }
+
+  .product-info {
+    gap: 0.85rem;
+  }
+
+  .breadcrumb-nav {
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    overflow-wrap: anywhere;
+  }
+
+  .thumb-btn {
+    width: 54px;
+    height: 54px;
+  }
+
+  .info-row {
+    display: grid;
+    grid-template-columns: minmax(72px, 0.4fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 0.75rem;
+  }
+
+  .info-row > span:last-child {
+    text-align: left;
+  }
+
+  .seller-mini-profile {
+    min-width: 0;
+  }
+
+  .product-price {
+    font-size: 1.55rem;
+  }
+
+  .fav-btn {
+    min-height: 38px;
+    padding-inline: 0.7rem;
+  }
+
+  .related-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .comments-section {
-  grid-column: 1 / -1;
-  margin-top: 2rem;
-  padding-top: 2rem;
+  margin-top: 0;
+  padding-top: 1.4rem;
   border-top: 1px solid var(--border);
 }
 
 .comment-form {
+  margin-top: 1rem;
   margin-bottom: 1.5rem;
 }
 
 .comment-input {
   width: 100%;
-  padding: 0.75rem;
+  min-height: 92px;
+  margin-bottom: 0.65rem;
+  padding: 0.8rem;
+  resize: vertical;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font: inherit;
-  font-size: 0.9rem;
+  background: var(--surface-2);
   color: var(--text);
-  background: var(--surface);
-  resize: vertical;
-  min-height: 60px;
-  margin-bottom: 0.5rem;
-  transition: border-color 0.15s;
+  font-size: 0.9rem;
 }
 
 .comment-input:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .comment-login {
+  margin: 1rem 0 0;
   color: var(--text-muted);
   font-size: 0.88rem;
-  margin-bottom: 1rem;
 }
 
 .comment-empty {
+  padding: 2rem 0;
   color: var(--text-muted);
   font-size: 0.88rem;
-  padding: 1rem 0;
 }
 
 .comment-item {
@@ -828,7 +953,7 @@ watch(() => route.params.id, (newId) => {
   align-items: center;
   justify-content: center;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-primary);
   font-size: 0.7rem;
   font-weight: 600;
 }
@@ -867,7 +992,6 @@ watch(() => route.params.id, (newId) => {
   color: var(--text-muted);
   cursor: pointer;
   padding: 0;
-  transition: color 0.15s;
 }
 
 .comment-reply-btn:hover {
@@ -906,7 +1030,6 @@ watch(() => route.params.id, (newId) => {
   font-weight: 600;
   cursor: pointer;
   border: none;
-  transition: opacity 0.15s;
 }
 
 .btn:disabled {
@@ -915,8 +1038,8 @@ watch(() => route.params.id, (newId) => {
 }
 
 .btn-primary {
-  background: var(--accent);
-  color: #fff;
+  background: var(--primary);
+  color: var(--on-primary);
 }
 
 .btn-primary:hover:not(:disabled) {

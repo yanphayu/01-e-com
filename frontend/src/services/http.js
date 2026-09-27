@@ -1,6 +1,30 @@
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 export const STORAGE_URL = API_URL.replace(/\/api\/?$/, '')
 
+export function resolveStorageUrl(path) {
+  if (!path) return ''
+
+  if (/^(blob:|data:)/i.test(path)) return path
+
+  if (/^https?:\/\//i.test(path)) {
+    try {
+      const url = new URL(path)
+      if (url.pathname.startsWith('/storage/')) {
+        return `${STORAGE_URL}${url.pathname}${url.search}${url.hash}`
+      }
+    } catch {}
+
+    return path
+  }
+
+  const normalized = String(path).replace(/^\/+/, '')
+  if (normalized.startsWith('storage/')) {
+    return `${STORAGE_URL}/${normalized}`
+  }
+
+  return `${STORAGE_URL}/storage/${normalized}`
+}
+
 import { getLocale } from '../i18n'
 
 export async function request(endpoint, options = {}) {

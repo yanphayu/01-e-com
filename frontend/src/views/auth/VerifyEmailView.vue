@@ -1,9 +1,10 @@
 <template>
-  <main class="auth-page">
+  <AuthLayout>
     <VerifyEmailForm />
-  </main>
+  </AuthLayout>
 </template>
 
 <script setup>
+import AuthLayout from '../../components/AuthLayout.vue'
 import VerifyEmailForm from '../../components/auth/VerifyEmailForm.vue'
 </script>

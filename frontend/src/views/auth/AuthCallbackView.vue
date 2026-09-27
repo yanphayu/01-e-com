@@ -37,7 +37,7 @@ onMounted(async () => {
     return
   }
 
-  router.replace(isNew ? { name: 'profile-setup' } : { name: 'home' })
+  router.replace(isNew ? { name: 'profile-setup' } : { name: 'profile', query: { edit: '1' } })
 })
 </script>
 

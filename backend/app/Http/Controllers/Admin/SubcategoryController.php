@@ -3,97 +3,100 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Subcategory;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class SubcategoryController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function filteredQuery(Request $request): Builder
     {
-        $query = Subcategory::with('category');
+        $query = Subcategory::with('category')->withCount('products');
 
-        if ($request->search) {
-            $query->where('name', 'like', "%{$request->search}%");
+        if ($request->filled('search')) {
+            $query->where('name', 'like', "%{$request->string('search')->trim()}%");
         }
 
-        if ($request->has('category_id')) {
-            $query->where('category_id', $request->category_id);
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->integer('category_id'));
         }
 
-        $subcategories = $query->latest()->paginate($request->get('per_page', 15));
-
-        return response()->json([
-            'success' => true,
-            'data' => $subcategories,
-        ]);
+        return $query->latest();
     }
 
-    public function store(Request $request): JsonResponse
+    public function index(Request $request): View
     {
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-            'has_brand' => 'boolean',
-            'has_model' => 'boolean',
-        ]);
+        $subcategories = $this->filteredQuery($request)->paginate(15)->withQueryString();
+        $categories = Category::orderBy('name')->get(['id', 'name']);
 
-        $validated['slug'] = \Str::slug($validated['name']);
-
-        $subcategory = Subcategory::create($validated);
-        $subcategory->load('category');
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Subcategory created successfully.',
-            'data' => $subcategory,
-        ], 201);
+        return view('admin.subcategories.index', compact('subcategories', 'categories'));
     }
 
-    public function update(Request $request, Subcategory $subcategory): JsonResponse
+    public function create(): View
+    {
+        $categories = Category::orderBy('name')->get(['id', 'name']);
+
+        return view('admin.subcategories.form', ['categories' => $categories, 'subcategory' => null]);
+    }
+
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'category_id' => 'sometimes|exists:categories,id',
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'sometimes|boolean',
-            'has_brand' => 'sometimes|boolean',
-            'has_model' => 'sometimes|boolean',
+            'category_id' => ['required', 'exists:categories,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['sometimes', 'boolean'],
+            'has_brand' => ['sometimes', 'boolean'],
+            'has_model' => ['sometimes', 'boolean'],
         ]);
 
-        if (isset($validated['name'])) {
-            $validated['slug'] = \Str::slug($validated['name']);
-        }
+        $validated['slug'] = Str::slug($validated['name']);
+
+        Subcategory::create($validated);
+
+        return redirect()->route('admin.subcategories.index')->with('status', 'Subcategory created.');
+    }
+
+    public function edit(Subcategory $subcategory): View
+    {
+        $categories = Category::orderBy('name')->get(['id', 'name']);
+
+        return view('admin.subcategories.form', compact('categories', 'subcategory'));
+    }
+
+    public function update(Request $request, Subcategory $subcategory): RedirectResponse
+    {
+        $validated = $request->validate([
+            'category_id' => ['required', 'exists:categories,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['sometimes', 'boolean'],
+            'has_brand' => ['sometimes', 'boolean'],
+            'has_model' => ['sometimes', 'boolean'],
+        ]);
+
+        $validated['slug'] = Str::slug($validated['name']);
 
         $subcategory->update($validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Subcategory updated successfully.',
-            'data' => $subcategory->fresh('category'),
-        ]);
+        return redirect()->route('admin.subcategories.index')->with('status', 'Subcategory updated.');
     }
 
-    public function destroy(Subcategory $subcategory): JsonResponse
+    public function destroy(Subcategory $subcategory): RedirectResponse
     {
         $subcategory->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Subcategory deleted successfully.',
-        ]);
+        return redirect()->route('admin.subcategories.index')->with('status', 'Subcategory deleted.');
     }
 
-    public function toggleActive(Subcategory $subcategory): JsonResponse
+    public function toggleActive(Subcategory $subcategory): RedirectResponse
     {
         $subcategory->update(['is_active' => ! $subcategory->is_active]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Subcategory status updated.',
-            'data' => ['is_active' => $subcategory->is_active],
-        ]);
+        return back()->with('status', 'Subcategory status updated.');
     }
 }

@@ -708,7 +708,6 @@ async function submitProduct() {
   cursor: pointer;
   padding: 0;
   margin-bottom: 0.5rem;
-  transition: color 0.15s;
 }
 
 .back-btn:hover {
@@ -742,7 +741,6 @@ async function submitProduct() {
   font-size: 0.82rem;
   font-weight: 600;
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
 }
 
 .step.active {
@@ -751,8 +749,8 @@ async function submitProduct() {
 }
 
 .step.done {
-  background: var(--success-soft);
-  color: var(--success);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .step-num {
@@ -772,8 +770,8 @@ async function submitProduct() {
 }
 
 .step.done .step-num {
-  background: var(--success);
-  color: #fff;
+  background: var(--accent);
+  color: var(--on-primary);
 }
 
 /* Step content */
@@ -811,7 +809,6 @@ async function submitProduct() {
   cursor: pointer;
   font: inherit;
   text-align: left;
-  transition: border-color 0.15s, background 0.15s;
 }
 
 .category-card:hover {
@@ -825,7 +822,7 @@ async function submitProduct() {
 
 .category-card.selected {
   border-color: var(--accent);
-  background: rgba(47, 158, 107, 0.15);
+  background: var(--accent-soft);
   box-shadow: inset 0 0 0 1px var(--accent);
 }
 
@@ -891,7 +888,6 @@ select.input {
   font-size: 0.9rem;
   display: grid;
   place-items: center;
-  transition: background 0.15s;
 }
 
 .remove-btn:hover {
@@ -911,7 +907,6 @@ select.input {
   font-weight: 600;
   font-size: 0.88rem;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .add-btn:hover {
@@ -940,7 +935,6 @@ select.input {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  transition: background 0.15s;
 }
 
 .phone-row .remove-btn:hover {
@@ -954,7 +948,6 @@ select.input {
   padding: 2.5rem 1.5rem;
   text-align: center;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
   color: var(--text-muted);
 }
 
@@ -1010,7 +1003,6 @@ select.input {
   cursor: pointer;
   display: grid;
   place-items: center;
-  transition: background 0.15s;
 }
 
 .img-remove:hover {
@@ -1030,7 +1022,6 @@ select.input {
   font-size: 0.7rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .img-primary:hover {
@@ -1113,7 +1104,6 @@ select.input {
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .loc-btn:hover {
@@ -1158,7 +1148,6 @@ select.input {
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 500;
-  transition: all 0.15s;
 }
 
 .condition-btn.active {

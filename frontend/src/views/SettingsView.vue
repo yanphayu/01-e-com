@@ -115,7 +115,6 @@ function logout() {
   color: var(--text);
   text-align: left;
   font: inherit;
-  transition: background 0.12s;
   width: 100%;
 }
 

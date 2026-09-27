@@ -476,7 +476,6 @@ onMounted(async () => {
   background: var(--surface);
   color: var(--text);
   font-size: 0.9rem;
-  transition: border-color 0.15s;
 }
 
 .input:focus {
@@ -504,7 +503,6 @@ onMounted(async () => {
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .loc-btn:hover {
@@ -582,7 +580,6 @@ onMounted(async () => {
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 500;
-  transition: all 0.15s;
 }
 
 .condition-btn.active {
@@ -654,7 +651,6 @@ onMounted(async () => {
   font-size: 0.65rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .set-primary-btn:hover {
@@ -687,7 +683,6 @@ onMounted(async () => {
   cursor: pointer;
   color: var(--text-muted);
   font-size: 0.88rem;
-  transition: all 0.15s;
 }
 
 .upload-label:hover {
@@ -713,7 +708,6 @@ onMounted(async () => {
   font-weight: 500;
   cursor: pointer;
   border: 1px solid var(--border);
-  transition: all 0.15s;
 }
 
 .btn-primary {
@@ -784,7 +778,6 @@ onMounted(async () => {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  transition: background 0.15s;
 }
 
 .phone-row .remove-btn:hover {
@@ -804,7 +797,6 @@ onMounted(async () => {
   font-weight: 600;
   font-size: 0.88rem;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .add-btn:hover {

@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\User;
+use App\Notifications\NewProductCreated;
+use App\Support\Notifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -28,6 +31,14 @@ class ProductController extends Controller
             $query->whereHas('detail', fn ($q) => $q->where('province', $request->province));
         }
 
+        if ($request->has('min_price')) {
+            $query->where('price', '>=', (float) $request->min_price);
+        }
+
+        if ($request->has('max_price')) {
+            $query->where('price', '<=', (float) $request->max_price);
+        }
+
         if ($request->has('q')) {
             $search = $request->q;
             $query->where(function ($q) use ($search) {
@@ -41,7 +52,9 @@ class ProductController extends Controller
             });
         }
 
-        $products = $query->latest()->paginate(20);
+        $products = $request->query('sort') === 'oldest'
+            ? $query->oldest()->paginate(20)
+            : $query->latest()->paginate(20);
 
         $favoriteIds = [];
         if ($request->bearerToken()) {
@@ -143,7 +156,15 @@ class ProductController extends Controller
             }
         }
 
-        $product->load(['detail.brand', 'detail.model', 'images', 'productAttributes.attribute', 'subcategory.category', 'phones']);
+        $product->load(['user.profile', 'detail.brand', 'detail.model', 'images', 'productAttributes.attribute', 'subcategory.category', 'phones']);
+
+        User::query()->where('is_admin', true)->each(function (User $admin) use ($product) {
+            try {
+                Notifier::send($admin, new NewProductCreated($product));
+            } catch (\Exception $e) {
+                // Broadcast may fail if Reverb is not running — notification is still saved to DB
+            }
+        });
 
         return response()->json([
             'success' => true,

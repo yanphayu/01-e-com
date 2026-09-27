@@ -77,7 +77,7 @@ function makeMarker(L, lat, lng) {
   const m = L.marker([lat, lng], {
     icon: L.divIcon({
       className: 'loc-pin',
-      html: '<svg viewBox="0 0 24 24" width="32" height="32" style="display:block"><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z" fill="var(--accent, #2f9e6b)" stroke="#fff" stroke-width="2"/><circle cx="12" cy="10" r="3" fill="#fff"/></svg>',
+      html: '<svg viewBox="0 0 24 24" width="32" height="32" style="display:block"><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 0 0-8-8z" fill="var(--primary, #2563EB)" stroke="#fff" stroke-width="2"/><circle cx="12" cy="10" r="3" fill="#fff"/></svg>',
       iconSize: [32, 32],
       iconAnchor: [16, 30],
     }),
@@ -204,21 +204,22 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center;
   padding: 1.25rem;
-  background: rgba(28, 27, 25, 0.45);
-  backdrop-filter: blur(2px);
+  background: var(--overlay);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .map-modal {
-  width: 100%;
-  max-width: 720px;
-  max-height: 90vh;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 720px;
+  max-height: calc(100dvh - 2.5rem);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
 }
 
 .map-head {
@@ -226,42 +227,66 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  flex-shrink: 0;
   padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  background: var(--surface-2);
 }
 
 .map-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.map-head h3::before {
+  content: '';
+  width: 4px;
+  height: 1.15em;
+  border-radius: 999px;
+  background: var(--primary);
 }
 
 .map-close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  line-height: 1;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
   color: var(--text-muted);
+  font-size: 1.45rem;
+  line-height: 1;
   cursor: pointer;
 }
+
 .map-close:hover {
   color: var(--text);
+  background: var(--surface-3);
+  border-color: var(--border-strong);
 }
 
 .map-container {
   width: 100%;
-  height: 400px;
+  height: min(400px, 52dvh);
   flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
 }
 
 .map-status {
   margin: 0;
-  padding: 0.6rem 1.25rem;
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  border-top: 1px solid var(--border);
+  padding: 0.65rem 1.25rem;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
   background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.82rem;
 }
 
 .map-status-ok {
@@ -272,8 +297,25 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: flex-end;
   gap: 0.6rem;
+  flex-shrink: 0;
   padding: 0.85rem 1.25rem;
   border-top: 1px solid var(--border);
-  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .map-overlay {
+    align-items: end;
+    padding: 0.75rem;
+  }
+
+  .map-modal {
+    max-height: calc(100dvh - 1.5rem);
+  }
+
+  .map-head,
+  .map-status,
+  .map-foot {
+    padding-inline: 1rem;
+  }
 }
 </style>

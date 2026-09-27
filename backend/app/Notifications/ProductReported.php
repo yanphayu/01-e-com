@@ -17,7 +17,7 @@ class ProductReported extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database', 'broadcast'];
+        return ['database'];
     }
 
     public function toArray(object $notifiable): array

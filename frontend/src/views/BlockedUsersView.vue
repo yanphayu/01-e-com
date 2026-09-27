@@ -18,7 +18,7 @@
 
       <div v-else class="blocked-list">
         <div v-for="user in blockedUsers" :key="user.id" class="blocked-item">
-          <img v-if="user.profile?.avatar" :src="user.profile.avatar" class="blocked-avatar" :alt="user.name" />
+          <img v-if="user.profile?.avatar" :src="resolveStorageUrl(user.profile.avatar)" class="blocked-avatar" :alt="user.name" />
           <span v-else class="blocked-avatar blocked-avatar-fallback">{{ (user.name || '?')[0] }}</span>
           <div class="blocked-info">
             <RouterLink :to="`/users/${user.id}`" class="blocked-name">{{ user.name }}</RouterLink>
@@ -37,6 +37,7 @@
 import { ref, onMounted } from 'vue'
 import { t } from '../i18n'
 import { getBlockedUsers, unblockUser } from '../services/chat'
+import { resolveStorageUrl } from '../services/http'
 
 const blockedUsers = ref([])
 const loading = ref(true)

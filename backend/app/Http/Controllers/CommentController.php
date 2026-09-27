@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Comment;
 use App\Models\Product;
 use App\Notifications\CommentCreated;
+use App\Support\Notifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -55,7 +56,7 @@ class CommentController extends Controller
 
         if ($product->user_id !== $request->user()->id) {
             try {
-                $product->user->notify(new CommentCreated($comment));
+                Notifier::send($product->user, new CommentCreated($comment));
             } catch (\Exception $e) {
                 // Broadcast may fail if Reverb is not running — notification is still saved to DB
             }
@@ -65,7 +66,7 @@ class CommentController extends Controller
             $parentComment = Comment::find($comment->parent_id);
             if ($parentComment && $parentComment->user_id !== $request->user()->id && $parentComment->user_id !== $product->user_id) {
                 try {
-                    $parentComment->user->notify(new CommentCreated($comment));
+                    Notifier::send($parentComment->user, new CommentCreated($comment));
                 } catch (\Exception $e) {
                     // Broadcast may fail if Reverb is not running — notification is still saved to DB
                 }

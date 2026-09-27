@@ -3,14 +3,14 @@
     <template v-if="!editing">
       <div class="fb-header container">
         <div class="fb-cover">
-          <img v-if="user.profile?.cover_image" :src="user.profile.cover_image" class="cover-img" alt="" />
+          <img v-if="user.profile?.cover_image" :src="resolveStorageUrl(user.profile.cover_image)" class="cover-img" alt="" />
           <div class="cover-gradient"></div>
         </div>
 
         <div class="fb-header-inner">
           <div class="fb-avatar-col">
             <div class="avatar-wrap">
-              <img v-if="user.profile?.avatar" :src="user.profile.avatar" class="store-avatar" alt="" />
+              <img v-if="user.profile?.avatar" :src="resolveStorageUrl(user.profile.avatar)" class="store-avatar" alt="" />
               <span v-else class="store-avatar store-avatar-fallback">{{ userInitial }}</span>
             </div>
           </div>
@@ -24,7 +24,6 @@
                 </svg>
               </span>
             </div>
-            <p class="store-email">{{ user.email }}</p>
           </div>
 
           <div class="fb-actions">
@@ -47,7 +46,7 @@
         <div class="fb-divider"></div>
       </div>
 
-      <div class="store-body">
+      <div class="store-body container">
         <div class="store-stats">
           <div class="stat-item">
             <span class="stat-value">{{ orderCount }}</span>
@@ -186,7 +185,7 @@
               class="switch-account-item"
               @click="switchAccount(acc)"
             >
-              <img v-if="acc.profile?.avatar" :src="acc.profile.avatar" class="switch-avatar" alt="" />
+              <img v-if="acc.profile?.avatar" :src="resolveStorageUrl(acc.profile.avatar)" class="switch-avatar" alt="" />
               <span v-else class="switch-avatar switch-avatar-fallback">{{ (acc.name || '?')[0] }}</span>
               <span class="switch-name">{{ acc.name }}</span>
             </button>
@@ -202,7 +201,7 @@
     </template>
 
     <div v-else class="store-edit container">
-      <ProfileSetupForm :redirect-on-save="false" @saved="onSaved" @cancel="editing = false" />
+      <ProfileSetupForm :redirect-on-save="false" @saved="onSaved" @cancel="stopEditing" />
     </div>
 
     <!-- Delete Confirmation -->
@@ -224,15 +223,16 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { t, getLocale, localeRef } from '../i18n'
 import { getUser } from '../services/auth'
 import { getProducts, deleteProduct as apiDeleteProduct } from '../services/products'
-import { STORAGE_URL } from '../services/http'
+import { STORAGE_URL, resolveStorageUrl } from '../services/http'
 import ProfileSetupForm from '../components/auth/ProfileSetupForm.vue'
 
+const route = useRoute()
 const router = useRouter()
-const editing = ref(false)
+const editing = ref(route.query.edit === '1')
 const user = ref({})
 const orderCount = ref(0)
 const reviewCount = ref(0)
@@ -314,7 +314,17 @@ async function loadProducts() {
 
 async function onSaved() {
   await loadUser()
+  stopEditing()
+}
+
+function stopEditing() {
   editing.value = false
+
+  if (route.query.edit) {
+    const query = { ...route.query }
+    delete query.edit
+    router.replace({ name: 'profile', query })
+  }
 }
 
 const otherAccounts = computed(() => {
@@ -408,8 +418,8 @@ watch(localeRef, () => translateAddress())
 
 .avatar-wrap {
   position: relative;
-  width: 168px;
-  height: 168px;
+  width: 128px;
+  height: 128px;
   flex-shrink: 0;
 }
 
@@ -450,7 +460,7 @@ watch(localeRef, () => translateAddress())
   font-weight: 700;
   margin: 0;
   word-break: break-word;
-  color: #050505;
+  color: var(--text);
 }
 
 .verified-badge {
@@ -460,13 +470,6 @@ watch(localeRef, () => translateAddress())
   flex-shrink: 0;
 }
 
-.store-email {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  margin: 0.2rem 0 0;
-  word-break: break-word;
-}
-
 .fb-actions {
   flex-shrink: 0;
   padding-top: 0.75rem;
@@ -474,25 +477,20 @@ watch(localeRef, () => translateAddress())
   gap: 0.5rem;
 }
 
-.fb-actions .btn {
+.fb-actions .btn-icon {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  background: #e4e6eb;
-  color: #050505;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
   border-radius: 6px;
   box-shadow: none;
 }
 
-.fb-actions .btn:hover {
-  background: #d8dadf;
-}
-
-.fb-actions .btn-icon {
-  padding: 0.55rem 0.7rem;
-}
-
 .fb-actions .btn-icon:hover {
+  background: var(--surface-3);
   color: var(--accent);
   border-color: var(--accent);
 }
@@ -500,13 +498,6 @@ watch(localeRef, () => translateAddress())
 .fb-divider {
   height: 1px;
   background: var(--border);
-}
-
-.store-body {
-  margin: 0 auto;
-  width: 100%;
-  max-width: 1400px;
-  padding: 0 1.5rem;
 }
 
 .store-stats {
@@ -617,7 +608,6 @@ watch(localeRef, () => translateAddress())
   font-size: 0.88rem;
   font-weight: 500;
   border: 1px solid var(--border);
-  transition: all 0.15s;
 }
 
 .social-link:hover {
@@ -628,7 +618,7 @@ watch(localeRef, () => translateAddress())
 
 .social-facebook:hover { color: #1877f2; border-color: #1877f2; }
 .social-instagram:hover { color: #e4405f; border-color: #e4405f; }
-.social-twitter:hover { color: #000; border-color: #000; }
+.social-twitter:hover { color: var(--accent); border-color: var(--accent); }
 
 .location-address {
   font-size: 0.95rem;
@@ -667,7 +657,6 @@ watch(localeRef, () => translateAddress())
   background: none;
   cursor: pointer;
   border-radius: var(--radius-sm);
-  transition: background 0.12s;
 }
 
 .switch-account-item:hover {
@@ -791,7 +780,6 @@ watch(localeRef, () => translateAddress())
   background: var(--surface);
   color: var(--text);
   cursor: pointer;
-  transition: all 0.15s;
 }
 
 .edit-btn:hover {
@@ -866,7 +854,6 @@ watch(localeRef, () => translateAddress())
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s;
 }
 
 .btn-danger:hover {
@@ -924,8 +911,8 @@ watch(localeRef, () => translateAddress())
   }
 
   .avatar-wrap {
-    width: 120px;
-    height: 120px;
+    width: 96px;
+    height: 96px;
   }
 
   .store-avatar-fallback {

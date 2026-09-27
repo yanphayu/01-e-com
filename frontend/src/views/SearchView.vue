@@ -15,7 +15,7 @@
             ref="searchInput"
             v-model="query"
             type="text"
-            class="search-input"
+            class="search-input input-bare"
             :placeholder="t('nav.search')"
             @input="onInput"
             @focus="onFocus"
@@ -333,7 +333,6 @@ function clearSearch() {
   color: var(--text-muted);
   cursor: pointer;
   flex-shrink: 0;
-  transition: color 0.15s;
 }
 
 .back-btn:hover {
@@ -352,7 +351,6 @@ function clearSearch() {
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--surface);
-  transition: border-color 0.15s;
 }
 
 .search-input-wrap:focus-within {
@@ -365,13 +363,7 @@ function clearSearch() {
 }
 
 .search-input {
-  border: none;
-  outline: none;
-  background: transparent;
   font-size: 1rem;
-  color: var(--text);
-  width: 100%;
-  padding: 0;
 }
 
 .search-input::placeholder {
@@ -425,7 +417,6 @@ function clearSearch() {
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s;
   white-space: nowrap;
 }
 
@@ -495,7 +486,6 @@ function clearSearch() {
   text-align: left;
   cursor: pointer;
   border-radius: var(--radius-sm);
-  transition: background 0.12s;
 }
 
 .history-item:hover {
@@ -534,7 +524,6 @@ function clearSearch() {
   color: var(--text);
   text-decoration: none;
   border-radius: var(--radius-sm);
-  transition: background 0.12s;
 }
 
 .result-item:hover {
@@ -570,7 +559,6 @@ function clearSearch() {
   text-align: left;
   cursor: pointer;
   border-radius: var(--radius-sm);
-  transition: background 0.12s;
 }
 
 .category-name:hover {

@@ -4,64 +4,67 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attribute;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class AttributeController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function filteredQuery(Request $request): Builder
     {
         $query = Attribute::query();
 
-        if ($request->search) {
-            $query->where('name', 'like', "%{$request->search}%");
+        if ($request->filled('search')) {
+            $query->where('name', 'like', "%{$request->string('search')->trim()}%");
         }
 
-        $attributes = $query->latest()->paginate($request->get('per_page', 15));
-
-        return response()->json([
-            'success' => true,
-            'data' => $attributes,
-        ]);
+        return $query->latest();
     }
 
-    public function store(Request $request): JsonResponse
+    public function index(Request $request): View
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:attributes,name',
-        ]);
+        $attributes = $this->filteredQuery($request)->paginate(15)->withQueryString();
 
-        $attribute = Attribute::create($validated);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Attribute created successfully.',
-            'data' => $attribute,
-        ], 201);
+        return view('admin.attributes.index', compact('attributes'));
     }
 
-    public function update(Request $request, Attribute $attribute): JsonResponse
+    public function create(): View
+    {
+        return view('admin.attributes.form');
+    }
+
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255|unique:attributes,name,'.$attribute->id,
+            'name' => ['required', 'string', 'max:255', 'unique:attributes,name'],
+        ]);
+
+        Attribute::create($validated);
+
+        return redirect()->route('admin.attributes.index')->with('status', 'Attribute created.');
+    }
+
+    public function edit(Attribute $attribute): View
+    {
+        return view('admin.attributes.form', compact('attribute'));
+    }
+
+    public function update(Request $request, Attribute $attribute): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:attributes,name,'.$attribute->id],
         ]);
 
         $attribute->update($validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Attribute updated successfully.',
-            'data' => $attribute->fresh(),
-        ]);
+        return redirect()->route('admin.attributes.index')->with('status', 'Attribute updated.');
     }
 
-    public function destroy(Attribute $attribute): JsonResponse
+    public function destroy(Attribute $attribute): RedirectResponse
     {
         $attribute->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Attribute deleted successfully.',
-        ]);
+        return redirect()->route('admin.attributes.index')->with('status', 'Attribute deleted.');
     }
 }

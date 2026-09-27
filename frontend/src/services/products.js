@@ -27,6 +27,9 @@ export function getProducts(params = {}) {
   if (params.subcategory_id) query.set('subcategory_id', params.subcategory_id)
   if (params.province) query.set('province', params.province)
   if (params.q) query.set('q', params.q)
+  if (params.min_price) query.set('min_price', params.min_price)
+  if (params.max_price) query.set('max_price', params.max_price)
+  if (params.sort) query.set('sort', params.sort)
   if (params.page) query.set('page', params.page)
 
   const qs = query.toString()

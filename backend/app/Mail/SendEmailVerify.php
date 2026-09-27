@@ -12,24 +12,24 @@ class SendEmailVerify extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $otp;
-
-    public function __construct($otp)
-    {
-        $this->otp = $otp;
+    public function __construct(
+        public string $otp,
+        public int $expiresInMinutes,
+    ) {
+        //
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Send Email Verify',
+            subject: 'Verify your TRINITY email address',
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            view: 'name',
+            view: 'mail.email-verify',
         );
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Report;
 use App\Models\User;
 use App\Notifications\ProductReported;
+use App\Support\Notifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -48,7 +49,7 @@ class ReportController extends Controller
 
         User::query()->where('is_admin', true)->each(function (User $admin) use ($report) {
             try {
-                $admin->notify(new ProductReported($report));
+                Notifier::send($admin, new ProductReported($report));
             } catch (\Exception $e) {
                 // Broadcast may fail if Reverb is not running — notification is still saved to DB
             }

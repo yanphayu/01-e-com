@@ -197,6 +197,13 @@ class UserProductSeeder extends Seeder
             mkdir(dirname($path), 0755, true);
         }
 
+        if (! function_exists('imagecreatetruecolor')) {
+            $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', true);
+            file_put_contents($path, $png);
+
+            return;
+        }
+
         $image = imagecreatetruecolor(800, 800);
         for ($y = 0; $y < 800; $y++) {
             $color = imagecolorallocate($image, 235 - ($y / 800) * 20, 240 - ($y / 800) * 15, 245 - ($y / 800) * 10);

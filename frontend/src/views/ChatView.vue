@@ -40,7 +40,7 @@
         >
           <img
             v-if="otherUser(conv).profile?.avatar"
-            :src="otherUser(conv).profile.avatar"
+            :src="resolveStorageUrl(otherUser(conv).profile.avatar)"
             class="conv-avatar"
             alt=""
           />
@@ -124,7 +124,7 @@
           <button class="chat-header-user" @click="showProfileInfo = true">
             <img
               v-if="otherUser(activeConversation).profile?.avatar"
-              :src="otherUser(activeConversation).profile.avatar"
+              :src="resolveStorageUrl(otherUser(activeConversation).profile.avatar)"
               class="chat-header-avatar"
               alt=""
             />
@@ -146,23 +146,14 @@
           <div
             v-for="msg in messages"
             :key="msg.id"
+            :id="`message-${msg.id}`"
             class="message-row"
             :class="{ mine: msg.user_id === userId }"
             @contextmenu.prevent="onMessageMenu(msg, $event)"
-            @touchstart.passive="onHoldStart(msg, $event)"
-            @touchmove.passive="onHoldMove"
-            @touchend="onHoldEnd"
-            @touchcancel="onHoldEnd"
-            @mousedown="onHoldStart(msg, $event)"
-            @mousemove="onHoldMove"
-            @mouseenter="onMessageHover(msg)"
-            @mouseleave="onMessageLeave"
-            @mouseup="onHoldEnd"
-            @click="onMessageClick(msg, $event)"
           >
             <img
               v-if="msg.user_id !== userId && msg.user?.profile?.avatar"
-              :src="msg.user.profile.avatar"
+              :src="resolveStorageUrl(msg.user.profile.avatar)"
               class="msg-avatar"
               alt=""
             />
@@ -176,12 +167,17 @@
                 </svg>
               </span>
 
-              <div v-if="msg.replied_message" class="msg-reply-quote">
+              <button
+                v-if="msg.replied_message"
+                type="button"
+                class="msg-reply-quote"
+                @click.stop="jumpToMessage(msg.replied_message.id)"
+              >
                 <span class="msg-reply-owner">
                   {{ msg.replied_message.user_id === userId ? t('chat.you') : (msg.replied_message.user?.name || '') }}
                 </span>
                 <span class="msg-reply-text">{{ replyPreview(msg.replied_message) }}</span>
-              </div>
+              </button>
 
               <div v-if="msg.deleted_at" class="msg-deleted-text">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -246,39 +242,23 @@
                 </svg>
               </span>
 
-              <div v-if="reactionsFor(msg).length" class="msg-reactions" :class="{ mine: msg.user_id === userId }">
-                <button
-                  v-for="r in reactionsFor(msg)"
-                  :key="r.reaction"
-                  class="msg-reaction"
-                  :class="{ mine: r.mine }"
-                  :title="r.names.join(', ')"
-                  @click.stop="toggleReaction(msg, r.reaction)"
-                >
-                  <span class="msg-reaction-emoji">{{ r.reaction }}</span>
-                  <span class="msg-reaction-count">{{ r.count }}</span>
-                </button>
-              </div>
             </div>
 
-            <Transition name="rr-pop">
-              <div v-if="!msg.deleted_at && (reactBarMessage?.id === msg.id || hoverMessage?.id === msg.id)" class="reaction-bar" @click.stop>
-                <button
-                  v-for="emoji in REACTIONS"
-                  :key="emoji"
-                  class="reaction-btn"
-                  :class="{ active: hasMyReaction(msg, emoji) }"
-                  @click="addReaction(msg, emoji)"
-                >
-                  {{ emoji }}
-                </button>
-                <button class="reaction-close" @click="closeReactBar">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                </button>
-              </div>
-            </Transition>
+            <button
+              v-if="!msg.deleted_at"
+              type="button"
+              class="message-more-btn"
+              :title="t('chat.more')"
+              :aria-label="t('chat.more')"
+              @click.stop="openMessageMenu(msg, $event)"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                <circle cx="5" cy="12" r="1.5" />
+                <circle cx="12" cy="12" r="1.5" />
+                <circle cx="19" cy="12" r="1.5" />
+              </svg>
+            </button>
+
           </div>
 
           <div v-if="messages.length === 0 && !loadingMessages" class="messages-empty">
@@ -360,7 +340,7 @@
 
     <!-- Profile info (Messenger-style Details) -->
     <div v-if="showProfileInfo && activeConversation" class="pf-scrim" @click="showProfileInfo = false"></div>
-    <Transition name="pf">
+
       <aside v-if="showProfileInfo && activeConversation" class="profile-info">
         <div class="pf-header">
           <h3 class="pf-title">{{ t('chat.details') }}</h3>
@@ -373,9 +353,9 @@
 
         <div class="pf-scroll">
           <div class="pf-hero">
-            <img v-if="profileUser.profile?.cover_image" :src="profileUser.profile.cover_image" class="pf-cover" alt="" />
+            <img v-if="profileUser.profile?.cover_image" :src="resolveStorageUrl(profileUser.profile.cover_image)" class="pf-cover" alt="" />
             <div v-else class="pf-cover pf-cover-empty"></div>
-            <img v-if="profileUser.profile?.avatar" :src="profileUser.profile.avatar" class="pf-avatar" alt="" />
+            <img v-if="profileUser.profile?.avatar" :src="resolveStorageUrl(profileUser.profile.avatar)" class="pf-avatar" alt="" />
             <span v-else class="pf-avatar pf-avatar-fallback">{{ (profileUser.name || '?')[0] }}</span>
             <h2 class="pf-name">{{ profileUser.name }}</h2>
           </div>
@@ -443,8 +423,7 @@
             </button>
           </div>
         </div>
-      </aside>
-    </Transition>
+        </aside>
 
     <!-- New Chat Modal -->
     <Teleport to="body">
@@ -474,7 +453,7 @@
                 class="user-result"
                 @click="startChat(u)"
               >
-                <img v-if="u.profile?.avatar" :src="u.profile.avatar" class="user-result-avatar" alt="" />
+                <img v-if="u.profile?.avatar" :src="resolveStorageUrl(u.profile.avatar)" class="user-result-avatar" alt="" />
                 <span v-else class="user-result-avatar user-result-fallback">{{ (u.name || '?')[0] }}</span>
                 <div>
                   <div class="user-result-name">{{ u.name }}</div>
@@ -511,7 +490,7 @@
                 class="user-result"
                 @click="doForwardTo(conv)"
               >
-                <img v-if="otherUser(conv).profile?.avatar" :src="otherUser(conv).profile.avatar" class="user-result-avatar" alt="" />
+                <img v-if="otherUser(conv).profile?.avatar" :src="resolveStorageUrl(otherUser(conv).profile.avatar)" class="user-result-avatar" alt="" />
                 <span v-else class="user-result-avatar user-result-fallback">{{ (otherUser(conv).name || '?')[0] }}</span>
                 <div>
                   <div class="user-result-name">{{ otherUser(conv).name }}</div>
@@ -526,7 +505,7 @@
     <!-- Context menu -->
     <Teleport to="body">
       <div v-if="menuConversation" class="cm-backdrop" @click.self="closeMenu"></div>
-      <Transition name="cm-pop">
+
         <div
           v-if="menuConversation"
           class="cm-card"
@@ -578,13 +557,13 @@
             </button>
           </div>
         </div>
-      </Transition>
+
     </Teleport>
 
     <!-- Message action menu -->
     <Teleport to="body">
       <div v-if="menuMessage" class="mm-backdrop" @click.self="closeMessageMenu"></div>
-      <Transition name="cm-pop">
+
         <div
           v-if="menuMessage"
           class="cm-card mm-card"
@@ -632,7 +611,7 @@
             </button>
           </div>
         </div>
-      </Transition>
+
     </Teleport>
   </div>
 </template>
@@ -641,11 +620,12 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { t } from '../i18n'
-import { getConversations, createConversation, getMessages, sendMessage, searchUsers, updateConversation, deleteConversation, markConversationUnread, blockConversationUser, updateMessage, deleteMessage, pinMessage, reactToMessage } from '../services/chat'
+import { getConversations, createConversation, getMessages, sendMessage, searchUsers, updateConversation, deleteConversation, markConversationUnread, blockConversationUser, updateMessage, deleteMessage, pinMessage } from '../services/chat'
 import { getProduct } from '../services/products'
-import { STORAGE_URL } from '../services/http'
+import { STORAGE_URL, resolveStorageUrl } from '../services/http'
 import { getEcho } from '../services/echo'
 import { setChatUnread } from '../stores/chat'
+import { pushToast } from '../stores/toast'
 
 const router = useRouter()
 const route = useRoute()
@@ -680,14 +660,13 @@ const menuPos = ref(null)
 const isArchivedView = ref(false)
 const menuMessage = ref(null)
 const menuMsgPos = ref(null)
-const reactBarMessage = ref(null)
-const hoverMessage = ref(null)
 const replyTo = ref(null)
 const editingMessage = ref(null)
 const showForwardPicker = ref(false)
 const forwardTargetMessage = ref(null)
 const showProfileInfo = ref(false)
 let subscribedChannelId = null
+let replyHighlightTimer = null
 
 const activeId = computed(() => activeConversation.value?.id)
 const canSend = computed(() => newMessage.value.trim() || imagePreview.value || draftProduct.value)
@@ -820,14 +799,52 @@ function computeChatUnread() {
 
 watch(conversations, computeChatUnread, { deep: true })
 
+function handleChatUnread(event) {
+  const payload = event.detail
+  if (!payload?.conversation_id || !payload.message) return
+
+  const conversation = conversations.value.find(c => c.id === payload.conversation_id)
+  if (!conversation) {
+    reloadConversations()
+    return
+  }
+
+  conversation.last_message = payload.message
+  conversation.last_message_at = payload.message.created_at
+
+   if (activeId.value !== payload.conversation_id) {
+      conversation.unread_count = (conversation.unread_count || 0) + 1
+      notifyChatMessage(conversation, payload.message)
+   }
+   }
+
+function notifyChatMessage(conversation, message) {
+   const who = otherUser(conversation)?.name || ''
+
+   let preview = message?.body || ''
+   if (!preview && message?.image) preview = t('toast.sentImage')
+   if (!preview && message?.voice) preview = t('toast.sentVoice')
+
+   pushToast({
+      type: 'info',
+      title: t('toast.newMessage'),
+      message: who ? `${who}: ${preview}`.trim() : preview,
+      action: t('toast.openChat'),
+      onAction: () => selectConversation(conversation),
+   })
+   }
+
 onMounted(() => {
   window.addEventListener('popstate', handlePopState)
   window.addEventListener('chat-show-list', handleShowList)
+  window.addEventListener('chat-unread', handleChatUnread)
 })
 
 onUnmounted(() => {
+  clearTimeout(replyHighlightTimer)
   window.removeEventListener('popstate', handlePopState)
   window.removeEventListener('chat-show-list', handleShowList)
+  window.removeEventListener('chat-unread', handleChatUnread)
   const echo = getEcho()
   if (echo && subscribedChannelId) {
     echo.leave(`chat.${subscribedChannelId}`)
@@ -992,74 +1009,6 @@ function clearDraftProduct() {
   draftProduct.value = null
 }
 
-const REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏']
-
-let holdTimer = null
-let holdTriggered = false
-let lastHoldTime = 0
-let holdStart = { x: 0, y: 0 }
-
-function onHoldStart(msg, event) {
-  if (msg.deleted_at) return
-  holdTriggered = false
-  clearTimeout(holdTimer)
-  const touch = event.touches && event.touches[0]
-  holdStart = {
-    x: touch?.clientX ?? event.clientX,
-    y: touch?.clientY ?? event.clientY,
-  }
-  holdTimer = setTimeout(() => {
-    holdTriggered = true
-    lastHoldTime = Date.now()
-    reactBarMessage.value = msg
-  }, 450)
-}
-
-function onHoldMove(event) {
-  const touch = event.touches && event.touches[0]
-  const x = touch?.clientX ?? event.clientX
-  const y = touch?.clientY ?? event.clientY
-  if (event.clientX == null && !touch) return
-  if (Math.abs(x - holdStart.x) > 12 || Math.abs(y - holdStart.y) > 12) {
-    clearTimeout(holdTimer)
-  }
-}
-
-function onHoldEnd() {
-  clearTimeout(holdTimer)
-  holdTimer = null
-}
-
-const canHover = typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(hover: hover)').matches
-
-function onMessageHover(msg) {
-  if (!canHover || msg.deleted_at) return
-  hoverMessage.value = msg
-}
-
-function onMessageLeave() {
-  hoverMessage.value = null
-}
-
-function closeReactBar() {
-  reactBarMessage.value = null
-  hoverMessage.value = null
-}
-
-function onMessageClick(msg, event) {
-  if (holdTriggered) {
-    holdTriggered = false
-    return
-  }
-  if (Date.now() - lastHoldTime < 500) return
-  if (reactBarMessage.value?.id === msg.id) {
-    reactBarMessage.value = null
-    return
-  }
-  reactBarMessage.value = null
-  openMessageMenu(msg, event)
-}
-
 function openMessageMenu(msg, event) {
   menuMessage.value = msg
   const el = event?.currentTarget
@@ -1178,37 +1127,6 @@ async function doForwardTo(conv) {
   }
 }
 
-function reactionsFor(msg) {
-  const list = msg.reactions || []
-  if (!list.length) return []
-  const counts = new Map()
-  for (const r of list) {
-    const key = r.reaction
-    if (!counts.has(key)) {
-      counts.set(key, { reaction: key, count: 0, mine: false, names: [] })
-    }
-    const cur = counts.get(key)
-    cur.count++
-    if (r.user_id === userId.value) cur.mine = true
-    if (r.user?.name && !cur.names.includes(r.user.name)) cur.names.push(r.user.name)
-  }
-  return Array.from(counts.values())
-}
-
-function hasMyReaction(msg, emoji) {
-  return (msg.reactions || []).some(r => r.user_id === userId.value && r.reaction === emoji)
-}
-
-function addReaction(msg, emoji) {
-  reactToMessage(msg.id, emoji)
-    .then(res => replaceMessage(res.data))
-    .catch(() => {})
-}
-
-function toggleReaction(msg, emoji) {
-  addReaction(msg, emoji)
-}
-
 function replyPreview(msg) {
   if (!msg) return ''
   if (msg.deleted_at) return t('chat.msgDeleted')
@@ -1228,6 +1146,23 @@ function scrollToBottom() {
   if (messagesContainer.value) {
     messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
   }
+}
+
+function jumpToMessage(messageId) {
+  const target = document.getElementById(`message-${messageId}`)
+  if (!target) return
+
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  target.classList.remove('is-reply-target')
+  clearTimeout(replyHighlightTimer)
+
+  requestAnimationFrame(() => {
+    target.classList.add('is-reply-target')
+  })
+
+  replyHighlightTimer = window.setTimeout(() => {
+    target.classList.remove('is-reply-target')
+  }, 1600)
 }
 
 let searchTimeout = null
@@ -1477,7 +1412,7 @@ onUnmounted(() => {
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 500;
-  transition: border-color 0.15s, color 0.15s;
+
 }
 
 .btn-new-chat:hover {
@@ -1496,7 +1431,7 @@ onUnmounted(() => {
   background: var(--surface);
   color: var(--text-muted);
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+
 }
 
 .btn-archived:hover {
@@ -1532,7 +1467,7 @@ onUnmounted(() => {
   padding: 0.85rem 0.5rem 0.85rem 1.25rem;
   cursor: pointer;
   border-bottom: 1px solid var(--border);
-  transition: background 0.12s;
+
 }
 
 .conv-item:hover {
@@ -1555,7 +1490,7 @@ onUnmounted(() => {
   color: var(--text-muted);
   cursor: pointer;
   border-radius: var(--radius-sm);
-  transition: background 0.12s, color 0.12s;
+
   margin-right: 0.5rem;
 }
 
@@ -1603,7 +1538,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-primary);
   font-weight: 600;
   font-size: 1rem;
 }
@@ -1649,7 +1584,7 @@ onUnmounted(() => {
   padding: 0 5px;
   border-radius: 999px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-primary);
   font-size: 0.65rem;
   font-weight: 700;
   line-height: 18px;
@@ -1708,7 +1643,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-primary);
   font-weight: 600;
   font-size: 0.875rem;
 }
@@ -1743,11 +1678,35 @@ onUnmounted(() => {
   gap: 0.5rem;
   max-width: 75%;
   position: relative;
+  scroll-margin-block: 1rem;
 }
 
 .message-row.mine {
   margin-left: auto;
   flex-direction: row-reverse;
+}
+
+.message-more-btn {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.message-more-btn:hover {
+  background: var(--surface-2);
+  color: var(--text);
+  opacity: 1;
 }
 
 .msg-avatar {
@@ -1763,7 +1722,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   background: var(--text-muted);
-  color: #fff;
+  color: var(--on-primary);
   font-size: 0.7rem;
   font-weight: 600;
 }
@@ -1779,8 +1738,22 @@ onUnmounted(() => {
 
 .message-row.mine .message-bubble {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-primary);
   border-color: var(--accent);
+}
+
+.message-row.is-reply-target .message-bubble {
+  animation: reply-message-highlight 1.6s ease;
+}
+
+@keyframes reply-message-highlight {
+  0%, 100% {
+    box-shadow: var(--shadow-sm);
+  }
+
+  35% {
+    box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-md);
+  }
 }
 
 .msg-image {
@@ -1832,18 +1805,23 @@ onUnmounted(() => {
 }
 
 .message-row.mine .msg-pin-badge {
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .msg-reply-quote {
   display: flex;
+  width: 100%;
   flex-direction: column;
   gap: 0.1rem;
   padding: 0.3rem 0.5rem;
   margin-bottom: 0.35rem;
+  border: 0;
   border-left: 3px solid var(--accent);
   border-radius: var(--radius-sm);
   background: var(--surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
@@ -1859,7 +1837,7 @@ onUnmounted(() => {
 }
 
 .message-row.mine .msg-reply-owner {
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .msg-reply-text {
@@ -1896,129 +1874,7 @@ onUnmounted(() => {
 }
 
 .message-row.mine .msg-forwarded-label {
-  color: #fff;
-}
-
-.msg-reactions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem;
-  margin-top: 0.3rem;
-}
-
-.msg-reaction {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 0.72rem;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.message-row.mine .msg-reaction {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #fff;
-}
-
-.msg-reaction.mine {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-
-.message-row.mine .msg-reaction.mine {
-  background: #fff;
-  border-color: #fff;
-  color: var(--accent);
-}
-
-.msg-reaction-emoji {
-  font-size: 0.8rem;
-}
-
-.msg-reaction-count {
-  font-weight: 700;
-}
-
-.reaction-bar {
-  position: absolute;
-  top: calc(100% + 8px);
-  display: flex;
-  align-items: center;
-  gap: 0.15rem;
-  padding: 0.35rem 0.5rem;
-  border-radius: 999px;
-  background: rgba(38, 40, 48, 0.85);
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.45);
-  z-index: 5;
-}
-
-.message-row.mine .reaction-bar {
-  right: 0;
-}
-
-.message-row:not(.mine) .reaction-bar {
-  left: 38px;
-}
-
-.reaction-btn {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: transparent;
-  border-radius: 50%;
-  font-size: 1.35rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: transform 0.12s, background 0.12s;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.reaction-btn:hover {
-  transform: scale(1.2);
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.reaction-btn.active {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.reaction-close {
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.rr-pop-enter-active,
-.rr-pop-leave-active {
-  transition: opacity 0.14s ease, transform 0.14s ease;
-}
-
-.rr-pop-enter-from,
-.rr-pop-leave-to {
-  opacity: 0;
-  transform: translateY(6px) scale(0.95);
+  color: var(--on-primary);
 }
 
 .mm-backdrop {
@@ -2097,7 +1953,7 @@ onUnmounted(() => {
   color: var(--text-muted);
   cursor: pointer;
   margin-bottom: 0.5rem;
-  transition: border-color 0.15s, color 0.15s;
+
 }
 
 .img-upload-btn:hover {
@@ -2138,7 +1994,7 @@ onUnmounted(() => {
   border-radius: 50%;
   border: none;
   background: var(--danger);
-  color: #fff;
+  color: var(--on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2175,7 +2031,7 @@ onUnmounted(() => {
   border-radius: 50%;
   border: none;
   background: var(--danger);
-  color: #fff;
+  color: var(--on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2212,10 +2068,10 @@ onUnmounted(() => {
   border-radius: var(--radius-sm);
   border: none;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-primary);
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.15s;
+
 }
 
 .send-btn:hover:not(:disabled) {
@@ -2236,7 +2092,7 @@ onUnmounted(() => {
   background: var(--surface);
   cursor: pointer;
   margin-bottom: 0.35rem;
-  transition: border-color 0.15s;
+
   max-width: 260px;
 }
 
@@ -2291,7 +2147,7 @@ onUnmounted(() => {
 }
 
 .message-row.mine .msg-product-price {
-  color: #fff;
+  color: var(--on-primary);
 }
 
 /* Modal */
@@ -2365,7 +2221,7 @@ onUnmounted(() => {
   padding: 0.65rem 0;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
-  transition: background 0.12s;
+
 }
 
 .user-result:last-child {
@@ -2389,7 +2245,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-primary);
   font-weight: 600;
   font-size: 0.875rem;
 }
@@ -2427,7 +2283,7 @@ onUnmounted(() => {
   box-shadow:
     0 24px 60px -12px rgba(0, 0, 0, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  color: #fff;
+  color: var(--on-primary);
   overflow: hidden;
 }
 
@@ -2470,14 +2326,14 @@ onUnmounted(() => {
   padding: 10px 12px;
   border: none;
   background: transparent;
-  color: #fff;
+  color: var(--on-primary);
   font-size: 0.94rem;
   font-weight: 400;
   letter-spacing: 0.01em;
   text-align: left;
   cursor: pointer;
   border-radius: 11px;
-  transition: background 0.12s;
+
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -2495,17 +2351,6 @@ onUnmounted(() => {
 
 .cm-danger .cm-action:hover {
   background: rgba(255, 108, 95, 0.12);
-}
-
-.cm-pop-enter-active,
-.cm-pop-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-
-.cm-pop-enter-from,
-.cm-pop-leave-to {
-  opacity: 0;
-  transform: translateY(4px) scale(0.97);
 }
 
 /* ---------- Responsive ---------- */
@@ -2539,7 +2384,6 @@ onUnmounted(() => {
     width: 100%;
     z-index: 20;
     transform: translateX(-100%);
-    transition: transform 0.25s ease;
     border-right: none;
     box-shadow: var(--shadow-lg);
   }
@@ -2624,29 +2468,12 @@ onUnmounted(() => {
 
 <style scoped>
 .chat-page {
-  --bg: #f3f3f5;
-  --surface: #ffffff;
-  --surface-2: #e9eaee;
-  --surface-3: #e1e2e6;
-  --text: #050505;
-  --text-muted: #65676b;
-  --border: rgba(0, 0, 0, 0.08);
-  --border-strong: rgba(0, 0, 0, 0.16);
-  --accent: #2f9e6b;
-  --accent-dark: #237a52;
-  --accent-soft: rgba(47, 158, 107, 0.12);
-  --danger: #e0413a;
-  --danger-soft: rgba(224, 65, 58, 0.1);
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --shadow-lg: 0 20px 50px -12px rgba(0, 0, 0, 0.18);
   background: var(--bg);
   -webkit-tap-highlight-color: transparent;
 }
 
 .chat-sidebar {
-  background: #ffffff;
+  background: var(--surface);
   border-right-color: var(--border);
   overscroll-behavior: contain;
 }
@@ -2673,12 +2500,12 @@ onUnmounted(() => {
   border-radius: 50%;
   background: transparent;
   color: var(--text-muted);
-  transition: background 0.15s, color 0.15s;
+
 }
 
 .btn-archived:hover,
 .btn-new-chat:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--surface-2);
   color: var(--text);
 }
 
@@ -2702,7 +2529,7 @@ onUnmounted(() => {
   height: 6px;
   border-radius: 50%;
   background: transparent;
-  transition: background 0.15s;
+
 }
 
 .btn-archived.active::after {
@@ -2712,8 +2539,7 @@ onUnmounted(() => {
 .conversation-list,
 .messages-area {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
-  scroll-behavior: smooth;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
 .conversation-list {
@@ -2727,19 +2553,15 @@ onUnmounted(() => {
   margin: 1px 8px;
   border-bottom: none;
   border-radius: 12px;
-  transition: background 0.18s ease, transform 0.18s ease;
 }
 
 .conv-item:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--surface-2);
 }
 
 .conv-item.active {
-  background: rgba(0, 0, 0, 0.06);
-}
-
-.conv-item:active {
-  transform: scale(0.99);
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--primary);
 }
 
 .conv-avatar {
@@ -2779,7 +2601,7 @@ onUnmounted(() => {
   padding: 0 6px;
   border-radius: 999px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-primary);
   font-size: 0.7rem;
   font-weight: 600;
 }
@@ -2792,33 +2614,36 @@ onUnmounted(() => {
 
 .conv-more {
   opacity: 1;
-  transition: background 0.15s, color 0.15s;
+
 }
 
 .conv-more:hover {
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--surface-3);
   color: var(--text);
 }
 
 .conv-avatar-fallback,
 .chat-header-fallback,
 .msg-avatar-fallback {
-  background: #7a7f85;
+  background: var(--primary);
+  color: var(--on-primary);
   font-weight: 600;
 }
 
 .chat-main {
-  background: #eff6f1;
+  background: var(--bg);
   min-height: 0;
   min-width: 0;
   overflow: hidden;
 }
 
 .chat-header {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--navbar-bg);
   border-bottom-color: var(--border);
   padding: 0.7rem 1rem;
   flex-shrink: 0;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .chat-header-name {
@@ -2847,58 +2672,28 @@ onUnmounted(() => {
 }
 
 .message-bubble {
-  background: #d8ecdf;
-  border-color: transparent;
-  color: #050505;
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
   border-radius: 18px;
   border-bottom-left-radius: 4px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
   padding: 0.55rem 0.8rem;
-  animation: msgIn 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-@keyframes msgIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }
 
 .message-row.mine .message-bubble {
-  background: linear-gradient(135deg, #2f9e6b 0%, #1e7d52 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent-dark) 100%);
   border-color: transparent;
-  color: #fff;
+  color: var(--on-primary);
   border-radius: 18px;
   border-bottom-left-radius: 18px;
   border-bottom-right-radius: 4px;
-}
-
-.reaction-bar {
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.2);
-}
-
-.reaction-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
-}
-
-.reaction-btn.active {
-  background: rgba(47, 158, 107, 0.15);
-}
-
-.reaction-close {
-  background: rgba(0, 0, 0, 0.08);
-  color: #050505;
+  box-shadow: 0 10px 24px -16px var(--focus-ring);
 }
 
 .msg-time {
   font-size: 0.64rem;
-  color: #65676b;
+  color: var(--text-muted);
 }
 
 .message-row.mine .msg-time {
@@ -2906,16 +2701,24 @@ onUnmounted(() => {
 }
 
 .msg-status.sent {
-  color: #a6abb0;
+  color: var(--text-muted);
 }
 
 .msg-status.seen {
-  color: #2f9e6b;
+  color: var(--success);
+}
+
+.message-row.mine .msg-status.sent {
+  color: color-mix(in srgb, var(--on-primary) 72%, transparent);
+}
+
+.message-row.mine .msg-status.seen {
+  color: var(--on-primary);
 }
 
 .msg-forwarded-label,
 .msg-reply-owner {
-  color: #2f9e6b;
+  color: var(--primary);
 }
 
 .message-row.mine .msg-forwarded-label {
@@ -2923,7 +2726,7 @@ onUnmounted(() => {
 }
 
 .message-row.mine .msg-reply-owner {
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .msg-avatar {
@@ -2946,7 +2749,7 @@ onUnmounted(() => {
 }
 
 .message-row.mine .msg-product-price {
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .chat-input-area {
@@ -2954,10 +2757,12 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  background: #ffffff;
+  background: var(--navbar-bg);
   border-top-color: var(--border);
   padding: 0.6rem 0.85rem 0.85rem;
   flex-shrink: 0;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .chat-input-area::before {
@@ -2985,11 +2790,11 @@ onUnmounted(() => {
   background: transparent;
   color: var(--text-muted);
   margin-bottom: 0;
-  transition: background 0.15s, color 0.15s;
+
 }
 
 .img-upload-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--surface-2);
   color: var(--text);
 }
 
@@ -3000,109 +2805,105 @@ onUnmounted(() => {
 }
 
 .msg-input {
-  border: none;
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: #f0f1f4;
+  background: var(--surface);
   color: var(--text);
   padding: 0.62rem 1.05rem;
   font-size: 0.94rem;
-  transition: background 0.15s;
 }
 
 .msg-input::placeholder {
-  color: #9a9da1;
+  color: var(--text-muted);
 }
 
 .msg-input:focus {
-  background: #e9ebee;
-  box-shadow: 0 0 0 2px var(--accent-soft);
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .send-btn {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2f9e6b, #1e7d52);
-  color: #fff;
-  transition: transform 0.15s, box-shadow 0.15s;
+  background: linear-gradient(135deg, var(--primary), var(--accent-dark));
+  color: var(--on-primary);
 }
 
 .send-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2f9e6b, #1e7d52);
-  box-shadow: 0 4px 14px rgba(47, 158, 107, 0.4);
+  background: linear-gradient(135deg, var(--primary), var(--accent-dark));
+  box-shadow: 0 4px 14px var(--focus-ring);
   transform: none;
-}
-
-.send-btn:active:not(:disabled) {
-  transform: scale(0.92);
 }
 
 .composer-preview {
   border-left: none;
-  background: #e9eaee;
+  background: var(--surface-2);
   border-radius: 12px;
 }
 
 .cm-backdrop,
 .mm-backdrop {
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--overlay);
 }
 
 .cm-card {
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow:
-    0 24px 60px -12px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  color: #050505;
+  background: var(--navbar-bg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  color: var(--text);
 }
 
 .cm-handle {
-  background: rgba(0, 0, 0, 0.18);
+  background: var(--border-strong);
 }
 
 .cm-title {
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--text-muted);
 }
 
 .cm-group + .cm-group {
-  border-top-color: rgba(0, 0, 0, 0.08);
+  border-top-color: var(--border);
 }
 
 .cm-action {
-  color: #050505;
+  color: var(--text);
 }
 
 .cm-action:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--surface-2);
 }
 
 .cm-danger .cm-action {
-  color: #e0413a;
+  color: var(--danger);
 }
 
 .cm-danger .cm-action:hover {
-  background: rgba(224, 65, 58, 0.08);
+  background: var(--danger-soft);
 }
 
 .modal-overlay {
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
+  background: var(--overlay);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .modal-card {
-  background: #ffffff;
+  background: var(--surface);
   border: 1px solid var(--border);
 }
 
 .modal-card .input {
-  background: #f0f1f4;
-  border-color: transparent;
+  background: var(--surface-2);
+  border-color: var(--border);
   color: var(--text);
 }
 
 .modal-card .input::placeholder {
-  color: #9a9da1;
+  color: var(--text-muted);
 }
 
 .modal-card .input:focus {
@@ -3116,11 +2917,11 @@ onUnmounted(() => {
 
 @media (max-width: 1300px), (hover: none) and (pointer: coarse) {
   .chat-sidebar {
-    background: #ffffff;
+    background: var(--surface);
   }
 
   .sidebar-scrim {
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--overlay);
   }
 }
 
@@ -3191,11 +2992,11 @@ onUnmounted(() => {
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition: background 0.15s;
+
 }
 
 .chat-header-details:hover {
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--surface-2);
 }
 
 .voice-btn {
@@ -3210,28 +3011,17 @@ onUnmounted(() => {
   color: var(--text-muted);
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.15s, color 0.15s;
+
 }
 
 .voice-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--surface-2);
   color: var(--text);
 }
 
 .voice-btn.recording {
-  color: #fff;
-  background: linear-gradient(135deg, #ff4d4d, #e02424);
-  animation: voice-pulse 1.1s ease-in-out infinite;
-}
-
-@keyframes voice-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(224, 36, 36, 0.45);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(224, 36, 36, 0);
-  }
+  color: var(--on-primary);
+  background: var(--danger);
 }
 
 .pf-scrim {
@@ -3242,8 +3032,8 @@ onUnmounted(() => {
   width: 340px;
   min-width: 340px;
   height: 100%;
-  background: #fff;
-  border-left: 1px solid #e4e6eb;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -3254,14 +3044,15 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0.7rem 1rem;
-  border-bottom: 1px solid #e4e6eb;
+  border-bottom: 1px solid var(--border);
+  background: var(--navbar-bg);
   flex-shrink: 0;
 }
 
 .pf-title {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #050505;
+  color: var(--text);
   margin: 0;
 }
 
@@ -3271,16 +3062,17 @@ onUnmounted(() => {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border: none;
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: #e9eaee;
-  color: #050505;
+  background: var(--surface-2);
+  color: var(--text-muted);
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .pf-close:hover {
-  background: #d8dadf;
+  border-color: var(--border-strong);
+  background: var(--surface-3);
+  color: var(--text);
 }
 
 .pf-scroll {
@@ -3292,7 +3084,7 @@ onUnmounted(() => {
 .pf-hero {
   position: relative;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #e4e6eb;
+  border-bottom: 1px solid var(--border);
 }
 
 .pf-cover {
@@ -3303,7 +3095,7 @@ onUnmounted(() => {
 }
 
 .pf-cover-empty {
-  background: linear-gradient(135deg, #2f9e6b, #6fb896);
+  background: linear-gradient(135deg, var(--primary), var(--info));
 }
 
 .pf-avatar {
@@ -3311,7 +3103,7 @@ onUnmounted(() => {
   height: 84px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #fff;
+  border: 3px solid var(--surface);
   margin: -44px auto 0;
   display: block;
   position: relative;
@@ -3325,15 +3117,15 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: #fff;
-  background: #2f9e6b;
+  color: var(--on-primary);
+  background: var(--primary);
 }
 
 .pf-name {
   text-align: center;
   font-size: 1.15rem;
   font-weight: 700;
-  color: #050505;
+  color: var(--text);
   margin: 0.6rem 0.5rem 0;
 }
 
@@ -3344,28 +3136,31 @@ onUnmounted(() => {
   margin: 0.85rem auto;
   padding: 0.5rem 0.9rem;
   width: fit-content;
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
   border-radius: 999px;
-  background: #dcefe4;
-  color: #1f7a50;
+  background: var(--accent-soft);
+  color: var(--primary);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   text-decoration: none;
 }
 
 .pf-view:hover {
-  background: #c9e5d6;
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 16%, var(--surface));
+  color: var(--primary);
 }
 
 .pf-section {
   padding: 0.85rem 1rem;
-  border-top: 8px solid #f0f2f5;
+  border-top: 8px solid var(--surface-2);
 }
 
 .pf-section-title {
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #65676b;
+  color: var(--text-muted);
   font-weight: 700;
   margin: 0 0 0.35rem;
 }
@@ -3380,20 +3175,20 @@ onUnmounted(() => {
 .pf-key {
   width: 88px;
   flex: 0 0 88px;
-  color: #65676b;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
 .pf-val {
   flex: 1;
   min-width: 0;
-  color: #050505;
+  color: var(--text);
   font-size: 0.92rem;
   overflow-wrap: anywhere;
 }
 
 .pf-link {
-  color: #1f7a50;
+  color: var(--primary);
   text-decoration: none;
 }
 
@@ -3403,7 +3198,7 @@ onUnmounted(() => {
 
 .pf-media-count {
   margin: 0 0 0.6rem;
-  color: #65676b;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -3440,14 +3235,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--on-primary);
   font-weight: 700;
   font-size: 1.1rem;
   z-index: 1;
 }
 
 .pf-actions {
-  border-top: 8px solid #f0f2f5;
+  border-top: 8px solid var(--surface-2);
 }
 
 .pf-block {
@@ -3457,28 +3252,17 @@ onUnmounted(() => {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.6rem;
-  border: 1px solid #e4e6eb;
-  border-radius: 8px;
-  background: #fff;
-  color: #050505;
+  border: 1px solid color-mix(in srgb, var(--danger) 24%, var(--border));
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--danger);
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
 .pf-block:hover {
-  background: #f0f2f5;
-}
-
-.pf-enter-active,
-.pf-leave-active {
-  transition: transform 0.22s ease, opacity 0.22s ease;
-}
-
-.pf-enter-from,
-.pf-leave-to {
-  transform: translateX(40px);
-  opacity: 0;
+  border-color: var(--danger);
+  background: var(--danger-soft);
 }
 
 @media (max-width: 900px) {
@@ -3487,7 +3271,9 @@ onUnmounted(() => {
     position: fixed;
     inset: 0;
     z-index: 90;
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--overlay);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
 
   .profile-info {
@@ -3499,17 +3285,7 @@ onUnmounted(() => {
     width: 100%;
     min-width: 0;
     border-left: none;
-    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
-  }
-
-  .pf-enter-from,
-  .pf-leave-to {
-    transform: translateX(100%);
-  }
-
-  .pf-enter-active,
-  .pf-leave-active {
-    transition: transform 0.28s ease;
+    box-shadow: var(--shadow-lg);
   }
 
   .pf-cover {

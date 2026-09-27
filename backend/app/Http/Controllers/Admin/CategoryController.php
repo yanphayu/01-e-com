@@ -4,81 +4,82 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class CategoryController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function filteredQuery(Request $request): Builder
     {
-        $query = Category::with('subcategories');
+        $query = Category::withCount('subcategories');
 
-        if ($request->search) {
-            $query->where('name', 'like', "%{$request->search}%");
+        if ($request->filled('search')) {
+            $query->where('name', 'like', "%{$request->string('search')->trim()}%");
         }
 
-        $categories = $query->latest()->paginate($request->get('per_page', 15));
-
-        return response()->json([
-            'success' => true,
-            'data' => $categories,
-        ]);
+        return $query->latest();
     }
 
-    public function store(Request $request): JsonResponse
+    public function index(Request $request): View
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'image' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $categories = $this->filteredQuery($request)->paginate(15)->withQueryString();
 
-        $category = Category::create($validated);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Category created successfully.',
-            'data' => $category,
-        ], 201);
+        return view('admin.categories.index', compact('categories'));
     }
 
-    public function update(Request $request, Category $category): JsonResponse
+    public function create(): View
+    {
+        return view('admin.categories.form');
+    }
+
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'image' => 'nullable|string',
-            'is_active' => 'sometimes|boolean',
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['sometimes', 'boolean'],
+        ]);
+
+        Category::create($validated);
+
+        return redirect()->route('admin.categories.index')->with('status', 'Category created.');
+    }
+
+    public function edit(Category $category): View
+    {
+        return view('admin.categories.form', compact('category'));
+    }
+
+    public function update(Request $request, Category $category): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'is_active' => ['sometimes', 'boolean'],
         ]);
 
         $category->update($validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Category updated successfully.',
-            'data' => $category->fresh(),
-        ]);
+        return redirect()->route('admin.categories.index')->with('status', 'Category updated.');
     }
 
-    public function destroy(Category $category): JsonResponse
+    public function destroy(Category $category): RedirectResponse
     {
+        if ($category->subcategories()->exists()) {
+            return back()->with('error', 'Category has subcategories and cannot be deleted.');
+        }
+
         $category->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Category deleted successfully.',
-        ]);
+        return redirect()->route('admin.categories.index')->with('status', 'Category deleted.');
     }
 
-    public function toggleActive(Category $category): JsonResponse
+    public function toggleActive(Category $category): RedirectResponse
     {
         $category->update(['is_active' => ! $category->is_active]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Category status updated.',
-            'data' => ['is_active' => $category->is_active],
-        ]);
+        return back()->with('status', 'Category status updated.');
     }
 }

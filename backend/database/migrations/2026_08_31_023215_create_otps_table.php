@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('otps', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users','id');
+            $table->foreignId('user_id')->constrained('users', 'id');
             $table->string('otp');
             $table->timestamp('expires_at');
             $table->timestamps();

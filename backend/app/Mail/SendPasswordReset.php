@@ -12,24 +12,24 @@ class SendPasswordReset extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $otp;
-
-    public function __construct($otp)
-    {
-        $this->otp = $otp;
+    public function __construct(
+        public string $otp,
+        public int $expiresInMinutes,
+    ) {
+        //
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Reset Your Password',
+            subject: 'Reset your TRINITY password',
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            view: 'password-reset',
+            view: 'mail.password-reset',
         );
     }
 }

@@ -31,21 +31,15 @@ class AuthController extends Controller
             'password' => $validate['password'],
         ]);
 
-        $otp = random_int(000000, 999999);
+        $otp = Otp::issueFor($user, Otp::TYPE_EMAIL_VERIFY);
 
-        Otp::create([
-            'user_id' => $user['id'],
-            'type' => 'email_verify',
-            'otp' => $otp,
-            'expires_at' => now()->addMinute(1),
-        ]);
-
-        Mail::to($user['email'])->send(new SendEmailVerify($otp));
+        Mail::to($user['email'])->send(new SendEmailVerify($otp->otp, $otp->minutesUntilExpiry()));
 
         return response()->json([
             'success' => true,
             'message' => 'Please verify your email.',
             'data' => $user,
+            'expires_in' => $otp->minutesUntilExpiry() * 60,
         ]);
     }
 
@@ -66,10 +60,11 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'User not found.',
-            ]);
+            ], 422);
         }
 
         $otp = Otp::where('user_id', $user['id'])
+            ->where('type', Otp::TYPE_EMAIL_VERIFY)
             ->where('otp', $validate['otp'])
             ->first();
 
@@ -77,15 +72,19 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid OTP.',
-            ]);
+            ], 422);
         }
 
-        if (now()->greaterThan($otp['expires_at'])) {
+        if ($otp->isExpired()) {
+            $otp->delete();
+
             return response()->json([
                 'success' => false,
                 'message' => 'OTP has expired.',
-            ]);
+            ], 422);
         }
+
+        $otp->delete();
 
         $user->forceFill(['email_verified_at' => now()])->save();
 
@@ -115,24 +114,18 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'User not found.',
-            ]);
+            ], 422);
         }
 
-        $otp = random_int(000000, 999999);
+        $otp = Otp::issueFor($user, Otp::TYPE_EMAIL_VERIFY);
 
-        Otp::create([
-            'user_id' => $user['id'],
-            'type' => 'email_verify',
-            'otp' => $otp,
-            'expires_at' => now()->addMinute(1),
-        ]);
-
-        Mail::to($user['email'])->send(new SendEmailVerify($otp));
+        Mail::to($user['email'])->send(new SendEmailVerify($otp->otp, $otp->minutesUntilExpiry()));
 
         return response()->json([
             'success' => true,
             'message' => 'Please verify your email.',
             'data' => $user,
+            'expires_in' => $otp->minutesUntilExpiry() * 60,
         ]);
     }
 
@@ -159,26 +152,28 @@ class AuthController extends Controller
         $user = Auth::user();
 
         if ($user->email_verified_at === null) {
-            $otp = random_int(000000, 999999);
-
-            Otp::create([
-                'user_id' => $user->id,
-                'type' => 'email_verify',
-                'otp' => $otp,
-                'expires_at' => now()->addMinute(1),
-            ]);
-
-            Mail::to($user->email)->send(new SendEmailVerify($otp));
+            $pendingOtp = Otp::where('user_id', $user->id)
+                ->where('type', Otp::TYPE_EMAIL_VERIFY)
+                ->where('expires_at', '>', now())
+                ->latest('id')
+                ->first();
 
             return response()->json([
                 'success' => false,
-                'message' => 'Your email is not verified yet. Please verify your email before logging in.',
+                'message' => $pendingOtp
+                    ? 'Your email is not verified yet. Please verify your email before logging in.'
+                    : 'Your email is not verified yet. Request a new verification code to continue.',
                 'verify_required' => true,
                 'data' => ['id' => $user->id, 'email' => $user->email],
+                'expires_in' => $pendingOtp ? $pendingOtp->minutesUntilExpiry() * 60 : null,
             ], 403);
         }
 
-        $token = $user->createToken('login_token')->plainTextToken;
+        $token = null;
+
+        if (! $request->hasSession()) {
+            $token = $user->createToken('login_token')->plainTextToken;
+        }
 
         return response()->json([
             'success' => true,
@@ -202,7 +197,18 @@ class AuthController extends Controller
     // logout
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $token = $request->user()?->currentAccessToken();
+
+        if ($token) {
+            $token->delete();
+        }
+
+        Auth::logout();
+
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return response()->json([
             'success' => true,
@@ -288,7 +294,7 @@ class AuthController extends Controller
 
         $user = $request->user();
         $profile = $user->profile()->firstOrCreate([]);
-        $profile->avatar = asset('storage/'.$path);
+        $profile->avatar = $path;
         $profile->save();
 
         $user->load(['profile.address']);
@@ -311,7 +317,7 @@ class AuthController extends Controller
 
         $user = $request->user();
         $profile = $user->profile()->firstOrCreate([]);
-        $profile->cover_image = asset('storage/'.$path);
+        $profile->cover_image = $path;
         $profile->save();
 
         $user->load(['profile.address']);
@@ -328,24 +334,14 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        Otp::where('user_id', $user->id)
-            ->where('type', 'account_delete')
-            ->delete();
+        $otp = Otp::issueFor($user, Otp::TYPE_ACCOUNT_DELETE);
 
-        $otp = random_int(000000, 999999);
-
-        Otp::create([
-            'user_id' => $user->id,
-            'type' => 'account_delete',
-            'otp' => $otp,
-            'expires_at' => now()->addMinutes(5),
-        ]);
-
-        Mail::to($user->email)->send(new SendAccountDelete($otp));
+        Mail::to($user->email)->send(new SendAccountDelete($otp->otp, $otp->minutesUntilExpiry()));
 
         return response()->json([
             'success' => true,
             'message' => 'Verification code sent to your email.',
+            'expires_in' => $otp->minutesUntilExpiry() * 60,
         ]);
     }
 
@@ -367,7 +363,7 @@ class AuthController extends Controller
         }
 
         $otp = Otp::where('user_id', $user->id)
-            ->where('type', 'account_delete')
+            ->where('type', Otp::TYPE_ACCOUNT_DELETE)
             ->where('otp', $validate['otp'])
             ->first();
 
@@ -378,7 +374,9 @@ class AuthController extends Controller
             ], 422);
         }
 
-        if (now()->greaterThan($otp->expires_at)) {
+        if ($otp->isExpired()) {
+            $otp->delete();
+
             return response()->json([
                 'success' => false,
                 'message' => 'OTP has expired.',
@@ -422,20 +420,9 @@ class AuthController extends Controller
             ]);
         }
 
-        Otp::where('user_id', $user->id)
-            ->where('type', 'password_reset')
-            ->delete();
+        $otp = Otp::issueFor($user, Otp::TYPE_PASSWORD_RESET);
 
-        $otp = random_int(000000, 999999);
-
-        Otp::create([
-            'user_id' => $user->id,
-            'type' => 'password_reset',
-            'otp' => $otp,
-            'expires_at' => now()->addMinutes(15),
-        ]);
-
-        Mail::to($user->email)->send(new SendPasswordReset($otp));
+        Mail::to($user->email)->send(new SendPasswordReset($otp->otp, $otp->minutesUntilExpiry()));
 
         return response()->json([
             'success' => true,
@@ -458,11 +445,11 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid credentials.',
-            ]);
+            ], 422);
         }
 
         $otp = Otp::where('user_id', $user->id)
-            ->where('type', 'password_reset')
+            ->where('type', Otp::TYPE_PASSWORD_RESET)
             ->where('otp', $validate['otp'])
             ->first();
 
@@ -470,21 +457,23 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid OTP.',
-            ]);
+            ], 422);
         }
 
-        if (now()->greaterThan($otp->expires_at)) {
+        if ($otp->isExpired()) {
+            $otp->delete();
+
             return response()->json([
                 'success' => false,
                 'message' => 'OTP has expired.',
-            ]);
+            ], 422);
         }
 
         $user->password = $validate['password'];
         $user->save();
 
         Otp::where('user_id', $user->id)
-            ->where('type', 'password_reset')
+            ->where('type', Otp::TYPE_PASSWORD_RESET)
             ->delete();
 
         $user->tokens()->delete();

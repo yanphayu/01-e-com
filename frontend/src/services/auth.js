@@ -4,6 +4,10 @@ export function googleRedirectUrl() {
   return `${API_URL}/auth/google/redirect`
 }
 
+export function getAuthPanel() {
+  return request('/auth-panel')
+}
+
 export function registerUser(payload) {
   return request('/register', {
     method: 'POST',
